@@ -1,0 +1,565 @@
+<!DOCTYPE html><script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Mrq Pm Weekly Dashboard",
+  "schemaVersion": 1,
+  "description": "MrQ performance marketing dashboard (refreshed 25 Jun 2026, actuals through 24 Jun). Recommended optimisations, data-health scan, this-week forecast & WTD, month-to-date + MTD-by-channel, YTD & YoY vs 2025 (hybrid baseline), 30-day daily, channel mix & efficiency, Web vs App split, ATL spend vs FTDs, channel optimisation, ad-group & affiliate-ID leaderboards, per-channel detail and six-month weekly trends. Affiliate spend gap-filled where the Raventrack feed lags.",
+  "mcpTools": [
+    "mcp__b9dbfb90-bb62-4dc2-92d0-7a56d5ff8f3b__attributionBigQuery"
+  ],
+  "mcpServerNames": [
+    "MrQ MCP"
+  ]
+}
+</script>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MrQ · Performance Marketing Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root{color-scheme:light;--blue:#0A2ECB;--navy:#0B2595;--sky:#00B2FF;--green:#42D486;--green2:#1c8f53;--yellow:#FFDF00;--pink:#FF63F6;--ink:#0c1430;--muted:#5b6480;--line:#e6e8f2;--bg:#f5f6fb;--card:#ffffff;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.45;}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 56px;}
+header.hero{background:var(--blue);color:#fff;border-radius:0 0 18px 18px;padding:26px 28px 30px;margin-bottom:22px;}
+.logo{display:inline-flex;align-items:baseline;font-weight:800;letter-spacing:-.5px;font-size:26px;background:#fff;color:var(--blue);padding:3px 12px;border-radius:9px;}
+header.hero h1{font-size:25px;margin:16px 0 4px;font-weight:800;letter-spacing:-.4px;}
+header.hero p{margin:0;opacity:.88;font-size:13.5px;max-width:860px}
+.asof{margin-top:10px;display:inline-block;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);padding:4px 11px;border-radius:20px;font-size:12px;font-weight:600;}
+.headline{margin-top:12px;display:flex;gap:18px;flex-wrap:wrap}
+.headline .hl{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:12px;padding:9px 14px}
+.headline .hl .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;opacity:.8}
+.headline .hl .v{font-size:20px;font-weight:800;letter-spacing:-.4px}
+h2.sec{font-size:13px;letter-spacing:.10em;text-transform:uppercase;color:var(--muted);margin:30px 4px 12px;font-weight:700;}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.kpis.five{grid-template-columns:repeat(4,1fr)}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px;box-shadow:0 1px 2px rgba(10,46,203,.04);}
+.kpi .lbl{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.kpi .val{font-size:26px;font-weight:800;letter-spacing:-1px;margin:6px 0 2px;color:var(--blue)}
+.kpi .rng{font-size:11.5px;color:var(--muted)}
+.health{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--yellow);border-radius:12px;padding:13px 18px;margin-bottom:8px}
+.health h3{margin:0 0 7px;font-size:14px;font-weight:800}
+.health h3 span{font-weight:600;font-size:11.5px;color:var(--muted)}
+.health ul{margin:0;padding-left:4px;list-style:none}
+.health li{margin:5px 0;font-size:12.5px;padding-left:20px;position:relative;line-height:1.45}
+.health li::before{position:absolute;left:0;top:0}
+.health li.warn::before{content:"\26A0";color:#b3209f}
+.health li.info::before{content:"\2139";color:var(--blue)}
+.health li.ok::before{content:"\2713";color:#1c8f53}
+.health li b{color:var(--ink)}
+.topreco{background:var(--blue);color:#fff;border-radius:14px;padding:17px 20px 18px;margin-bottom:14px}
+.topreco h3{margin:0 0 3px;font-size:17px;font-weight:800;letter-spacing:-.2px}
+.topreco .sub{margin:0 0 13px;font-size:12px;opacity:.85}
+.topreco .ritems{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.topreco .ri{font-size:12.5px;line-height:1.42;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:11px 12px}
+.topreco .ri .rt{font-weight:800;font-size:11px;letter-spacing:.04em;text-transform:uppercase;display:inline-block;margin-bottom:6px;padding:2px 8px;border-radius:6px}
+.topreco .rt.scale{background:#fff;color:var(--blue)} .topreco .rt.cut{background:var(--pink);color:#3a0035}
+.topreco .rt.opt{background:var(--green);color:#06321c} .topreco .rt.meas{background:#cdb4ff;color:#2c0a52}
+.topreco .realloc{margin-top:13px;background:var(--yellow);border-radius:10px;padding:10px 14px;font-size:12.5px;color:var(--ink)}
+.topreco .realloc b{color:var(--navy)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px 18px;overflow-x:auto;}
+.panel h3{margin:0 0 2px;font-size:15px;font-weight:800}
+.panel .sub{margin:0 0 12px;font-size:12px;color:var(--muted)}
+.chartbox{position:relative;height:240px}
+.chartbox.tall{height:300px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700}
+td.ch{font-weight:600}
+.pill{font-weight:700;border-radius:6px;padding:1px 7px;font-size:12px}
+.pos{background:rgba(66,212,134,.18);color:#1c8f53}
+.neg{background:rgba(255,99,246,.14);color:#b3209f}
+.mid{background:#fff5cc;color:#8a6d00}
+.act{font-weight:800;border-radius:6px;padding:2px 8px;font-size:11.5px;white-space:nowrap}
+.act.scale{background:rgba(10,46,203,.12);color:var(--blue)}
+.act.cut{background:rgba(255,99,246,.16);color:#b3209f}
+.act.opt{background:rgba(66,212,134,.20);color:#1c8f53}
+.act.meas{background:rgba(122,20,168,.12);color:#7a14a8}
+.insights{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 22px 8px;}
+.insights li{margin:11px 0;font-size:13px}
+.insights b{color:var(--blue)}
+.callout{background:var(--yellow);border-radius:14px;padding:14px 18px;margin-top:14px;color:var(--ink);font-size:12.5px}
+.callout b{color:var(--navy)}
+.chgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.chcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.chcard .chhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.chcard h3{margin:0;font-size:14.5px;font-weight:800}
+.chstats{display:flex;gap:13px;margin:8px 0 6px;flex-wrap:wrap}
+.chstat{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;font-weight:600}
+.chstat b{display:block;font-size:13px;color:var(--ink);font-weight:800;letter-spacing:-.3px;margin-top:1px}
+.chartbox.mini2{height:130px}
+.chcap{font-size:10.5px;font-weight:700;letter-spacing:.02em;color:var(--muted);margin:9px 0 2px}
+.note-sm{font-size:11.5px;color:var(--muted);margin:8px 2px 0}
+footer.note{margin-top:26px;font-size:12px;color:var(--muted);background:#eef0f7;border-radius:12px;padding:14px 18px;}
+footer.note b{color:var(--ink)}
+@media(max-width:900px){.kpis,.kpis.five{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.chgrid{grid-template-columns:1fr}.topreco .ritems{grid-template-columns:1fr 1fr}}
+.bp{margin:14px 0 18px}
+.bp .lab{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;margin-bottom:6px;gap:10px}
+.bp .lab .t{font-weight:800;color:var(--ink);font-size:13px}
+.bp .lab .v{color:var(--muted)}
+.bp .lab .v b{color:var(--ink)}
+.prog{position:relative;height:24px;background:#eef0f7;border-radius:8px;overflow:visible}
+.prog>i{position:absolute;left:0;top:0;height:100%;border-radius:8px;display:block}
+.prog .mk{position:absolute;top:-4px;height:32px;width:2px;background:var(--ink);opacity:.6}
+.prog .mkl{position:absolute;top:-17px;font-size:9.5px;font-weight:700;color:var(--muted);white-space:nowrap;transform:translateX(-50%)}
+.bmini{position:relative;height:10px;background:#eef0f7;border-radius:5px;overflow:visible;min-width:120px}
+.bmini>i{position:absolute;left:0;top:0;height:100%;border-radius:5px}
+.bmini .mk{position:absolute;top:-2px;height:14px;width:2px;background:var(--ink);opacity:.55}
+
+.tabnav{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px;position:sticky;top:0;background:var(--bg);padding:11px 0;z-index:20;border-bottom:1px solid var(--line)}
+.tabnav button{font-family:inherit;font-size:12px;font-weight:700;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 11px;cursor:pointer;transition:all .12s}
+.tabnav button:hover{border-color:var(--blue);color:var(--blue)}
+.tabnav button.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.tabpane{animation:fadein .18s ease}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.tabpane>h2.sec:first-child{margin-top:6px}
+</style></head>
+<body>
+<header class="hero"><div class="wrap" style="padding:0">
+  <span class="logo">Mr<span>Q</span></span>
+  <h1>Performance Marketing — Forecast, Year-on-Year &amp; Channel Optimisation</h1>
+  <p>Attributed Spend, FTDs, CPA, 12-month predicted LTV (PLTV) and LTV:CAC from <code>mrq-data.dbt.attribution_spend_metrics</code>. Blended across all attributed channels (paid + brand/ATL + organic). Affiliate spend gap-filled where the Raventrack feed lags.</p>
+  <span class="asof">As of Thu 25 Jun 2026 · actuals through yesterday (Wed 24 Jun) · last complete week 15 Jun</span>
+  <div class="headline">
+    <div class="hl"><div class="l">YTD 12m PLTV</div><div class="v">£30.78M</div></div>
+    <div class="hl"><div class="l">YTD spend</div><div class="v">£27.44M</div></div>
+    <div class="hl"><div class="l">YTD LTV:CAC</div><div class="v">1.12</div></div>
+    <div class="hl"><div class="l">YTD FTDs</div><div class="v">199,976</div></div>
+  </div>
+</div></header>
+<div class="wrap"><div class="tabnav" id="tabnav"><button data-tab="tab-summary" class="active" title="Summary">Summary</button><button data-tab="tab-1" title="1 · This week — forecast &amp; week-to-date">This week</button><button data-tab="tab-2" title="2 · Month to date — June actuals &amp; full-month forecast">Month to date</button><button data-tab="tab-2b" title="2b · Targets — plan vs actual (by channel)">Targets</button><button data-tab="tab-2c" title="2c · Budget progress — vs annual plan">Budget progress</button><button data-tab="tab-3" title="3 · Year to date &amp; year-on-year (vs 2025 hybrid baseline)">Year to date & year-on-year</button><button data-tab="tab-3b" title="3b · PLTV drivers — month-on-month">PLTV drivers</button><button data-tab="tab-4" title="4 · Daily view — last 30 days">Daily view</button><button data-tab="tab-4b" title="4b · Timing &amp; payday effects">Timing & payday effects</button><button data-tab="tab-5" title="5 · Insights">Insights</button><button data-tab="tab-6" title="6 · Channel mix &amp; paid efficiency — last 4 weeks">Channel mix & paid efficiency</button><button data-tab="tab-7" title="7 · Web vs App platform split">Web vs App platform split</button><button data-tab="tab-8" title="8 · ATL spend vs total FTDs">ATL spend vs total FTDs</button><button data-tab="tab-9" title="9 · Channel optimisation — last 4 weeks">Channel optimisation</button><button data-tab="tab-9b" title="9b · Attribution model — time-decay (last 4 weeks)">Attribution model</button><button data-tab="tab-10" title="10 · Sub-channel leaderboard — ad groups (last 4 weeks)">Sub-channel leaderboard</button><button data-tab="tab-10b" title="10b · Within Affiliate — by affiliate ID (last 4 weeks)">Within Affiliate</button><button data-tab="tab-11" title="11 · Per-channel detail">Per-channel detail</button><button data-tab="tab-12" title="12 · Six-month weekly trends">Six-month weekly trends</button></div><section class="tabpane" id="tab-summary"><h2 class="sec">Summary</h2>
+<div class="kpis" style="margin-bottom:16px"><div class="kpi"><div class="lbl">YTD LTV:CAC</div><div class="val">1.12</div><div class="rng">PLTV £30.78M / spend £27.44M</div></div><div class="kpi"><div class="lbl">This week (fcst)</div><div class="val">7,955 FTDs</div><div class="rng">LTV:CAC 1.04 · CPA £144.09</div></div><div class="kpi"><div class="lbl">June vs plan</div><div class="val">90% PLTV</div><div class="rng">FTDs 97% of plan</div></div><div class="kpi"><div class="lbl">Budget used</div><div class="val">40%</div><div class="rng">of £68.1M · 48% of year</div></div><div class="kpi"><div class="lbl">PLTV MoM</div><div class="val">-7.5%</div><div class="rng">like-for-like vs prior month</div></div><div class="kpi"><div class="lbl">Affiliate alerts</div><div class="val">2</div><div class="rng">affiliates &lt;0.8 LTV:CAC (≥£20k)</div></div></div>
+  <div class="topreco">
+    <h3>Recommended optimisations</h3>
+    <p class="sub">Where to push, fix and protect right now — full detail in the Channel optimisation section below.</p>
+    <div class="ritems">
+      <div class="ri"><span class="rt scale">Scale &uarr;</span><br><b>Google UAC &amp; Apple Ads</b> (UAC 1.40, Apple Brand 1.53, Apple Non-Brand 1.13) — efficient, under-funded. Lift budgets / tCPA ~15&ndash;20% per week.</div>
+      <div class="ri"><span class="rt cut">Fix / cut</span><br><b>Meta Paid Social (0.78) &amp; Meta App (0.85)</b> — underwater / marginal on predicted LTV. iOS install ad sets are the worst (0.38&ndash;0.45) — pause or switch to value bidding.</div>
+      <div class="ri"><span class="rt opt">Optimise</span><br><b>Affiliate</b> — biggest paid spend (£1.79M/4wk) near breakeven (1.04). Move to hybrid/rev-share &amp; prune the genuinely sub-0.8 partners on actual PLTV (IDs 2014 0.72, 2098 0.66, 3189 0.35, 2053 0.64); the two biggest (2164 0.84, 2630 0.90) sit near breakeven.</div>
+      <div class="ri"><span class="rt meas">Measure</span><br><b>ATL</b> — £1.70M/4wk, zero attributed FTDs (£48.04 implied cost / total FTD). Stand up geo-lift / media-mix testing.</div>
+    </div>
+    <div class="realloc"><b>Quick win:</b> shift ~£150k / 4 weeks from underwater Meta + low-LTV affiliates into Google UAC + Apple Ads (≈1.3&ndash;1.5 LTV:CAC) → roughly <b>£55&ndash;70k more predicted LTV per 4 weeks</b>, broadly FTD-volume-neutral.</div>
+  </div>
+
+  <div class="health">
+    <h3>Data health &amp; anomaly check <span>· last 7 complete days (15&ndash;21 Jun) vs prior 7 (8&ndash;14 Jun)</span></h3>
+    <ul>
+      <li class="warn"><b>Affiliate spend lag</b> — Wed 24 Jun lands £0 from the Raventrack feed but 290 Affiliate FTDs are recorded. Gap-filled at the trailing 4-week Affiliate CPA (£146) → +£42,462 added to daily/WTD/MTD/YTD spend (asterisked throughout). The prior lagging day (23 Jun) has since back-filled to £50,360, close to its gap-fill estimate — validating the method.</li>
+      <li class='warn'><b>Affiliate App</b> — FTDs -82% wow (5 vs 27) — small base, watch feed.</li>
+      <li class="info"><b>Email FTDs ≈ 0</b> — Email shows 0 attributed FTDs both weeks (structural, no live email-attribution feed). Expected; flagged for awareness.</li>
+      <li class="ok"><b>Totals reconcile</b> — channel-level last-4-week spend (£4.83M) and FTDs (35,439) tie out exactly to the weekly roll-up. No channel collapsed to ~0 FTDs unexpectedly.</li>
+    </ul>
+  </div>
+
+  </section><section class="tabpane" id="tab-1" style="display:none"><h2 class="sec">1 · This week — forecast &amp; week-to-date</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">Forecast spend</div><div class="val">£1,146,197</div><div class="rng">full week (Mon 22&ndash;Sun 28 Jun)</div></div>
+    <div class="kpi"><div class="lbl">Forecast FTDs</div><div class="val">7,955</div><div class="rng">WTD 2,892 landed</div></div>
+    <div class="kpi"><div class="lbl">Forecast CPA</div><div class="val">£144.09</div><div class="rng">WTD £157.93*</div></div>
+    <div class="kpi"><div class="lbl">Forecast LTV:CAC</div><div class="val">1.04</div><div class="rng">WTD 0.93*</div></div>
+  </div>
+  <p class="note-sm">Forecast = gap-filled WTD actual + 5 × trailing-4-week daily average. WTD spend gap-filled for the Affiliate feed lag (*). 3 of 7 days landed (Mon 22 – Wed 24 Jun), so the forecast still leans on the trailing run-rate.</p>
+
+  </section><section class="tabpane" id="tab-2" style="display:none"><h2 class="sec">2 · Month to date — June actuals &amp; full-month forecast</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">MTD spend*</div><div class="val">£4,091,842</div><div class="rng">1&ndash;24 Jun · forecast £5,114,802</div></div>
+    <div class="kpi"><div class="lbl">MTD FTDs</div><div class="val">29,337</div><div class="rng">forecast 36,671</div></div>
+    <div class="kpi"><div class="lbl">MTD CPA*</div><div class="val">£139.48</div><div class="rng">forecast £139.48</div></div>
+    <div class="kpi"><div class="lbl">MTD LTV:CAC*</div><div class="val">1.04</div><div class="rng">forecast 1.04</div></div>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="panel"><h3>Cumulative spend — June</h3><p class="sub">Gap-filled actuals vs full-month forecast pace</p><div class="chartbox"><canvas id="cumSpend"></canvas></div></div>
+    <div class="panel"><h3>Cumulative FTDs — June</h3><p class="sub">Actuals vs full-month forecast pace</p><div class="chartbox"><canvas id="cumFtds"></canvas></div></div>
+  </div>
+  <div class="panel" style="margin-top:16px"><h3>MTD by channel</h3><p class="sub">1&ndash;24 Jun · spend, FTDs, CPA, 12m PLTV, LTV:CAC</p>
+    <table><thead><tr><th>Channel</th><th>Spend</th><th>FTDs</th><th>CPA</th><th>12m PLTV</th><th>LTV:CAC</th></tr></thead><tbody><tr><td class='ch'>ATL</td><td>£1,471,171</td><td>0</td><td>—</td><td>£0</td><td><span class="pill neg">0.00</span></td></tr><tr><td class='ch'>Affiliate</td><td>£1,441,250</td><td>10,022</td><td>£144</td><td>£1,466,130</td><td><span class="pill pos">1.02</span></td></tr><tr><td class='ch'>PPC Brand</td><td>£323,555</td><td>1,852</td><td>£175</td><td>£321,806</td><td><span class="pill mid">0.99</span></td></tr><tr><td class='ch'>Google UAC</td><td>£188,108</td><td>1,307</td><td>£144</td><td>£247,864</td><td><span class="pill pos">1.32</span></td></tr><tr><td class='ch'>Meta App</td><td>£150,600</td><td>995</td><td>£151</td><td>£120,463</td><td><span class="pill neg">0.80</span></td></tr><tr><td class='ch'>Meta Paid Social</td><td>£140,976</td><td>903</td><td>£156</td><td>£97,602</td><td><span class="pill neg">0.69</span></td></tr><tr><td class='ch'>PPC Generic</td><td>£101,957</td><td>421</td><td>£242</td><td>£97,968</td><td><span class="pill mid">0.96</span></td></tr><tr><td class='ch'>Apple Ads Brand</td><td>£100,010</td><td>1,088</td><td>£92</td><td>£153,180</td><td><span class="pill pos">1.53</span></td></tr><tr><td class='ch'>Apple Ads Non Brand</td><td>£76,791</td><td>367</td><td>£209</td><td>£71,078</td><td><span class="pill mid">0.93</span></td></tr><tr><td class='ch'>Organic Search</td><td>£41,001</td><td>3,590</td><td>£11</td><td>£679,748</td><td><span class="pill pos">16.58</span></td></tr><tr><td class='ch'>iOS Organic</td><td>£11,560</td><td>3,356</td><td>£3</td><td>£479,705</td><td><span class="pill pos">41.50</span></td></tr><tr><td class='ch'>Android Organic</td><td>£2,200</td><td>525</td><td>£4</td><td>£99,431</td><td><span class="pill pos">45.19</span></td></tr><tr><td class='ch'>Affiliate App</td><td>£200</td><td>119</td><td>£2</td><td>£17,074</td><td><span class="pill pos">85.38</span></td></tr><tr><td class='ch'>RAF</td><td>£0</td><td>2,839</td><td>£0</td><td>£252,962</td><td><span class="pill" style="color:#5b6480">n/a</span></td></tr><tr><td class='ch'>Direct</td><td>£0</td><td>1,466</td><td>£0</td><td>£77,125</td><td><span class="pill" style="color:#5b6480">n/a</span></td></tr><tr><td class='ch'>Unattributed</td><td>£0</td><td>399</td><td>£0</td><td>£75,997</td><td><span class="pill" style="color:#5b6480">n/a</span></td></tr><tr><td class='ch'>Organic Social</td><td>£0</td><td>49</td><td>£0</td><td>£4,256</td><td><span class="pill" style="color:#5b6480">n/a</span></td></tr><tr><td class='ch'>Referral</td><td>£0</td><td>38</td><td>£0</td><td>£5,832</td><td><span class="pill" style="color:#5b6480">n/a</span></td></tr></tbody></table>
+  </div>
+
+
+  </section><section class="tabpane" id="tab-2b" style="display:none"><h2 class="sec">2b · Targets — plan vs actual (by channel)</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">June PLTV vs plan</div><div class="val">£5.3M</div><div class="rng">plan £5.9M · forecast 90% of plan</div></div>
+    <div class="kpi"><div class="lbl">June FTDs vs plan</div><div class="val">36,671</div><div class="rng">plan 37,999 · 97% of plan</div></div>
+    <div class="kpi"><div class="lbl">YTD PLTV vs plan</div><div class="val">99%</div><div class="rng">to-date, actual vs plan</div></div>
+    <div class="kpi"><div class="lbl">FY 2026 plan</div><div class="val">£73.1M</div><div class="rng">PLTV · 470,505 FTDs · £68.1M spend</div></div>
+  </div>
+  <div class="panel" style="margin-top:14px"><h3>June — plan vs full-month forecast, by channel</h3><p class="sub">Plan from the H2/full-year plan (visible workbook sheets); forecast = June MTD actual scaled to full month; pace = forecast PLTV ÷ plan. Sorted by plan PLTV.</p>
+    <table><thead><tr><th>Channel</th><th>Plan spend</th><th>Fcst spend</th><th>Spend %</th><th>Plan FTDs</th><th>Fcst FTDs</th><th>FTDs %</th><th>Plan PLTV</th><th>Fcst PLTV</th><th>PLTV %</th><th>LTV:CAC&nbsp;&rarr;</th></tr></thead><tbody><tr><td class='ch'>Affiliate</td><td>£1.9M</td><td>£1.9M</td><td><span class='pill mid'>95%</span></td><td>11,296</td><td>12,528</td><td><span class='pill pos'>111%</span></td><td>£1.6M</td><td>£1.8M</td><td><span class='pill pos'>116%</span></td><td>0.81 → 0.99</td></tr><tr><td class='ch'>Organic Search</td><td>£43k</td><td>£51k</td><td><span class='pill pos'>118%</span></td><td>5,246</td><td>4,488</td><td><span class='pill neg'>86%</span></td><td>£1.2M</td><td>£850k</td><td><span class='pill neg'>72%</span></td><td>27.10 → 16.58</td></tr><tr><td class='ch'>PPC Brand</td><td>£492k</td><td>£404k</td><td><span class='pill neg'>82%</span></td><td>3,903</td><td>2,315</td><td><span class='pill neg'>59%</span></td><td>£732k</td><td>£402k</td><td><span class='pill neg'>55%</span></td><td>1.49 → 0.99</td></tr><tr><td class='ch'>iOS Organic</td><td>£17k</td><td>£14k</td><td><span class='pill neg'>87%</span></td><td>3,620</td><td>4,195</td><td><span class='pill pos'>116%</span></td><td>£552k</td><td>£600k</td><td><span class='pill pos'>109%</span></td><td>33.33 → 41.50</td></tr><tr><td class='ch'>Google UAC</td><td>£292k</td><td>£235k</td><td><span class='pill neg'>80%</span></td><td>1,696</td><td>1,634</td><td><span class='pill mid'>96%</span></td><td>£318k</td><td>£310k</td><td><span class='pill mid'>98%</span></td><td>1.09 → 1.32</td></tr><tr><td class='ch'>RAF</td><td>£0</td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>3,424</td><td>3,549</td><td><span class='pill pos'>104%</span></td><td>£297k</td><td>£316k</td><td><span class='pill pos'>107%</span></td><td>— → —</td></tr><tr><td class='ch'>Apple Ads Brand</td><td>£117k</td><td>£125k</td><td><span class='pill pos'>107%</span></td><td>1,389</td><td>1,360</td><td><span class='pill mid'>98%</span></td><td>£216k</td><td>£191k</td><td><span class='pill neg'>89%</span></td><td>1.85 → 1.53</td></tr><tr><td class='ch'>Meta App</td><td>£181k</td><td>£188k</td><td><span class='pill pos'>104%</span></td><td>1,354</td><td>1,244</td><td><span class='pill mid'>92%</span></td><td>£206k</td><td>£151k</td><td><span class='pill neg'>73%</span></td><td>1.14 → 0.80</td></tr><tr><td class='ch'>PPC Generic</td><td>£176k</td><td>£127k</td><td><span class='pill neg'>72%</span></td><td>635</td><td>526</td><td><span class='pill neg'>83%</span></td><td>£160k</td><td>£122k</td><td><span class='pill neg'>77%</span></td><td>0.91 → 0.96</td></tr><tr><td class='ch'>Direct</td><td>£0</td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>1,423</td><td>1,832</td><td><span class='pill pos'>129%</span></td><td>£140k</td><td>£96k</td><td><span class='pill neg'>69%</span></td><td>— → —</td></tr><tr><td class='ch'>Meta Paid Social</td><td>£225k</td><td>£176k</td><td><span class='pill neg'>78%</span></td><td>1,450</td><td>1,129</td><td><span class='pill neg'>78%</span></td><td>£133k</td><td>£122k</td><td><span class='pill mid'>91%</span></td><td>0.59 → 0.69</td></tr><tr><td class='ch'>Unattributed</td><td>£0</td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>563</td><td>499</td><td><span class='pill neg'>89%</span></td><td>£110k</td><td>£95k</td><td><span class='pill neg'>86%</span></td><td>— → —</td></tr><tr><td class='ch'>Android Organic</td><td>£3k</td><td>£3k</td><td><span class='pill neg'>87%</span></td><td>700</td><td>656</td><td><span class='pill mid'>94%</span></td><td>£107k</td><td>£124k</td><td><span class='pill pos'>117%</span></td><td>33.78 → 45.20</td></tr><tr><td class='ch'>Affiliate App</td><td>£11k</td><td>£250</td><td><span class='pill neg'>2%</span></td><td>565</td><td>149</td><td><span class='pill neg'>26%</span></td><td>£78k</td><td>£21k</td><td><span class='pill neg'>27%</span></td><td>7.43 → 85.37</td></tr><tr><td class='ch'>Apple Ads Non Brand</td><td>£52k</td><td>£96k</td><td><span class='pill pos'>186%</span></td><td>228</td><td>459</td><td><span class='pill pos'>201%</span></td><td>£49k</td><td>£89k</td><td><span class='pill pos'>181%</span></td><td>0.95 → 0.93</td></tr><tr><td class='ch'>Referral</td><td>£0</td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>143</td><td>48</td><td><span class='pill neg'>33%</span></td><td>£32k</td><td>£7k</td><td><span class='pill neg'>23%</span></td><td>— → —</td></tr><tr><td class='ch'>Organic Social</td><td>£0</td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>110</td><td>61</td><td><span class='pill neg'>56%</span></td><td>£11k</td><td>£5k</td><td><span class='pill neg'>48%</span></td><td>— → —</td></tr><tr><td class='ch'>Email</td><td>£0</td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>239</td><td>0</td><td><span class='pill neg'>0%</span></td><td>£5k</td><td>£0</td><td><span class='pill neg'>0%</span></td><td>— → —</td></tr><tr><td class='ch'>CRM</td><td>£0</td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>15</td><td>0</td><td><span class='pill neg'>0%</span></td><td>£3k</td><td>£0</td><td><span class='pill neg'>0%</span></td><td>— → —</td></tr><tr><td class='ch'>ATL</td><td>£1.8M</td><td>£1.8M</td><td><span class='pill mid'>100%</span></td><td>0</td><td>0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>£0</td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>0.00 → 0.00</td></tr><tr style='border-top:2px solid var(--line);font-weight:800'><td class='ch'>TOTAL</td><td>£5.4M</td><td>£5.1M</td><td><span class='pill mid'>95%</span></td><td>37,999</td><td>36,672</td><td><span class='pill mid'>97%</span></td><td>£5.9M</td><td>£5.3M</td><td><span class='pill mid'>90%</span></td><td>1.09 → 1.04</td></tr></tbody></table>
+  </div>
+  <div class="panel" style="margin-top:14px"><h3>YTD pacing vs plan, by channel</h3><p class="sub">Actual Jan 1–23 Jun vs plan-to-date (Jan–May + June pro-rated to the 23rd). Pace = actual ÷ plan-to-date. Sorted by actual PLTV.</p>
+    <table><thead><tr><th>Channel</th><th>Act spend</th><th>Spend %</th><th>Act FTDs</th><th>Plan FTDs</th><th>FTDs %</th><th>Act PLTV</th><th>PLTV %</th><th>LTV:CAC&nbsp;&rarr;</th></tr></thead><tbody><tr><td class='ch'>Affiliate</td><td>£10.1M</td><td><span class='pill mid'>99%</span></td><td>70,064</td><td>61,244</td><td><span class='pill pos'>114%</span></td><td>£10.3M</td><td><span class='pill pos'>120%</span></td><td>0.84 → 1.02</td></tr><tr><td class='ch'>Organic Search</td><td>£216k</td><td><span class='pill pos'>103%</span></td><td>25,253</td><td>28,526</td><td><span class='pill neg'>89%</span></td><td>£5.5M</td><td><span class='pill neg'>86%</span></td><td>30.60 → 25.59</td></tr><tr><td class='ch'>PPC Brand</td><td>£2.4M</td><td><span class='pill mid'>97%</span></td><td>15,493</td><td>21,068</td><td><span class='pill neg'>74%</span></td><td>£2.9M</td><td><span class='pill neg'>72%</span></td><td>1.62 → 1.21</td></tr><tr><td class='ch'>iOS Organic</td><td>£84k</td><td><span class='pill mid'>98%</span></td><td>16,896</td><td>17,790</td><td><span class='pill mid'>95%</span></td><td>£2.5M</td><td><span class='pill mid'>93%</span></td><td>31.21 → 29.55</td></tr><tr><td class='ch'>RAF</td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>21,598</td><td>19,296</td><td><span class='pill pos'>112%</span></td><td>£2.0M</td><td><span class='pill pos'>118%</span></td><td>— → —</td></tr><tr><td class='ch'>Google UAC</td><td>£1.4M</td><td><span class='pill mid'>97%</span></td><td>7,635</td><td>8,921</td><td><span class='pill neg'>86%</span></td><td>£1.5M</td><td><span class='pill neg'>86%</span></td><td>1.21 → 1.08</td></tr><tr><td class='ch'>Unattributed</td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>5,665</td><td>3,677</td><td><span class='pill pos'>154%</span></td><td>£1.1M</td><td><span class='pill pos'>171%</span></td><td>— → —</td></tr><tr><td class='ch'>Meta App</td><td>£905k</td><td><span class='pill pos'>101%</span></td><td>5,802</td><td>6,682</td><td><span class='pill neg'>87%</span></td><td>£868k</td><td><span class='pill neg'>85%</span></td><td>1.13 → 0.96</td></tr><tr><td class='ch'>Apple Ads Brand</td><td>£468k</td><td><span class='pill pos'>101%</span></td><td>5,479</td><td>6,771</td><td><span class='pill neg'>81%</span></td><td>£860k</td><td><span class='pill neg'>82%</span></td><td>2.27 → 1.84</td></tr><tr><td class='ch'>Meta Paid Social</td><td>£1.2M</td><td><span class='pill mid'>97%</span></td><td>7,781</td><td>6,933</td><td><span class='pill pos'>112%</span></td><td>£837k</td><td><span class='pill pos'>135%</span></td><td>0.50 → 0.69</td></tr><tr><td class='ch'>PPC Generic</td><td>£616k</td><td><span class='pill mid'>94%</span></td><td>2,795</td><td>2,585</td><td><span class='pill pos'>108%</span></td><td>£685k</td><td><span class='pill pos'>109%</span></td><td>0.96 → 1.11</td></tr><tr><td class='ch'>Direct</td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>7,123</td><td>7,236</td><td><span class='pill mid'>98%</span></td><td>£598k</td><td><span class='pill neg'>77%</span></td><td>— → —</td></tr><tr><td class='ch'>Android Organic</td><td>£16k</td><td><span class='pill mid'>98%</span></td><td>3,160</td><td>3,407</td><td><span class='pill mid'>93%</span></td><td>£530k</td><td><span class='pill mid'>100%</span></td><td>32.71 → 33.21</td></tr><tr><td class='ch'>Affiliate App</td><td>£51k</td><td><span class='pill neg'>86%</span></td><td>1,916</td><td>2,724</td><td><span class='pill neg'>70%</span></td><td>£268k</td><td><span class='pill neg'>73%</span></td><td>6.19 → 5.22</td></tr><tr><td class='ch'>Apple Ads Non Brand</td><td>£212k</td><td><span class='pill pos'>120%</span></td><td>948</td><td>823</td><td><span class='pill pos'>115%</span></td><td>£205k</td><td><span class='pill pos'>111%</span></td><td>1.05 → 0.97</td></tr><tr><td class='ch'>Referral</td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>325</td><td>879</td><td><span class='pill neg'>37%</span></td><td>£76k</td><td><span class='pill neg'>38%</span></td><td>— → —</td></tr><tr><td class='ch'>Organic Social</td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>425</td><td>530</td><td><span class='pill neg'>80%</span></td><td>£37k</td><td><span class='pill neg'>70%</span></td><td>— → —</td></tr><tr><td class='ch'>Email</td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>1,586</td><td>1,785</td><td><span class='pill neg'>89%</span></td><td>£29k</td><td><span class='pill neg'>75%</span></td><td>— → —</td></tr><tr><td class='ch'>Display/Programmatic</td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>22</td><td>0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>£4k</td><td><span style='color:#9aa3bf'>n/a</span></td><td>— → —</td></tr><tr><td class='ch'>CRM</td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>10</td><td>159</td><td><span class='pill neg'>6%</span></td><td>£1k</td><td><span class='pill neg'>4%</span></td><td>— → —</td></tr><tr><td class='ch'>ATL</td><td>£9.8M</td><td><span class='pill mid'>98%</span></td><td>0</td><td>0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>£0</td><td><span style='color:#9aa3bf'>n/a</span></td><td>0.00 → 0.00</td></tr><tr style='border-top:2px solid var(--line);font-weight:800'><td class='ch'>TOTAL</td><td>£27.4M</td><td><span class='pill mid'>98%</span></td><td>199,976</td><td>201,036</td><td><span class='pill mid'>99%</span></td><td>£30.8M</td><td><span class='pill mid'>99%</span></td><td>1.12 → 1.12</td></tr></tbody></table>
+  </div>
+  <div class="panel" style="margin-top:14px"><h3>Full-year 2026 plan, by channel</h3><p class="sub">Plan totals incl. the £3m H2 ATL uplift (ATL carries spend but 0 attributed FTDs). Sorted by plan spend.</p>
+    <table><thead><tr><th>Channel</th><th>Spend</th><th>FTDs</th><th>12m PLTV</th><th>CPA</th><th>LTV:CAC</th></tr></thead><tbody><tr><td class='ch'>ATL</td><td>£24.6M</td><td>0</td><td>£0</td><td>—</td><td>—</td></tr><tr><td class='ch'>Affiliate</td><td>£24.2M</td><td>141,347</td><td>£19.8M</td><td>£171</td><td>0.82</td></tr><tr><td class='ch'>PPC Brand</td><td>£6.0M</td><td>48,743</td><td>£9.2M</td><td>£123</td><td>1.53</td></tr><tr><td class='ch'>Google UAC</td><td>£3.5M</td><td>20,949</td><td>£4.0M</td><td>£168</td><td>1.13</td></tr><tr><td class='ch'>Meta Paid Social</td><td>£2.9M</td><td>17,215</td><td>£1.6M</td><td>£167</td><td>0.55</td></tr><tr><td class='ch'>Meta App</td><td>£2.2M</td><td>16,285</td><td>£2.5M</td><td>£135</td><td>1.12</td></tr><tr><td class='ch'>PPC Generic</td><td>£1.9M</td><td>7,088</td><td>£1.8M</td><td>£271</td><td>0.91</td></tr><tr><td class='ch'>Apple Ads Brand</td><td>£1.3M</td><td>16,623</td><td>£2.6M</td><td>£78</td><td>1.98</td></tr><tr><td class='ch'>Apple Ads Non Brand</td><td>£549k</td><td>2,441</td><td>£534k</td><td>£225</td><td>0.97</td></tr><tr><td class='ch'>Organic Search</td><td>£522k</td><td>65,729</td><td>£14.7M</td><td>£8</td><td>28.26</td></tr><tr><td class='ch'>iOS Organic</td><td>£205k</td><td>43,463</td><td>£6.6M</td><td>£5</td><td>32.15</td></tr><tr><td class='ch'>Affiliate App</td><td>£136k</td><td>6,729</td><td>£925k</td><td>£20</td><td>6.82</td></tr><tr><td class='ch'>Android Organic</td><td>£39k</td><td>8,370</td><td>£1.3M</td><td>£5</td><td>33.03</td></tr><tr><td class='ch'>CRM</td><td>£0</td><td>265</td><td>£54k</td><td>—</td><td>—</td></tr><tr><td class='ch'>Direct</td><td>£0</td><td>17,332</td><td>£1.8M</td><td>—</td><td>—</td></tr><tr><td class='ch'>Email</td><td>£0</td><td>3,477</td><td>£72k</td><td>—</td><td>—</td></tr><tr><td class='ch'>Organic Social</td><td>£0</td><td>1,309</td><td>£130k</td><td>—</td><td>—</td></tr><tr><td class='ch'>RAF</td><td>£0</td><td>43,580</td><td>£3.8M</td><td>—</td><td>—</td></tr><tr><td class='ch'>Referral</td><td>£0</td><td>1,893</td><td>£429k</td><td>—</td><td>—</td></tr><tr><td class='ch'>Unattributed</td><td>£0</td><td>7,667</td><td>£1.4M</td><td>—</td><td>—</td></tr><tr style='border-top:2px solid var(--line);font-weight:800'><td class='ch'>TOTAL</td><td>£68.1M</td><td>470,505</td><td>£73.1M</td><td>£145</td><td>1.07</td></tr></tbody></table>
+  </div>
+  <div class="callout"><b>Read:</b> overall June is pacing a touch under plan on value (forecast PLTV 90% of plan) with FTDs 97% of plan. <b>Affiliate is well ahead</b> (June PLTV ~118%, YTD ~121%), while <b>Organic Search and PPC Brand are the laggards</b> (June PLTV ~73% and ~56% of plan; YTD ~87% and ~73%) — the same channels behind on the plan are the ones dragging the MoM PLTV trend. Targets are a fixed plan; only actuals refresh daily.</div>
+
+
+  </section><section class="tabpane" id="tab-2c" style="display:none"><h2 class="sec">2c · Budget progress — vs annual plan</h2>
+  <div class="panel"><h3>Year-to-date vs full-year 2026 plan</h3><p class="sub">Actuals Jan 1–23 Jun. Filled bar = used to date; black marker = plan-to-date pace (the plan's intended burn by now). Year 48% elapsed.</p><div class='bp'><div class='lab'><span class='t'>Spend (media budget)</span><span class='v'><b>£27.4M</b> of £68.1M · <b>40% used</b> · plan-to-date 41% · year 48% elapsed</span></div><div class='prog'><i style='width:40.2%;background:var(--blue)'></i><span class='mk' style='left:40.9%'></span><span class='mkl' style='left:40.9%'>plan 41%</span></div></div><div class='bp'><div class='lab'><span class='t'>FTDs</span><span class='v'><b>£200k</b> of £471k · <b>43% used</b> · plan-to-date 43% · year 48% elapsed</span></div><div class='prog'><i style='width:42.5%;background:var(--green2)'></i><span class='mk' style='left:42.7%'></span><span class='mkl' style='left:42.7%'>plan 43%</span></div></div><div class='bp'><div class='lab'><span class='t'>12m PLTV</span><span class='v'><b>£30.8M</b> of £73.1M · <b>42% used</b> · plan-to-date 43% · year 48% elapsed</span></div><div class='prog'><i style='width:42.1%;background:var(--sky)'></i><span class='mk' style='left:42.7%'></span><span class='mkl' style='left:42.7%'>plan 43%</span></div></div></div>
+  <div class="panel" style="margin-top:14px"><h3>Media-spend budget by channel</h3><p class="sub">YTD spend vs annual budget; bar marker = plan-to-date. % used pill: green = on plan pace (90–110%), amber = under, pink = over. Spend-bearing channels only (incl. £3m H2 ATL uplift).</p><table><thead><tr><th>Channel</th><th>Annual budget</th><th>YTD spent</th><th>Progress</th><th>% used</th><th>Plan-to-date</th></tr></thead><tbody><tr><td class='ch'>ATL</td><td>£24.6M</td><td>£9.8M</td><td style='min-width:140px'><div class='bmini'><i style='width:39.6%;background:var(--blue)'></i><span class='mk' style='left:40.3%'></span></div></td><td><span class='pill pos'>40%</span></td><td>40%</td></tr><tr><td class='ch'>Affiliate</td><td>£24.2M</td><td>£10.1M</td><td style='min-width:140px'><div class='bmini'><i style='width:41.6%;background:var(--blue)'></i><span class='mk' style='left:42.1%'></span></div></td><td><span class='pill pos'>42%</span></td><td>42%</td></tr><tr><td class='ch'>PPC Brand</td><td>£6.0M</td><td>£2.4M</td><td style='min-width:140px'><div class='bmini'><i style='width:39.7%;background:var(--blue)'></i><span class='mk' style='left:40.9%'></span></div></td><td><span class='pill pos'>40%</span></td><td>41%</td></tr><tr><td class='ch'>Google UAC</td><td>£3.5M</td><td>£1.4M</td><td style='min-width:140px'><div class='bmini'><i style='width:39.1%;background:var(--blue)'></i><span class='mk' style='left:40.4%'></span></div></td><td><span class='pill pos'>39%</span></td><td>40%</td></tr><tr><td class='ch'>Meta Paid Social</td><td>£2.9M</td><td>£1.2M</td><td style='min-width:140px'><div class='bmini'><i style='width:42.3%;background:var(--blue)'></i><span class='mk' style='left:43.7%'></span></div></td><td><span class='pill pos'>42%</span></td><td>44%</td></tr><tr><td class='ch'>Meta App</td><td>£2.2M</td><td>£905k</td><td style='min-width:140px'><div class='bmini'><i style='width:41.0%;background:var(--blue)'></i><span class='mk' style='left:40.8%'></span></div></td><td><span class='pill pos'>41%</span></td><td>41%</td></tr><tr><td class='ch'>PPC Generic</td><td>£1.9M</td><td>£616k</td><td style='min-width:140px'><div class='bmini'><i style='width:32.0%;background:var(--blue)'></i><span class='mk' style='left:34.1%'></span></div></td><td><span class='pill pos'>32%</span></td><td>34%</td></tr><tr><td class='ch'>Apple Ads Brand</td><td>£1.3M</td><td>£468k</td><td style='min-width:140px'><div class='bmini'><i style='width:35.9%;background:var(--blue)'></i><span class='mk' style='left:35.6%'></span></div></td><td><span class='pill pos'>36%</span></td><td>36%</td></tr><tr><td class='ch'>Apple Ads Non Brand</td><td>£549k</td><td>£212k</td><td style='min-width:140px'><div class='bmini'><i style='width:38.6%;background:var(--blue)'></i><span class='mk' style='left:32.2%'></span></div></td><td><span class='pill neg'>39%</span></td><td>32%</td></tr><tr><td class='ch'>Organic Search</td><td>£522k</td><td>£216k</td><td style='min-width:140px'><div class='bmini'><i style='width:41.5%;background:var(--blue)'></i><span class='mk' style='left:40.2%'></span></div></td><td><span class='pill pos'>41%</span></td><td>40%</td></tr><tr><td class='ch'>iOS Organic</td><td>£205k</td><td>£84k</td><td style='min-width:140px'><div class='bmini'><i style='width:40.9%;background:var(--blue)'></i><span class='mk' style='left:41.7%'></span></div></td><td><span class='pill pos'>41%</span></td><td>42%</td></tr><tr><td class='ch'>Affiliate App</td><td>£136k</td><td>£51k</td><td style='min-width:140px'><div class='bmini'><i style='width:37.8%;background:var(--blue)'></i><span class='mk' style='left:43.9%'></span></div></td><td><span class='pill mid'>38%</span></td><td>44%</td></tr><tr><td class='ch'>Android Organic</td><td>£39k</td><td>£16k</td><td style='min-width:140px'><div class='bmini'><i style='width:40.9%;background:var(--blue)'></i><span class='mk' style='left:41.7%'></span></div></td><td><span class='pill pos'>41%</span></td><td>42%</td></tr><tr style='border-top:2px solid var(--line);font-weight:800'><td class='ch'>TOTAL</td><td>£68.1M</td><td>£27.4M</td><td><div class='bmini'><i style='width:40.2%;background:var(--blue)'></i><span class='mk' style='left:40.9%'></span></div></td><td><span class='pill pos'>40%</span></td><td>41%</td></tr></tbody></table></div>
+
+  </section><section class="tabpane" id="tab-3" style="display:none"><h2 class="sec">3 · Year to date &amp; year-on-year (vs 2025 hybrid baseline)</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">YoY FTDs</div><div class="val">+72.4%</div><div class="rng">Jan&ndash;Jun, 2026 vs 2025</div></div>
+    <div class="kpi"><div class="lbl">YoY CPA</div><div class="val">-19.9%</div><div class="rng">£137.29 vs £171.33</div></div>
+    <div class="kpi"><div class="lbl">YoY LTV:CAC</div><div class="val">+12.8%</div><div class="rng">1.12 vs 0.99</div></div>
+    <div class="kpi"><div class="lbl">2026 is...</div><div class="val" style="font-size:20px">More efficient</div><div class="rng">cheaper FTDs, higher LTV:CAC</div></div>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="panel"><h3>Monthly FTDs — 2025 vs 2026</h3><p class="sub">Bars = FTDs; line = YoY % growth (Jun 2026 forecast *)</p><div class="chartbox"><canvas id="moFtds"></canvas></div></div>
+    <div class="panel"><h3>Monthly LTV:CAC — 2025 vs 2026</h3><p class="sub">Hybrid baseline: 2025 spend = FY25 tracker; FTDs &amp; PLTV = model</p><div class="chartbox"><canvas id="moLc"></canvas></div></div>
+  </div>
+  <div class="panel" style="margin-top:16px"><h3>Year-on-year by month</h3><p class="sub">2025 baseline: tracker spend ÷ model FTDs (CPA); model PLTV ÷ tracker spend (LTV:CAC). Jun 2026 = full-month forecast *</p>
+    <table><thead><tr><th>Month</th><th>FTDs '25</th><th>FTDs '26</th><th>YoY</th><th>Spend '26</th><th>CPA '25</th><th>CPA '26</th><th>LTV:CAC '25</th><th>LTV:CAC '26</th></tr></thead><tbody><tr><td class='ch'>Jan</td><td>19,933</td><td>31,002</td><td>+56%</td><td>£3,949,661</td><td>£161</td><td>£127</td><td>1.00</td><td>1.18</td></tr><tr><td class='ch'>Feb</td><td>18,602</td><td>32,640</td><td>+75%</td><td>£4,925,651</td><td>£169</td><td>£151</td><td>0.99</td><td>1.07</td></tr><tr><td class='ch'>Mar</td><td>19,356</td><td>32,428</td><td>+68%</td><td>£4,669,698</td><td>£196</td><td>£144</td><td>0.88</td><td>1.10</td></tr><tr><td class='ch'>Apr</td><td>20,699</td><td>35,146</td><td>+70%</td><td>£4,625,010</td><td>£154</td><td>£132</td><td>1.16</td><td>1.14</td></tr><tr><td class='ch'>May</td><td>20,668</td><td>39,423</td><td>+91%</td><td>£5,176,413</td><td>£153</td><td>£131</td><td>1.16</td><td>1.19</td></tr><tr><td class='ch'>Jun *</td><td>21,016</td><td>36,671</td><td>+74%</td><td>£5,114,802</td><td>£195</td><td>£139</td><td>0.83</td><td>1.04</td></tr></tbody></table>
+  </div>
+
+
+  </section><section class="tabpane" id="tab-3b" style="display:none"><h2 class="sec">3b · PLTV drivers — month-on-month</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">12m PLTV (like-for-like)</div><div class="val">£4.27M</div><div class="rng">Jun 1–24 vs May 1–24 £4.61M · -7.5%</div></div>
+    <div class="kpi"><div class="lbl">FTDs</div><div class="val">29,337</div><div class="rng">-3.6% vs prior month</div></div>
+    <div class="kpi"><div class="lbl">PLTV per FTD</div><div class="val">£145</div><div class="rng">£152 prior · -4.0%</div></div>
+    <div class="kpi"><div class="lbl">Split of the £344k drop</div><div class="val" style="font-size:19px">47% vol / 53% rate</div><div class="rng">rate change is within-channel, not mix</div></div>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="panel"><h3>Contribution to ΔPLTV by channel</h3><p class="sub">May 1–24 → Jun 1–24 · green = added value, pink = lost value</p><div class="chartbox tall"><canvas id="momWaterfall"></canvas></div></div>
+    <div class="panel"><h3>Top movers</h3><p class="sub">ΔPLTV decomposed into volume (FTD count) vs value-per-FTD</p>
+      <table><thead><tr><th>Channel</th><th>ΔPLTV</th><th>Volume</th><th>Value</th><th>Driver</th><th>PLTV/FTD</th></tr></thead><tbody><tr><td class='ch'>Organic Search</td><td><span class='pill neg'>−£172,155</span></td><td>−£52,787</td><td>−£119,368</td><td>value/FTD</td><td>£221→£189</td></tr><tr><td class='ch'>iOS Organic</td><td><span class='pill pos'>+£79,951</span></td><td>+£69,653</td><td>+£10,298</td><td>volume</td><td>£140→£143</td></tr><tr><td class='ch'>Unattributed</td><td><span class='pill neg'>−£76,757</span></td><td>−£74,606</td><td>−£2,151</td><td>volume</td><td>£194→£190</td></tr><tr><td class='ch'>PPC Brand</td><td><span class='pill neg'>−£70,170</span></td><td>−£90,107</td><td>+£19,937</td><td>volume</td><td>£164→£174</td></tr><tr><td class='ch'>Affiliate App</td><td><span class='pill neg'>−£45,239</span></td><td>−£42,802</td><td>−£2,437</td><td>volume</td><td>£153→£144</td></tr><tr><td class='ch'>Meta App</td><td><span class='pill neg'>−£38,614</span></td><td>−£3,326</td><td>−£35,288</td><td>value/FTD</td><td>£156→£121</td></tr><tr><td class='ch'>Google UAC</td><td><span class='pill pos'>+£36,967</span></td><td>+£40,518</td><td>−£3,551</td><td>volume</td><td>£193→£190</td></tr><tr><td class='ch'>RAF</td><td><span class='pill neg'>−£29,956</span></td><td>−£26,202</td><td>−£3,754</td><td>volume</td><td>£90→£89</td></tr><tr><td class='ch'>PPC Generic</td><td><span class='pill neg'>−£25,606</span></td><td>−£33,291</td><td>+£7,685</td><td>volume</td><td>£217→£233</td></tr><tr><td class='ch'>Affiliate</td><td><span class='pill pos'>+£22,611</span></td><td>+£9,174</td><td>+£13,437</td><td>vol + value</td><td>£145→£146</td></tr><tr><td class='ch'>Direct</td><td><span class='pill neg'>−£22,161</span></td><td>+£3,823</td><td>−£25,984</td><td>value/FTD</td><td>£71→£53</td></tr><tr><td class='ch'>Meta Paid Social</td><td><span class='pill neg'>−£16,418</span></td><td>−£12,344</td><td>−£4,074</td><td>volume</td><td>£112→£108</td></tr><tr><td class='ch'>Apple Ads Brand</td><td><span class='pill pos'>+£13,877</span></td><td>+£23,589</td><td>−£9,712</td><td>volume</td><td>£150→£141</td></tr><tr><td class='ch'>Apple Ads Non Brand</td><td><span class='pill pos'>+£12,875</span></td><td>+£27,136</td><td>−£14,261</td><td>volume</td><td>£240→£194</td></tr><tr><td class='ch'>Referral</td><td><span class='pill neg'>−£6,834</span></td><td>−£4,967</td><td>−£1,867</td><td>volume</td><td>£189→£154</td></tr><tr><td class='ch'>Android Organic</td><td><span class='pill neg'>−£3,879</span></td><td>−£12,877</td><td>+£8,998</td><td>vol + value</td><td>£173→£189</td></tr></tbody></table>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:14px"><h3>Month-on-month to date — by channel</h3><p class="sub">May 1–24 vs Jun 1–24 (matched day window) · shows current-month value with % change vs prior month; FTD/PLTV moves coloured, spend neutral</p>
+    <table><thead><tr><th>Channel</th><th>Spend (Δ)</th><th>FTDs (Δ)</th><th>12m PLTV (Δ)</th><th>LTV:CAC '→</th></tr></thead><tbody><tr><td class='ch'>Affiliate</td><td>£1441k <span style='color:#5b6480;font-weight:700'>+7%</span></td><td>10,022 <span class='pill pos'>+1%</span></td><td>£1466k <span class='pill pos'>+2%</span></td><td>1.08 → 1.02</td></tr><tr><td class='ch'>Organic Search</td><td>£41k <span style='color:#5b6480;font-weight:700'>+3%</span></td><td>3,590 <span class='pill neg'>-7%</span></td><td>£680k <span class='pill neg'>-20%</span></td><td>21.47 → 16.58</td></tr><tr><td class='ch'>iOS Organic</td><td>£12k <span style='color:#5b6480;font-weight:700'>+3%</span></td><td>3,356 <span class='pill pos'>+17%</span></td><td>£480k <span class='pill pos'>+20%</span></td><td>35.73 → 41.50</td></tr><tr><td class='ch'>PPC Brand</td><td>£324k <span style='color:#5b6480;font-weight:700'>-15%</span></td><td>1,852 <span class='pill neg'>-22%</span></td><td>£322k <span class='pill neg'>-18%</span></td><td>1.02 → 0.99</td></tr><tr><td class='ch'>RAF</td><td>£0 <span style='color:#9aa3bf'>—</span></td><td>2,839 <span class='pill neg'>-9%</span></td><td>£253k <span class='pill neg'>-11%</span></td><td><span style='color:#9aa3bf'>n/a</span></td></tr><tr><td class='ch'>Google UAC</td><td>£188k <span style='color:#5b6480;font-weight:700'>-1%</span></td><td>1,307 <span class='pill pos'>+19%</span></td><td>£248k <span class='pill pos'>+18%</span></td><td>1.11 → 1.32</td></tr><tr><td class='ch'>Apple Ads Brand</td><td>£100k <span style='color:#5b6480;font-weight:700'>+6%</span></td><td>1,088 <span class='pill pos'>+17%</span></td><td>£153k <span class='pill pos'>+10%</span></td><td>1.47 → 1.53</td></tr><tr><td class='ch'>Meta App</td><td>£151k <span style='color:#5b6480;font-weight:700'>-7%</span></td><td>995 <span class='pill neg'>-2%</span></td><td>£120k <span class='pill neg'>-24%</span></td><td>0.98 → 0.80</td></tr><tr><td class='ch'>Android Organic</td><td>£2k <span style='color:#5b6480;font-weight:700'>+3%</span></td><td>525 <span class='pill neg'>-12%</span></td><td>£99k <span class='pill neg'>-4%</span></td><td>48.52 → 45.19</td></tr><tr><td class='ch'>PPC Generic</td><td>£102k <span style='color:#5b6480;font-weight:700'>-24%</span></td><td>421 <span class='pill neg'>-26%</span></td><td>£98k <span class='pill neg'>-21%</span></td><td>0.92 → 0.96</td></tr><tr><td class='ch'>Meta Paid Social</td><td>£141k <span style='color:#5b6480;font-weight:700'>+1%</span></td><td>903 <span class='pill neg'>-11%</span></td><td>£98k <span class='pill neg'>-14%</span></td><td>0.82 → 0.69</td></tr><tr><td class='ch'>Direct</td><td>£0 <span style='color:#9aa3bf'>—</span></td><td>1,466 <span class='pill pos'>+4%</span></td><td>£77k <span class='pill neg'>-22%</span></td><td><span style='color:#9aa3bf'>n/a</span></td></tr><tr><td class='ch'>Unattributed</td><td>£0 <span style='color:#9aa3bf'>—</span></td><td>399 <span class='pill neg'>-49%</span></td><td>£76k <span class='pill neg'>-50%</span></td><td><span style='color:#9aa3bf'>n/a</span></td></tr><tr><td class='ch'>Apple Ads Non Brand</td><td>£77k <span style='color:#5b6480;font-weight:700'>+41%</span></td><td>367 <span class='pill pos'>+52%</span></td><td>£71k <span class='pill pos'>+22%</span></td><td>1.07 → 0.93</td></tr><tr><td class='ch'>Affiliate App</td><td>£200 <span style='color:#5b6480;font-weight:700'>-98%</span></td><td>119 <span class='pill neg'>-71%</span></td><td>£17k <span class='pill neg'>-73%</span></td><td>5.99 → 85.38</td></tr><tr><td class='ch'>Referral</td><td>£0 <span style='color:#9aa3bf'>—</span></td><td>38 <span class='pill neg'>-43%</span></td><td>£6k <span class='pill neg'>-54%</span></td><td><span style='color:#9aa3bf'>n/a</span></td></tr><tr><td class='ch'>Organic Social</td><td>£0 <span style='color:#9aa3bf'>—</span></td><td>49 <span class='pill neg'>-21%</span></td><td>£4k <span class='pill neg'>-21%</span></td><td><span style='color:#9aa3bf'>n/a</span></td></tr><tr><td class='ch'>Display/Programmatic</td><td>£0 <span style='color:#9aa3bf'>—</span></td><td>1 <span class='pill neg'>-50%</span></td><td>£25 <span class='pill neg'>-48%</span></td><td><span style='color:#9aa3bf'>n/a</span></td></tr><tr><td class='ch'>ATL</td><td>£1471k <span style='color:#5b6480;font-weight:700'>+3%</span></td><td>0 <span style='color:#9aa3bf'>—</span></td><td>£0 <span style='color:#9aa3bf'>—</span></td><td>0.00 → 0.00</td></tr><tr><td class='ch'>Email</td><td>£0 <span style='color:#9aa3bf'>—</span></td><td>0 <span class='pill neg'>-100%</span></td><td>£0 <span class='pill neg'>-100%</span></td><td><span style='color:#9aa3bf'>n/a</span></td></tr><tr style='border-top:2px solid var(--line);font-weight:800'><td class='ch'>TOTAL</td><td>£4049k <span style='color:#5b6480;font-weight:700'>+2%</span></td><td>29,337 <span class='pill neg'>-4%</span></td><td>£4268k <span class='pill neg'>-7%</span></td><td>1.16 → 1.05</td></tr></tbody></table>
+  </div>
+  <div class="callout"><b>Read:</b> the raw calendar fall (May £6.20M → June MTD) is mostly the partial month. Like-for-like, PLTV is down -7.5% — about half fewer FTDs, half lower predicted value per FTD. <b>Organic Search</b> is the dominant real driver (≈55% of the drop, value £223→£190 + fewer FTDs). Much of the rest is non-economic: <b>Unattributed</b> (reattribution to named channels) and <b>Affiliate App</b> (feed anomaly) are volume-only. Early-money quality is broadly stable — avg first deposit £23.06 → £21.90 <span style='color:#b3209f;font-weight:700'>▼</span>, 2nd-deposit rate 46.5% → 46.0% <span style='color:#b3209f;font-weight:700'>▼</span> — and recent-cohort PLTV is the least-matured (savvy-staker share 12.3% → 10.0% <span style='color:#b3209f;font-weight:700'>▼</span>), so part of the per-FTD dip likely revises up. APD first-week/FTD 2.010 → 1.949 <span style='color:#b3209f;font-weight:700'>▼</span>.</div>
+
+  </section><section class="tabpane" id="tab-4" style="display:none"><h2 class="sec">4 · Daily view — last 30 days</h2>
+  <div class="panel"><h3>Daily spend &amp; FTDs</h3><p class="sub">Gap-filled spend (Affiliate feed lag asterisked in tooltip) · 26 May&ndash;24 Jun</p><div class="chartbox tall"><canvas id="daily"></canvas></div></div>
+
+
+  </section><section class="tabpane" id="tab-4b" style="display:none"><h2 class="sec">4b · Timing &amp; payday effects</h2>
+  <div class="grid2">
+    <div class="panel"><h3>FTDs by day of month</h3><p class="sub">avg per day, Jan–May 2026 · yellow = month-end payday window (27th+); line = PLTV/FTD</p><div class="chartbox tall"><canvas id="domChart"></canvas></div></div>
+    <div class="panel"><h3>FTDs by day of week</h3><p class="sub">avg per day, Jan–May 2026 · pink = Friday</p><div class="chartbox tall"><canvas id="dowChart"></canvas></div></div>
+  </div>
+  <div class="callout"><b>Payday is a real, recurring driver.</b> The last days of every month (≈27th–month-end) consistently pull <b>5% more FTDs than mid-month</b> (~1,207/day vs ~1,148) and <b>20% more than early-month</b>, at a higher value per player (PLTV/FTD ~£166 vs ~£144 early-month). It shows as <b>more depositors, not bigger deposits</b> (first-deposit size is flat at ~£22). Layered on top, <b>Friday</b> is the strongest weekday (~1,391 FTDs vs ~994 Mon–Wed). So end-of-month surges like 29 May (a Friday in the payday window, in Spring-Bank-Holiday week) are payday + day-of-week + holiday <b>stacking</b> — not a trend break — and they inflate that month's comparison base.</div>
+
+  </section><section class="tabpane" id="tab-5" style="display:none"><h2 class="sec">5 · Insights</h2>
+  <div class="insights"><ul>
+    <li><b>Volume is well ahead of last year</b> — YTD FTDs are up ~+72.4% vs 2025 on the hybrid baseline, while CPA is down ~20% and LTV:CAC up ~13%. Growth is coming with improving efficiency, not just more spend.</li>
+    <li><b>Organic &amp; app installs carry the value</b> — Organic Search, iOS Organic and RAF deliver the highest LTV:CAC and most of the non-paid FTDs; App platform LTV:CAC (2.4) is inflated by organic installs attributed to App.</li>
+    <li><b>Affiliate is the swing factor</b> — at £1.79M/4wk it is the largest controllable line and sits right at breakeven (1.04). On actual per-affiliate PLTV the worst large partners are IDs 2014 (0.72) and 2098 (0.66); the two biggest spenders (2164 0.84, 2630 0.90) are closer to breakeven than the earlier estimate implied.</li>
+    <li><b>Meta is the clearest efficiency problem</b> — Meta Paid Social (0.78) and the iOS install ad sets in Meta App (0.38&ndash;0.45) are underwater on predicted LTV; reallocating from them is the cleanest budget-neutral win.</li>
+    <li><b>ATL remains unmeasured in last-click</b> — £1.70M/4wk with zero attributed FTDs; the only honest read is the £48.04 blended implied cost per total FTD, which argues for a proper geo-lift / MMM test.</li>
+  </ul></div>
+
+  </section><section class="tabpane" id="tab-6" style="display:none"><h2 class="sec">6 · Channel mix &amp; paid efficiency — last 4 weeks</h2>
+  <div class="grid2">
+    <div class="panel"><h3>Paid spend by channel</h3><p class="sub">25 May&ndash;21 Jun</p><div class="chartbox"><canvas id="mixSpend"></canvas></div></div>
+    <div class="panel"><h3>Paid FTDs by channel</h3><p class="sub">25 May&ndash;21 Jun</p><div class="chartbox"><canvas id="mixFtds"></canvas></div></div>
+  </div>
+
+  </section><section class="tabpane" id="tab-7" style="display:none"><h2 class="sec">7 · Web vs App platform split</h2>
+  <div class="panel"><h3>Platform summary — last 4 weeks</h3><p class="sub">attribution_platform: Web / App / Other (Other ≈ ATL &amp; brand)</p>
+    <table><thead><tr><th>Platform</th><th>Spend</th><th>FTDs</th><th>CPA</th><th>12m PLTV</th><th>LTV:CAC</th></tr></thead><tbody><tr><td class='ch'>Web</td><td>£2,504,895</td><td>22,262</td><td>£113</td><td>£3508320</td><td><span class="pill pos">1.40</span></td></tr><tr><td class='ch'>App</td><td>£618,780</td><td>9,103</td><td>£68</td><td>£1478171</td><td><span class="pill pos">2.39</span></td></tr><tr><td class='ch'>Other</td><td>£1,702,525</td><td>4,074</td><td>£418</td><td>£433486</td><td><span class="pill neg">0.25</span></td></tr></tbody></table>
+    <p class="note-sm">App LTV:CAC is lifted by organic installs attributed to the App platform; paid-only App economics are tighter than the blended figure.</p>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="panel"><h3>Weekly spend by platform</h3><p class="sub">last 12 weeks</p><div class="chartbox"><canvas id="pwSpend"></canvas></div></div>
+    <div class="panel"><h3>Weekly LTV:CAC by platform</h3><p class="sub">last 12 weeks</p><div class="chartbox"><canvas id="pwLc"></canvas></div></div>
+  </div>
+
+  </section><section class="tabpane" id="tab-8" style="display:none"><h2 class="sec">8 · ATL spend vs total FTDs</h2>
+  <div class="panel"><h3>ATL (brand) spend vs total business FTDs</h3><p class="sub">ATL is unattributed in last-click; implied cost = ATL spend ÷ all FTDs (~£48.04)</p><div class="chartbox tall"><canvas id="atl"></canvas></div></div>
+
+  </section><section class="tabpane" id="tab-9" style="display:none"><h2 class="sec">9 · Channel optimisation — last 4 weeks</h2>
+  <div class="panel"><h3>Paid channel scorecard</h3><p class="sub">Scale ≥1.30 · Optimise 0.85&ndash;1.30 · Fix/cut &lt;0.85 · Measure (ATL, no last-click FTDs)</p>
+    <table><thead><tr><th>Channel</th><th>Spend</th><th>FTDs</th><th>CPA</th><th>12m PLTV</th><th>LTV:CAC</th><th>Action</th></tr></thead><tbody><tr><td class='ch'>Affiliate</td><td>£1,788,090</td><td>12,212</td><td>£146</td><td>£1859180</td><td><span class="pill mid">1.04</span></td><td><span class='act opt'>Optimise</span></td></tr><tr><td class='ch'>ATL</td><td>£1,702,525</td><td>0</td><td>—</td><td>£0</td><td><span class="pill" style="color:#5b6480">n/a</span></td><td><span class='act meas'>Measure</span></td></tr><tr><td class='ch'>PPC Brand</td><td>£371,822</td><td>2,144</td><td>£173</td><td>£394154</td><td><span class="pill mid">1.06</span></td><td><span class='act opt'>Optimise</span></td></tr><tr><td class='ch'>Google UAC</td><td>£208,177</td><td>1,462</td><td>£142</td><td>£287920</td><td><span class="pill pos">1.38</span></td><td><span class='act scale'>Scale ↑</span></td></tr><tr><td class='ch'>Apple Ads Brand</td><td>£122,177</td><td>1,269</td><td>£96</td><td>£185293</td><td><span class="pill pos">1.52</span></td><td><span class='act scale'>Scale ↑</span></td></tr><tr><td class='ch'>Apple Ads Non Brand</td><td>£86,812</td><td>439</td><td>£198</td><td>£97186</td><td><span class="pill mid">1.12</span></td><td><span class='act opt'>Optimise</span></td></tr><tr><td class='ch'>Meta App</td><td>£183,690</td><td>1,194</td><td>£154</td><td>£155039</td><td><span class="pill neg">0.84</span></td><td><span class='act cut'>Fix / cut</span></td></tr><tr><td class='ch'>Meta Paid Social</td><td>£165,055</td><td>1,083</td><td>£152</td><td>£127648</td><td><span class="pill neg">0.77</span></td><td><span class='act cut'>Fix / cut</span></td></tr><tr><td class='ch'>PPC Generic</td><td>£132,477</td><td>555</td><td>£239</td><td>£132533</td><td><span class="pill mid">1.00</span></td><td><span class='act opt'>Optimise</span></td></tr></tbody></table>
+    <div class="callout"><b>Reallocation:</b> move ~£150k / 4 weeks out of Meta Paid Social, the Meta App iOS install sets and sub-0.65 affiliates, into Google UAC, Apple Ads Brand &amp; Apple Ads Non-Brand at higher tCPA. Net effect ≈ +£55&ndash;70k predicted LTV per 4 weeks at roughly flat FTD volume.</div>
+  </div>
+
+
+  </section><section class="tabpane" id="tab-9b" style="display:none"><h2 class="sec">9b · Attribution model — time-decay (last 4 weeks)</h2>
+  <div class="callout" style="background:#eef0f7;margin-bottom:14px"><b>What this is.</b> The rest of the dashboard uses <b>last-click</b> attribution. Time-decay spreads each conversion's credit across all touchpoints on the path, weighting those closer to conversion. <b>Totals are identical</b> (same 35,438 FTDs, £5.4M PLTV, £4.8M spend) — only the per-channel split changes. Spend is fixed, so CPA &amp; LTV:CAC here are time-decay-credited.</div>
+  <div class="panel"><h3>By channel — time-decay credited (last 4 wks)</h3><p class="sub">Spend, time-decay FTDs, CPA, 12m PLTV and LTV:CAC. Sorted by spend.</p>
+    <table><thead><tr><th>Channel</th><th>Spend</th><th>FTDs (TD)</th><th>CPA</th><th>12m PLTV</th><th>LTV:CAC</th></tr></thead><tbody><tr><td class='ch'>Affiliate</td><td>£1.8M</td><td>4,806</td><td>£372</td><td>£713k</td><td><span class="pill neg">0.40</span></td></tr><tr><td class='ch'>ATL</td><td>£1.7M</td><td>0</td><td>—</td><td>£0</td><td><span class="pill neg">0.00</span></td></tr><tr><td class='ch'>PPC Brand</td><td>£372k</td><td>1,118</td><td>£333</td><td>£199k</td><td><span class="pill neg">0.54</span></td></tr><tr><td class='ch'>Google UAC</td><td>£208k</td><td>267</td><td>£780</td><td>£59k</td><td><span class="pill neg">0.28</span></td></tr><tr><td class='ch'>Meta App</td><td>£184k</td><td>302</td><td>£608</td><td>£47k</td><td><span class="pill neg">0.25</span></td></tr><tr><td class='ch'>Meta Paid Social</td><td>£165k</td><td>460</td><td>£359</td><td>£44k</td><td><span class="pill neg">0.26</span></td></tr><tr><td class='ch'>PPC Generic</td><td>£132k</td><td>241</td><td>£550</td><td>£57k</td><td><span class="pill neg">0.43</span></td></tr><tr><td class='ch'>Apple Ads Brand</td><td>£122k</td><td>239</td><td>£511</td><td>£36k</td><td><span class="pill neg">0.30</span></td></tr><tr><td class='ch'>Apple Ads Non Brand</td><td>£87k</td><td>78</td><td>£1113</td><td>£18k</td><td><span class="pill neg">0.21</span></td></tr><tr><td class='ch'>Organic Search</td><td>£47k</td><td>3,036</td><td>£16</td><td>£574k</td><td><span class="pill pos">12.11</span></td></tr><tr><td class='ch'>iOS Organic</td><td>£13k</td><td>7,028</td><td>£2</td><td>£1.0M</td><td><span class="pill pos">77.79</span></td></tr><tr><td class='ch'>Android Organic</td><td>£3k</td><td>2,661</td><td>£1</td><td>£485k</td><td><span class="pill pos">190.32</span></td></tr><tr><td class='ch'>Affiliate App</td><td>£2k</td><td>239</td><td>£8</td><td>£34k</td><td><span class="pill pos">16.82</span></td></tr><tr><td class='ch'>Direct</td><td>£0</td><td>13,637</td><td>—</td><td>£2.0M</td><td><span style='color:#9aa3bf'>n/a</span></td></tr><tr><td class='ch'>RAF</td><td>£0</td><td>793</td><td>—</td><td>£67k</td><td><span style='color:#9aa3bf'>n/a</span></td></tr><tr><td class='ch'>Unattributed</td><td>£0</td><td>284</td><td>—</td><td>£49k</td><td><span style='color:#9aa3bf'>n/a</span></td></tr><tr><td class='ch'>Referral</td><td>£0</td><td>150</td><td>—</td><td>£27k</td><td><span style='color:#9aa3bf'>n/a</span></td></tr><tr><td class='ch'>Organic Social</td><td>£0</td><td>82</td><td>—</td><td>£7k</td><td><span style='color:#9aa3bf'>n/a</span></td></tr><tr><td class='ch'>CRM</td><td>£0</td><td>17</td><td>—</td><td>£4k</td><td><span style='color:#9aa3bf'>n/a</span></td></tr><tr style='border-top:2px solid var(--line);font-weight:800'><td class='ch'>TOTAL</td><td>£4.8M</td><td>35,438</td><td>£136</td><td>£5.4M</td><td>1.12</td></tr></tbody></table>
+  </div>
+  <div class="panel" style="margin-top:14px"><h3>FTD credit: last-click vs time-decay</h3><p class="sub">Same conversions, re-credited. Paid channels lose credit to later Direct/Organic/app touches.</p><div class="chartbox tall"><canvas id="tdChart"></canvas></div></div>
+  <div class="callout"><b>Read:</b> under time-decay the nine paid channels are credited just <b>7,511 FTDs</b> vs <b>20,358</b> under last-click (<b>-63%</b>), and blended paid LTV:CAC falls from <b>0.68</b> (last-click) to <b>0.25</b> (time-decay). Direct, Organic Search and iOS/Android organic absorb most of the re-credited value — they tend to be the <i>last</i> touches before deposit. Treat this as a sensitivity check, not a re-baseline: paid still <i>initiates</i> many of those journeys. (ATL carries spend but 0 attributed FTDs in every model.)</div>
+
+  </section><section class="tabpane" id="tab-10" style="display:none"><h2 class="sec">10 · Sub-channel leaderboard — ad groups (last 4 weeks)</h2>
+  <div class="grid2">
+    <div class="panel"><h3>Best by LTV:CAC</h3><p class="sub">spend ≥ £500, FTDs ≥ 3</p>
+      <table><thead><tr><th>Channel</th><th>Ad group</th><th>Spend</th><th>FTDs</th><th>CPA</th><th>LTV:CAC</th></tr></thead><tbody><tr><td class='ch'>PPC Brand</td><td style='font-size:11.5px'>brand other mrq bingo</td><td>£866</td><td>11</td><td>£79</td><td><span class="pill pos">2.77</span></td></tr><tr><td class='ch'>Apple Ads Brand</td><td style='font-size:11.5px'>core brand evening</td><td>£31,980</td><td>409</td><td>£78</td><td><span class="pill pos">2.10</span></td></tr><tr><td class='ch'>Google UAC</td><td style='font-size:11.5px'>world cup - brand focus</td><td>£8,208</td><td>59</td><td>£139</td><td><span class="pill pos">2.10</span></td></tr><tr><td class='ch'>Apple Ads Non Brand</td><td style='font-size:11.5px'>Automated</td><td>£14,550</td><td>137</td><td>£106</td><td><span class="pill pos">1.85</span></td></tr><tr><td class='ch'>Apple Ads Non Brand</td><td style='font-size:11.5px'>casino</td><td>£15,292</td><td>72</td><td>£212</td><td><span class="pill pos">1.62</span></td></tr><tr><td class='ch'>Google UAC</td><td style='font-size:11.5px'>bingo_Q</td><td>£60,820</td><td>479</td><td>£127</td><td><span class="pill pos">1.59</span></td></tr></tbody></table></div>
+    <div class="panel"><h3>Worst by LTV:CAC</h3><p class="sub">spend ≥ £500, FTDs ≥ 3</p>
+      <table><thead><tr><th>Channel</th><th>Ad group</th><th>Spend</th><th>FTDs</th><th>CPA</th><th>LTV:CAC</th></tr></thead><tbody><tr><td class='ch'>Meta App</td><td style='font-size:11.5px'>Q126 iOS Installs 25+ Broad AlwaysOn (Copy)</td><td>£45,811</td><td>140</td><td>£327</td><td><span class="pill neg">0.38</span></td></tr><tr><td class='ch'>Meta App</td><td style='font-size:11.5px'>Q126 iOS Purchase AppSales 25+ Broad (Copy)</td><td>£46,080</td><td>226</td><td>£204</td><td><span class="pill neg">0.41</span></td></tr><tr><td class='ch'>Meta App</td><td style='font-size:11.5px'>Q126 AND Installs 25+ Broad AlwaysOn (Copy)</td><td>£45,781</td><td>120</td><td>£382</td><td><span class="pill neg">0.45</span></td></tr><tr><td class='ch'>Meta Paid Social</td><td style='font-size:11.5px'>Q126 Value Conversions WebSales Broad (Copy)</td><td>£33,056</td><td>167</td><td>£198</td><td><span class="pill neg">0.49</span></td></tr><tr><td class='ch'>Meta Paid Social</td><td style='font-size:11.5px'>Q126 Maximise(volume) Conv WebSales Broad</td><td>£84,124</td><td>500</td><td>£168</td><td><span class="pill neg">0.53</span></td></tr><tr><td class='ch'>Apple Ads Non Brand</td><td style='font-size:11.5px'>slots</td><td>£3,424</td><td>10</td><td>£342</td><td><span class="pill neg">0.53</span></td></tr></tbody></table></div>
+  </div>
+
+  </section><section class="tabpane" id="tab-10b" style="display:none"><h2 class="sec">10b · Within Affiliate — by affiliate ID (last 4 weeks)</h2>
+  <div class="panel"><h3>Top 20 affiliates by spend</h3><p class="sub">Spend, FTDs and 12-month PLTV per affiliate from <code>attribution_spend_metrics</code> (by <code>affiliate_id</code>) — these are <b>actual</b> figures (no longer estimated) and reconcile exactly to the blended Affiliate channel totals used elsewhere. CPA = spend ÷ FTDs; LTV:CAC = PLTV ÷ spend.</p>
+    <table><thead><tr><th>Affiliate</th><th>Spend</th><th>FTDs</th><th>CPA</th><th>12m PLTV</th><th>LTV:CAC</th></tr></thead><tbody><tr><td class='ch'>2164</td><td>£551,500</td><td>2,399</td><td>£230</td><td>£465,157</td><td><span class="pill mid">0.84</span></td></tr><tr><td class='ch'>2630</td><td>£316,000</td><td>1,329</td><td>£238</td><td>£283,074</td><td><span class="pill mid">0.90</span></td></tr><tr><td class='ch'>2014</td><td>£272,490</td><td>1,134</td><td>£240</td><td>£196,584</td><td><span class="pill neg">0.72</span></td></tr><tr><td class='ch'>2242</td><td>£195,225</td><td>2,469</td><td>£79</td><td>£253,578</td><td><span class="pill pos">1.30</span></td></tr><tr><td class='ch'>2098</td><td>£94,750</td><td>407</td><td>£233</td><td>£62,090</td><td><span class="pill neg">0.66</span></td></tr><tr><td class='ch'>2990</td><td>£87,780</td><td>900</td><td>£98</td><td>£94,951</td><td><span class="pill pos">1.08</span></td></tr><tr><td class='ch'>2362</td><td>£48,500</td><td>657</td><td>£74</td><td>£61,352</td><td><span class="pill pos">1.26</span></td></tr><tr><td class='ch'>2107</td><td>£35,200</td><td>189</td><td>£186</td><td>£41,996</td><td><span class="pill pos">1.19</span></td></tr><tr><td class='ch'>2195</td><td>£27,600</td><td>341</td><td>£81</td><td>£49,361</td><td><span class="pill pos">1.79</span></td></tr><tr><td class='ch'>456</td><td>£19,840</td><td>125</td><td>£159</td><td>£27,198</td><td><span class="pill pos">1.37</span></td></tr><tr><td class='ch'>323</td><td>£16,480</td><td>104</td><td>£158</td><td>£17,974</td><td><span class="pill pos">1.09</span></td></tr><tr><td class='ch'>373</td><td>£15,040</td><td>164</td><td>£92</td><td>£26,251</td><td><span class="pill pos">1.75</span></td></tr><tr><td class='ch'>2053</td><td>£11,960</td><td>32</td><td>£374</td><td>£7,683</td><td><span class="pill neg">0.64</span></td></tr><tr><td class='ch'>6071</td><td>£9,360</td><td>121</td><td>£77</td><td>£22,711</td><td><span class="pill pos">2.43</span></td></tr><tr><td class='ch'>2380</td><td>£8,990</td><td>50</td><td>£180</td><td>£9,227</td><td><span class="pill pos">1.03</span></td></tr><tr><td class='ch'>2999</td><td>£7,380</td><td>118</td><td>£63</td><td>£15,897</td><td><span class="pill pos">2.15</span></td></tr><tr><td class='ch'>2510</td><td>£6,930</td><td>54</td><td>£128</td><td>£9,610</td><td><span class="pill pos">1.39</span></td></tr><tr><td class='ch'>3189</td><td>£6,600</td><td>68</td><td>£97</td><td>£2,279</td><td><span class="pill neg">0.34</span></td></tr><tr><td class='ch'>2460</td><td>£6,600</td><td>113</td><td>£58</td><td>£8,548</td><td><span class="pill pos">1.29</span></td></tr><tr><td class='ch'>2970</td><td>£5,675</td><td>158</td><td>£36</td><td>£22,011</td><td><span class="pill pos">3.88</span></td></tr></tbody></table>
+    <p class="note-sm">⚠ Affiliate <b>names</b> are not yet shown: <code>dim_affiliate</code> (and <code>dim_raventrack_affiliate_stats</code>) depend on <code>dbt_intermediate.int_pq_affiliate_config</code>, which the reporting role (BQ_ATTRIBUTION) cannot read — a NOC grant is needed. Shown by <code>affiliate_id</code> until access is granted.</p>
+  </div>
+
+  </section><section class="tabpane" id="tab-11" style="display:none"><h2 class="sec">11 · Per-channel detail</h2>
+  <div class="chgrid">
+    <div class="chcard">
+      <div class="chhead"><h3>Affiliate</h3></div>
+      <div class="chstats">
+        <div class="chstat">Spend 4wk<b>£1,788,090</b></div>
+        <div class="chstat">FTDs<b>12,212</b></div>
+        <div class="chstat">CPA<b>£146</b></div>
+        <div class="chstat">LTV:CAC<b>1.04</b></div>
+      </div>
+      <div class="chcap">Spend (bars) &amp; FTDs (line) · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_v_Affiliate"></canvas></div>
+      <div class="chcap">CPA &amp; LTV:CAC · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_e_Affiliate"></canvas></div>
+    </div>
+    <div class="chcard">
+      <div class="chhead"><h3>ATL</h3></div>
+      <div class="chstats">
+        <div class="chstat">Spend 4wk<b>£1,702,525</b></div>
+        <div class="chstat">FTDs<b>0</b></div>
+        <div class="chstat">CPA<b>—</b></div>
+        <div class="chstat">LTV:CAC<b>n/a</b></div>
+      </div>
+      <div class="chcap">Spend (bars) &amp; FTDs (line) · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_v_ATL"></canvas></div>
+      <div class="chcap">CPA &amp; LTV:CAC · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_e_ATL"></canvas></div>
+    </div>
+    <div class="chcard">
+      <div class="chhead"><h3>PPC Brand</h3></div>
+      <div class="chstats">
+        <div class="chstat">Spend 4wk<b>£371,822</b></div>
+        <div class="chstat">FTDs<b>2,144</b></div>
+        <div class="chstat">CPA<b>£173</b></div>
+        <div class="chstat">LTV:CAC<b>1.06</b></div>
+      </div>
+      <div class="chcap">Spend (bars) &amp; FTDs (line) · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_v_PPC_Brand"></canvas></div>
+      <div class="chcap">CPA &amp; LTV:CAC · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_e_PPC_Brand"></canvas></div>
+    </div>
+    <div class="chcard">
+      <div class="chhead"><h3>Google UAC</h3></div>
+      <div class="chstats">
+        <div class="chstat">Spend 4wk<b>£208,177</b></div>
+        <div class="chstat">FTDs<b>1,462</b></div>
+        <div class="chstat">CPA<b>£142</b></div>
+        <div class="chstat">LTV:CAC<b>1.38</b></div>
+      </div>
+      <div class="chcap">Spend (bars) &amp; FTDs (line) · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_v_Google_UAC"></canvas></div>
+      <div class="chcap">CPA &amp; LTV:CAC · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_e_Google_UAC"></canvas></div>
+    </div>
+    <div class="chcard">
+      <div class="chhead"><h3>Apple Ads Brand</h3></div>
+      <div class="chstats">
+        <div class="chstat">Spend 4wk<b>£122,177</b></div>
+        <div class="chstat">FTDs<b>1,269</b></div>
+        <div class="chstat">CPA<b>£96</b></div>
+        <div class="chstat">LTV:CAC<b>1.52</b></div>
+      </div>
+      <div class="chcap">Spend (bars) &amp; FTDs (line) · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_v_Apple_Ads_Brand"></canvas></div>
+      <div class="chcap">CPA &amp; LTV:CAC · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_e_Apple_Ads_Brand"></canvas></div>
+    </div>
+    <div class="chcard">
+      <div class="chhead"><h3>Apple Ads Non Brand</h3></div>
+      <div class="chstats">
+        <div class="chstat">Spend 4wk<b>£86,812</b></div>
+        <div class="chstat">FTDs<b>439</b></div>
+        <div class="chstat">CPA<b>£198</b></div>
+        <div class="chstat">LTV:CAC<b>1.12</b></div>
+      </div>
+      <div class="chcap">Spend (bars) &amp; FTDs (line) · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_v_Apple_Ads_Non_Brand"></canvas></div>
+      <div class="chcap">CPA &amp; LTV:CAC · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_e_Apple_Ads_Non_Brand"></canvas></div>
+    </div>
+    <div class="chcard">
+      <div class="chhead"><h3>Meta App</h3></div>
+      <div class="chstats">
+        <div class="chstat">Spend 4wk<b>£183,690</b></div>
+        <div class="chstat">FTDs<b>1,194</b></div>
+        <div class="chstat">CPA<b>£154</b></div>
+        <div class="chstat">LTV:CAC<b>0.84</b></div>
+      </div>
+      <div class="chcap">Spend (bars) &amp; FTDs (line) · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_v_Meta_App"></canvas></div>
+      <div class="chcap">CPA &amp; LTV:CAC · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_e_Meta_App"></canvas></div>
+    </div>
+    <div class="chcard">
+      <div class="chhead"><h3>Meta Paid Social</h3></div>
+      <div class="chstats">
+        <div class="chstat">Spend 4wk<b>£165,055</b></div>
+        <div class="chstat">FTDs<b>1,083</b></div>
+        <div class="chstat">CPA<b>£152</b></div>
+        <div class="chstat">LTV:CAC<b>0.77</b></div>
+      </div>
+      <div class="chcap">Spend (bars) &amp; FTDs (line) · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_v_Meta_Paid_Social"></canvas></div>
+      <div class="chcap">CPA &amp; LTV:CAC · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_e_Meta_Paid_Social"></canvas></div>
+    </div>
+    <div class="chcard">
+      <div class="chhead"><h3>PPC Generic</h3></div>
+      <div class="chstats">
+        <div class="chstat">Spend 4wk<b>£132,477</b></div>
+        <div class="chstat">FTDs<b>555</b></div>
+        <div class="chstat">CPA<b>£239</b></div>
+        <div class="chstat">LTV:CAC<b>1.00</b></div>
+      </div>
+      <div class="chcap">Spend (bars) &amp; FTDs (line) · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_v_PPC_Generic"></canvas></div>
+      <div class="chcap">CPA &amp; LTV:CAC · weekly + part-week</div>
+      <div class="chartbox mini2"><canvas id="pc_e_PPC_Generic"></canvas></div>
+    </div></div>
+
+  </section><section class="tabpane" id="tab-12" style="display:none"><h2 class="sec">12 · Six-month weekly trends</h2>
+  <div class="grid2">
+    <div class="panel"><h3>Weekly spend &amp; FTDs</h3><p class="sub">26 complete weeks + part-week point (22 Jun)</p><div class="chartbox tall"><canvas id="trendVol"></canvas></div></div>
+    <div class="panel"><h3>Weekly CPA &amp; LTV:CAC</h3><p class="sub">26 complete weeks + part-week point</p><div class="chartbox tall"><canvas id="trendEff"></canvas></div></div>
+  </div>
+
+  
+</section><footer class="note">
+    <b>Method &amp; caveats.</b> Source <code>mrq-data.dbt.attribution_spend_metrics</code> (rows mutually exclusive → SUM-safe). Spend = SUM(spend), FTDs = SUM(ftd_players), 12m PLTV = SUM(sum_pltv); CPA = spend ÷ FTDs; LTV:CAC = PLTV ÷ spend. Actuals run through yesterday (22 Jun); ISO weeks start Monday. 2025 YoY baseline is hybrid: 2025 <b>spend</b> from the FY25 tracker (never BigQuery 2025 spend), 2025 <b>FTDs &amp; PLTV</b> from the model. Affiliate (Raventrack) spend lags ~2&ndash;4 days and is gap-filled at the trailing 4-week Affiliate CPA where spend is missing but FTDs exist (*). Affiliate-level PLTV is estimated. Aggregate marketing data only — no player-level information.
+  </footer></div>
+
+<script>
+var DATA = {"wkLabels": ["22 Dec", "29 Dec", "5 Jan", "12 Jan", "19 Jan", "26 Jan", "2 Feb", "9 Feb", "16 Feb", "23 Feb", "2 Mar", "9 Mar", "16 Mar", "23 Mar", "30 Mar", "6 Apr", "13 Apr", "20 Apr", "27 Apr", "4 May", "11 May", "18 May", "25 May", "1 Jun", "8 Jun", "15 Jun"], "wkSpend": [1251198, 993311, 920236, 871043, 859029, 953805, 1017304, 1235360, 1384969, 1315234, 1135499, 1127943, 970293, 997187, 956343, 975833, 1095682, 1136834, 1270120, 1212872, 1148895, 1068494, 1191096, 1300368, 1161965, 1172768], "wkFtds": [8992, 7544, 6758, 6903, 6812, 7710, 7172, 8004, 8763, 8772, 7310, 7397, 6896, 7660, 7557, 6714, 8850, 9254, 8707, 8719, 9201, 8564, 8994, 9145, 8573, 8727], "wkPltv": [1552992, 1160495, 963880, 1038099, 1075150, 1200099, 1047743, 1298988, 1486500, 1479570, 1062298, 1150715, 1151688, 1329525, 1104355, 1018081, 1323406, 1409520, 1317757, 1275768, 1407040, 1392107, 1548001, 1283292, 1227793, 1334620], "wkCpa": [139.15, 131.67, 136.17, 126.18, 126.11, 123.71, 141.84, 154.34, 158.05, 149.94, 155.33, 152.49, 140.7, 130.18, 126.55, 145.34, 123.81, 122.85, 145.87, 139.11, 124.87, 124.77, 132.43, 142.19, 135.54, 134.38], "wkLc": [1.241, 1.168, 1.047, 1.192, 1.252, 1.258, 1.03, 1.052, 1.073, 1.125, 0.936, 1.02, 1.187, 1.333, 1.155, 1.043, 1.208, 1.24, 1.038, 1.052, 1.225, 1.303, 1.3, 0.987, 1.057, 1.138], "partWk": {"label": "22 Jun", "spend": 414279, "ftds": 2892, "cpa": 143.25, "lc": 1.02}, "dLabels": ["26 May", "27 May", "28 May", "29 May", "30 May", "31 May", "1 Jun", "2 Jun", "3 Jun", "4 Jun", "5 Jun", "6 Jun", "7 Jun", "8 Jun", "9 Jun", "10 Jun", "11 Jun", "12 Jun", "13 Jun", "14 Jun", "15 Jun", "16 Jun", "17 Jun", "18 Jun", "19 Jun", "20 Jun", "21 Jun", "22 Jun", "23 Jun", "24 Jun"], "dSpend": [143898, 152060, 178594, 205685, 188666, 175834, 181686, 178802, 178023, 203938, 182460, 205365, 170094, 163727, 174495, 161924, 163497, 167611, 173132, 157578, 151158, 158078, 161846, 173466, 175834, 181582, 170804, 152137, 159582, 145022], "dFtds": [973, 1035, 1364, 1816, 1545, 1362, 1146, 1199, 1153, 1348, 1486, 1548, 1265, 1099, 1120, 1151, 1217, 1351, 1449, 1186, 1204, 1153, 1172, 1210, 1503, 1339, 1146, 961, 1002, 929], "dCpa": [147.89, 146.92, 130.93, 113.26, 122.11, 129.1, 158.54, 149.13, 154.4, 151.29, 122.79, 132.66, 134.46, 148.98, 155.8, 140.68, 134.34, 124.06, 119.48, 132.87, 125.55, 137.1, 138.09, 143.36, 116.99, 135.61, 149.04, 158.31, 159.26, 156.11], "dEst": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], "junLabels": ["1 Jun", "2 Jun", "3 Jun", "4 Jun", "5 Jun", "6 Jun", "7 Jun", "8 Jun", "9 Jun", "10 Jun", "11 Jun", "12 Jun", "13 Jun", "14 Jun", "15 Jun", "16 Jun", "17 Jun", "18 Jun", "19 Jun", "20 Jun", "21 Jun", "22 Jun", "23 Jun", "24 Jun"], "junCumSpend": [181686, 360488, 538510, 742449, 924909, 1130274, 1300368, 1464095, 1638591, 1800515, 1964011, 2131623, 2304755, 2462333, 2613491, 2771569, 2933415, 3106881, 3282715, 3464297, 3635101, 3787238, 3946820, 4091842], "junCumFtds": [1146, 2345, 3498, 4846, 6332, 7880, 9145, 10244, 11364, 12515, 13732, 15083, 16532, 17718, 18922, 20075, 21247, 22457, 23960, 25299, 26445, 27406, 28408, 29337], "junFcSpend": 5114802, "junFcFtds": 36671, "mLabels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"], "mF26": [31002, 32640, 32428, 35146, 39423, 36671], "mF25": [19933, 18602, 19356, 20699, 20668, 21016], "mYoY": [55.5, 75.5, 67.5, 69.8, 90.7, 74.5], "mLc26": [1.183, 1.068, 1.101, 1.141, 1.19, 1.043], "mLc25": [0.997, 0.992, 0.883, 1.165, 1.161, 0.826], "pwLabels": ["30 Mar", "6 Apr", "13 Apr", "20 Apr", "27 Apr", "4 May", "11 May", "18 May", "25 May", "1 Jun", "8 Jun", "15 Jun"], "pwSpend_Web": [438395, 436756, 544318, 569142, 705266, 642464, 580535, 504152, 621685, 715288, 576178, 591744], "pwLc_Web": [1.69, 1.6, 1.638, 1.704, 1.283, 1.323, 1.612, 1.746, 1.623, 1.187, 1.365, 1.46], "pwSpend_App": [121222, 123827, 136114, 152442, 149605, 155157, 153111, 149093, 154161, 155989, 156695, 151935], "pwLc_App": [2.107, 1.746, 2.22, 2.131, 1.771, 1.935, 2.313, 2.532, 2.681, 2.223, 2.305, 2.349], "pwSpend_Other": [396727, 415250, 415250, 415250, 415250, 415250, 415250, 415250, 415250, 429092, 429092, 429092], "pwLc_Other": [0.272, 0.248, 0.312, 0.276, 0.356, 0.302, 0.282, 0.324, 0.319, 0.222, 0.191, 0.288], "atlLabels": ["30 Mar", "6 Apr", "13 Apr", "20 Apr", "27 Apr", "4 May", "11 May", "18 May", "25 May", "1 Jun", "8 Jun", "15 Jun"], "atlSpend": [396727, 415250, 415250, 415250, 415250, 415250, 415250, 415250, 415250, 429092, 429092, 429092], "atlTotFtds": [7557, 6714, 8850, 9254, 8707, 8719, 9201, 8564, 8994, 9145, 8573, 8727], "atlCostFtd": [52.5, 61.85, 46.92, 44.87, 47.69, 47.63, 45.13, 48.49, 46.17, 46.92, 50.05, 49.17], "mixLabels": ["Affiliate", "ATL", "PPC Brand", "Google UAC", "Apple Ads Brand", "Meta App", "Meta Paid Social", "PPC Generic", "Apple Ads Non Brand"], "mixSpend": [1788090, 1702525, 371822, 208177, 122177, 183690, 165055, 132477, 86812], "mixFtds": [12212, 0, 2144, 1462, 1269, 1194, 1083, 555, 439], "pcLabels": ["30 Mar", "6 Apr", "13 Apr", "20 Apr", "27 Apr", "4 May", "11 May", "18 May", "25 May", "1 Jun", "8 Jun", "15 Jun"], "perChannel": {"Affiliate": {"spend": [296855, 264965, 352060, 361930, 468680, 435160, 376070, 327270, 445185, 522980, 399635, 420290], "ftds": [2496, 2110, 2692, 2711, 3069, 3061, 2886, 2626, 3131, 3408, 2760, 2915], "cpa": [118.93, 125.58, 130.78, 133.5, 152.71, 142.16, 130.31, 124.63, 142.19, 153.46, 144.8, 144.18], "lc": [1.078, 1.168, 1.13, 1.219, 1.01, 0.993, 1.166, 1.167, 1.202, 0.933, 0.986, 1.074], "pt": {"spend": 98345, "ftds": 941, "cpa": 104.51, "lc": 1.448}, "tot": {"spend": 1788090, "ftds": 12212, "pltv": 1859180, "cpa": 146.42, "lc": 1.04}}, "ATL": {"spend": [396727, 415250, 415250, 415250, 415250, 415250, 415250, 415250, 415250, 429092, 429092, 429092], "ftds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "cpa": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "lc": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "pt": {"spend": 183896, "ftds": 0, "cpa": 0, "lc": 0.0}, "tot": {"spend": 1702525, "ftds": 0, "pltv": 0, "cpa": 0, "lc": 0.0}}, "PPC Brand": {"spend": [83053, 80597, 103157, 105568, 142873, 112455, 104967, 97568, 85116, 99411, 96023, 91278], "ftds": [643, 608, 759, 746, 732, 724, 705, 603, 494, 524, 571, 554], "cpa": [129.17, 132.56, 135.91, 141.51, 195.18, 155.32, 148.89, 161.8, 172.3, 189.72, 168.17, 164.76], "lc": [1.438, 1.595, 1.34, 1.371, 0.887, 1.054, 1.156, 1.118, 1.219, 0.818, 1.052, 1.24], "pt": {"spend": 36848, "ftds": 202, "cpa": 182.42, "lc": 0.849}, "tot": {"spend": 371822, "ftds": 2144, "pltv": 394154, "cpa": 173.42, "lc": 1.06}}, "Google UAC": {"spend": [59575, 60736, 62027, 62891, 56916, 59249, 53884, 51090, 47753, 51551, 52208, 56851], "ftds": [297, 261, 326, 310, 313, 277, 352, 340, 316, 379, 352, 415], "cpa": [200.59, 232.7, 190.27, 202.88, 181.84, 213.9, 153.08, 150.26, 151.12, 136.02, 148.32, 136.99], "lc": [0.912, 0.692, 0.767, 0.946, 0.977, 0.921, 1.349, 1.34, 1.462, 1.332, 1.454, 1.385], "pt": {"spend": 27685, "ftds": 161, "cpa": 171.95, "lc": 1.043}, "tot": {"spend": 208177, "ftds": 1462, "pltv": 287920, "cpa": 142.39, "lc": 1.383}}, "Apple Ads Brand": {"spend": [21237, 21497, 26165, 27957, 27458, 26577, 28907, 27946, 32916, 33320, 30405, 25536], "ftds": [223, 173, 295, 255, 215, 256, 307, 281, 290, 284, 384, 311], "cpa": [95.23, 124.26, 88.69, 109.64, 127.71, 103.82, 94.16, 99.45, 113.5, 117.32, 79.18, 82.11], "lc": [1.827, 0.811, 1.656, 1.296, 1.139, 1.527, 1.618, 1.631, 1.481, 1.152, 1.827, 1.722], "pt": {"spend": 10749, "ftds": 109, "cpa": 98.62, "lc": 1.616}, "tot": {"spend": 122177, "ftds": 1269, "pltv": 185293, "cpa": 96.28, "lc": 1.517}}, "Meta App": {"spend": [28690, 28531, 32061, 38111, 42432, 46825, 48436, 47340, 46578, 46844, 48034, 42233], "ftds": [217, 212, 333, 362, 315, 284, 287, 312, 285, 299, 324, 286], "cpa": [132.21, 134.58, 96.28, 105.28, 134.71, 164.88, 168.77, 151.73, 163.43, 156.67, 148.25, 147.67], "lc": [1.018, 1.245, 1.342, 1.513, 0.884, 0.973, 0.969, 1.08, 0.974, 0.766, 0.779, 0.903], "pt": {"spend": 13488, "ftds": 86, "cpa": 156.83, "lc": 0.756}, "tot": {"spend": 183690, "ftds": 1194, "pltv": 155039, "cpa": 153.84, "lc": 0.844}}, "Meta Paid Social": {"spend": [24922, 43053, 50253, 51530, 41727, 40608, 41008, 40751, 41441, 41147, 41123, 41343], "ftds": [198, 428, 836, 934, 298, 308, 307, 292, 284, 300, 226, 274], "cpa": [125.87, 100.59, 60.11, 55.17, 140.02, 131.84, 133.58, 139.56, 145.92, 137.16, 181.96, 150.89], "lc": [0.916, 1.189, 1.154, 1.034, 0.575, 0.539, 1.034, 0.942, 1.005, 0.817, 0.591, 0.733], "pt": {"spend": 17363, "ftds": 104, "cpa": 166.95, "lc": 0.669}, "tot": {"spend": 165055, "ftds": 1083, "pltv": 127648, "cpa": 152.41, "lc": 0.773}}, "PPC Generic": {"spend": [26400, 40910, 31616, 42882, 42894, 42669, 46916, 26990, 38371, 39792, 27438, 26876], "ftds": [135, 97, 136, 202, 152, 161, 214, 125, 167, 165, 101, 122], "cpa": [195.55, 421.75, 232.47, 212.29, 282.2, 265.02, 219.24, 215.92, 229.76, 241.16, 271.67, 220.3], "lc": [1.821, 0.483, 1.012, 1.167, 0.595, 0.694, 1.197, 0.989, 1.12, 0.876, 0.866, 1.13], "pt": {"spend": 7851, "ftds": 32, "cpa": 245.33, "lc": 0.885}, "tot": {"spend": 132477, "ftds": 555, "pltv": 132533, "cpa": 238.7, "lc": 1.0}}, "Apple Ads Non Brand": {"spend": [6129, 7249, 10148, 17070, 15740, 14622, 14899, 16433, 21230, 20160, 21935, 23486], "ftds": [21, 33, 48, 66, 49, 55, 71, 93, 104, 121, 111, 102], "cpa": [291.86, 219.67, 211.42, 258.63, 321.22, 265.85, 209.84, 176.7, 204.14, 166.61, 197.61, 230.26], "lc": [0.824, 0.929, 1.296, 0.483, 0.481, 0.668, 1.325, 1.549, 1.513, 1.112, 1.045, 0.837], "pt": {"spend": 11209, "ftds": 32, "cpa": 350.29, "lc": 0.509}, "tot": {"spend": 86812, "ftds": 439, "pltv": 97186, "cpa": 197.75, "lc": 1.12}}}, "momChLabels": ["Organic Search", "Unattributed", "PPC Brand", "Affiliate App", "Meta App", "RAF", "PPC Generic", "Direct", "Meta Paid Social", "Referral", "Android Organic", "Apple Ads Non Brand", "Apple Ads Brand", "Affiliate", "Google UAC", "iOS Organic"], "momChDelta": [-172155, -76757, -70170, -45239, -38614, -29956, -25606, -22161, -16418, -6834, -3879, 12875, 13877, 22611, 36967, 79951], "domLabels": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"], "domFtds": [1114, 1104, 1037, 994, 977, 1060, 994, 1077, 1132, 1137, 1069, 1040, 1168, 1107, 1168, 1238, 1217, 1092, 1084, 1185, 1191, 1164, 1172, 1186, 1055, 1071, 1221, 1221, 1285, 1341, 1252], "domPltvFtd": [136.1, 144.1, 148.8, 143.2, 139.8, 147.3, 146.3, 142.3, 145.3, 157.4, 151.0, 147.1, 164.4, 161.1, 158.5, 158.2, 146.8, 163.9, 154.4, 160.3, 163.0, 164.5, 160.5, 162.9, 173.0, 160.3, 175.3, 169.6, 164.4, 166.1, 151.8], "domPay": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1], "dowLabels": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], "dowFtds": [990, 999, 993, 1115, 1391, 1277, 1127], "mPlanFtds": [31002, 32640, 32428, 35146, 39423, 37999], "wkPlanFtds": [null, 3922, 6758, 6903, 6812, 7710, 7172, 8004, 8763, 8772, 7310, 7397, 6896, 7660, 7557, 6714, 8850, 9254, 8707, 8719, 9201, 8564, 8994, 9145, 8573, 8909, 9110], "tdLabels": ["Affiliate", "Direct", "iOS Organic", "Organic Search", "RAF", "PPC Brand", "Android Organic", "Google UAC", "Apple Ads Brand", "Meta Paid Social", "Meta App", "PPC Generic", "Apple Ads Non Brand"], "tdLastClick": [12212, 1682, 3870, 4477, 3500, 2144, 629, 1462, 1269, 1083, 1194, 555, 439], "tdTimeDecay": [4806, 13637, 7028, 3036, 793, 1118, 2661, 267, 239, 460, 302, 241, 78]};
+(function(){
+  var BLUE="#0A2ECB",SKY="#00B2FF",GREEN="#1c8f53",GREEN2="#42D486",PINK="#FF63F6",YEL="#E6C200",MUTED="#5b6480",GRID="rgba(10,46,203,.07)";
+  Chart && (Chart.defaults.font.family="Inter,-apple-system,Segoe UI,Roboto,sans-serif",Chart.defaults.color=MUTED,Chart.defaults.font.size=11);
+  function mkChart(id,cfg){
+    if(!cfg || !cfg.type){ throw new Error("Chart config missing type for #"+id); }
+    var el=document.getElementById(id); if(!el) return null;
+    return new Chart(el,cfg);
+  }
+  function axisR(title){return {position:"right",grid:{drawOnChartArea:false},title:{display:!!title,text:title}};}
+  function gbp(v){return "£"+Math.round(v).toLocaleString();}
+  function init(){
+    // 2: cumulative spend
+    mkChart("cumSpend",{type:"line",data:{labels:DATA.junLabels,datasets:[
+      {label:"Cumulative spend (gap-filled)",data:DATA.junCumSpend,borderColor:BLUE,backgroundColor:"rgba(10,46,203,.08)",fill:true,tension:.25,pointRadius:0,borderWidth:2},
+      {label:"Full-month forecast",data:DATA.junLabels.map(function(_,i){return Math.round(DATA.junFcSpend*(i+1)/DATA.junLabels.length);}),borderColor:PINK,borderDash:[6,4],fill:false,tension:0,pointRadius:0,borderWidth:2}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"}},scales:{y:{ticks:{callback:gbp}},x:{grid:{display:false}}}}});
+    // 2: cumulative ftds
+    mkChart("cumFtds",{type:"line",data:{labels:DATA.junLabels,datasets:[
+      {label:"Cumulative FTDs",data:DATA.junCumFtds,borderColor:GREEN,backgroundColor:"rgba(28,143,83,.10)",fill:true,tension:.25,pointRadius:0,borderWidth:2},
+      {label:"Full-month forecast",data:DATA.junLabels.map(function(_,i){return Math.round(DATA.junFcFtds*(i+1)/DATA.junLabels.length);}),borderColor:PINK,borderDash:[6,4],fill:false,tension:0,pointRadius:0,borderWidth:2}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"}},scales:{y:{},x:{grid:{display:false}}}}});
+    // 3: monthly ftds + yoy
+    mkChart("moFtds",{type:"bar",data:{labels:DATA.mLabels,datasets:[
+      {label:"2025 FTDs",data:DATA.mF25,backgroundColor:"#cdd3f5",order:2},
+      {label:"2026 FTDs",data:DATA.mF26,backgroundColor:BLUE,order:2},
+      {type:"line",label:"2026 plan",data:DATA.mPlanFtds,borderColor:YEL,backgroundColor:YEL,borderDash:[5,4],fill:false,tension:.3,borderWidth:2,pointRadius:0,spanGaps:true,order:0},
+      {type:"line",label:"YoY %",data:DATA.mYoY,borderColor:PINK,backgroundColor:PINK,yAxisID:"y1",tension:.3,borderWidth:2,pointRadius:3,order:1}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"}},scales:{y:{title:{display:true,text:"FTDs"}},y1:Object.assign(axisR("YoY %"),{ticks:{callback:function(v){return v+"%";}}}),x:{grid:{display:false}}}}});
+    // 3: monthly ltv:cac
+    mkChart("moLc",{type:"line",data:{labels:DATA.mLabels,datasets:[
+      {label:"2025",data:DATA.mLc25,borderColor:MUTED,backgroundColor:MUTED,tension:.3,borderWidth:2,pointRadius:3},
+      {label:"2026",data:DATA.mLc26,borderColor:BLUE,backgroundColor:BLUE,tension:.3,borderWidth:2,pointRadius:3}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"},annotation:false},scales:{y:{suggestedMin:.8},x:{grid:{display:false}}}}});
+    // 3b: PLTV drivers waterfall
+    mkChart("momWaterfall",{type:"bar",data:{labels:DATA.momChLabels,datasets:[
+      {label:"ΔPLTV",data:DATA.momChDelta,backgroundColor:DATA.momChDelta.map(function(v){return v>=0?GREEN:PINK;})}
+    ]},options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return (c.raw>=0?"+£":"−£")+Math.abs(c.raw).toLocaleString();}}}},scales:{x:{ticks:{callback:gbp},title:{display:true,text:"Δ 12m PLTV (£)"}}}}});
+    // 4: daily
+    mkChart("daily",{type:"bar",data:{labels:DATA.dLabels,datasets:[
+      {label:"Spend (gap-filled)",data:DATA.dSpend,backgroundColor:DATA.dEst.map(function(e){return e?PINK:BLUE;}),order:2},
+      {type:"line",label:"FTDs",data:DATA.dFtds,borderColor:GREEN,backgroundColor:GREEN,yAxisID:"y1",tension:.3,borderWidth:2,pointRadius:0,order:1}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"},tooltip:{callbacks:{afterBody:function(it){return DATA.dEst[it[0].dataIndex]?"* spend gap-filled (Affiliate feed lag)":"";}}}},scales:{y:{ticks:{callback:gbp}},y1:axisR("FTDs"),x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:10}}}}});
+    // 4b: timing / payday
+    mkChart("domChart",{type:"bar",data:{labels:DATA.domLabels,datasets:[
+      {label:"Avg FTDs",data:DATA.domFtds,backgroundColor:DATA.domPay.map(function(p){return p?YEL:BLUE;}),order:2},
+      {type:"line",label:"PLTV/FTD",data:DATA.domPltvFtd,borderColor:GREEN,backgroundColor:GREEN,yAxisID:"y1",tension:.3,borderWidth:2,pointRadius:0,order:1}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"}},scales:{y:{title:{display:true,text:"Avg FTDs/day"}},y1:Object.assign(axisR("PLTV/FTD"),{ticks:{callback:gbp}}),x:{grid:{display:false},title:{display:true,text:"Day of month"}}}}});
+    mkChart("dowChart",{type:"bar",data:{labels:DATA.dowLabels,datasets:[
+      {label:"Avg FTDs",data:DATA.dowFtds,backgroundColor:DATA.dowLabels.map(function(d){return d==="Fri"?PINK:BLUE;})}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{title:{display:true,text:"Avg FTDs/day"}},x:{grid:{display:false}}}}});
+    // 9b: time-decay vs last-click FTDs
+    mkChart("tdChart",{type:"bar",data:{labels:DATA.tdLabels,datasets:[
+      {label:"Last-click FTDs",data:DATA.tdLastClick,backgroundColor:BLUE},
+      {label:"Time-decay FTDs",data:DATA.tdTimeDecay,backgroundColor:SKY}
+    ]},options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"}},scales:{x:{title:{display:true,text:"FTDs (last 4 wks)"}},y:{grid:{display:false}}}}});
+    // 6: mix
+    mkChart("mixSpend",{type:"bar",data:{labels:DATA.mixLabels,datasets:[{label:"Spend",data:DATA.mixSpend,backgroundColor:BLUE}]},options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:gbp}}}}});
+    mkChart("mixFtds",{type:"bar",data:{labels:DATA.mixLabels,datasets:[{label:"FTDs",data:DATA.mixFtds,backgroundColor:GREEN}]},options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{}}}});
+    // 7: platform weekly
+    mkChart("pwSpend",{type:"line",data:{labels:DATA.pwLabels,datasets:[
+      {label:"Web",data:DATA.pwSpend_Web,borderColor:BLUE,backgroundColor:BLUE,tension:.3,borderWidth:2,pointRadius:0},
+      {label:"App",data:DATA.pwSpend_App,borderColor:SKY,backgroundColor:SKY,tension:.3,borderWidth:2,pointRadius:0},
+      {label:"Other (ATL)",data:DATA.pwSpend_Other,borderColor:PINK,backgroundColor:PINK,tension:.3,borderWidth:2,pointRadius:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"}},scales:{y:{ticks:{callback:gbp}},x:{grid:{display:false}}}}});
+    mkChart("pwLc",{type:"line",data:{labels:DATA.pwLabels,datasets:[
+      {label:"Web",data:DATA.pwLc_Web,borderColor:BLUE,backgroundColor:BLUE,tension:.3,borderWidth:2,pointRadius:0},
+      {label:"App",data:DATA.pwLc_App,borderColor:SKY,backgroundColor:SKY,tension:.3,borderWidth:2,pointRadius:0},
+      {label:"Other (ATL)",data:DATA.pwLc_Other,borderColor:PINK,backgroundColor:PINK,tension:.3,borderWidth:2,pointRadius:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"}},scales:{y:{},x:{grid:{display:false}}}}});
+    // 8: ATL
+    mkChart("atl",{type:"bar",data:{labels:DATA.atlLabels,datasets:[
+      {label:"ATL spend",data:DATA.atlSpend,backgroundColor:"#cdb4ff",order:3},
+      {type:"line",label:"Total FTDs",data:DATA.atlTotFtds,borderColor:BLUE,backgroundColor:BLUE,yAxisID:"y1",tension:.3,borderWidth:2,pointRadius:2,order:1},
+      {type:"line",label:"Implied £/FTD",data:DATA.atlCostFtd,borderColor:PINK,backgroundColor:PINK,yAxisID:"y2",tension:.3,borderWidth:2,pointRadius:2,order:2}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"}},scales:{y:{ticks:{callback:gbp}},y1:axisR("FTDs"),y2:{display:false},x:{grid:{display:false}}}}});
+    // 11: per-channel
+    var pc=DATA.perChannel;
+    Object.keys(pc).forEach(function(ch){
+      var safe=ch.replace(/ /g,"_"); var c=pc[ch];
+      var labV=DATA.pcLabels.concat(["22-24 Jun*"]);
+      mkChart("pc_v_"+safe,{type:"bar",data:{labels:labV,datasets:[
+        {label:"Spend",data:c.spend.concat([c.pt.spend]),backgroundColor:c.spend.map(function(){return BLUE;}).concat([SKY]),order:2},
+        {type:"line",label:"FTDs",data:c.ftds.concat([c.pt.ftds]),borderColor:GREEN,backgroundColor:GREEN,yAxisID:"y1",tension:.3,borderWidth:2,pointRadius:0,order:1}
+      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:gbp}},y1:{position:"right",grid:{drawOnChartArea:false}},x:{grid:{display:false},ticks:{display:false}}}}});
+      mkChart("pc_e_"+safe,{type:"line",data:{labels:labV,datasets:[
+        {label:"CPA",data:c.cpa.concat([c.pt.cpa]),borderColor:PINK,backgroundColor:PINK,tension:.3,borderWidth:2,pointRadius:0},
+        {label:"LTV:CAC",data:c.lc.concat([c.pt.lc]),borderColor:BLUE,backgroundColor:BLUE,yAxisID:"y1",tension:.3,borderWidth:2,pointRadius:0}
+      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:gbp}},y1:{position:"right",grid:{drawOnChartArea:false}},x:{grid:{display:false},ticks:{display:false}}}}});
+    });
+    // 12: trends (+ part-week point)
+    var tl=DATA.wkLabels.concat([DATA.partWk.label+"*"]);
+    mkChart("trendVol",{type:"bar",data:{labels:tl,datasets:[
+      {label:"Spend",data:DATA.wkSpend.concat([DATA.partWk.spend]),backgroundColor:DATA.wkSpend.map(function(){return BLUE;}).concat([SKY]),order:2},
+      {type:"line",label:"FTDs",data:DATA.wkFtds.concat([DATA.partWk.ftds]),borderColor:GREEN,backgroundColor:GREEN,yAxisID:"y1",tension:.3,borderWidth:2,pointRadius:0,order:1},
+      {type:"line",label:"Plan FTDs",data:DATA.wkPlanFtds,borderColor:YEL,backgroundColor:YEL,borderDash:[5,4],yAxisID:"y1",tension:.3,borderWidth:2,pointRadius:0,spanGaps:true,order:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"}},scales:{y:{ticks:{callback:gbp}},y1:axisR("FTDs"),x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:9}}}}});
+    mkChart("trendEff",{type:"line",data:{labels:tl,datasets:[
+      {label:"CPA",data:DATA.wkCpa.concat([DATA.partWk.cpa]),borderColor:PINK,backgroundColor:PINK,tension:.3,borderWidth:2,pointRadius:0},
+      {label:"LTV:CAC",data:DATA.wkLc.concat([DATA.partWk.lc]),borderColor:BLUE,backgroundColor:BLUE,yAxisID:"y1",tension:.3,borderWidth:2,pointRadius:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"}},scales:{y:{ticks:{callback:gbp},title:{display:true,text:"CPA"}},y1:axisR("LTV:CAC"),x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:9}}}}});
+  }
+  if(typeof document!=="undefined"){
+    if(document.readyState!=="loading") init(); else document.addEventListener("DOMContentLoaded",init);
+  }
+  if(typeof module!=="undefined"){ module.exports={init:init}; }
+})();
+</script>
+
+<script>
+(function(){
+  function show(id){
+    var panes=document.querySelectorAll('.tabpane');
+    for(var i=0;i<panes.length;i++) panes[i].style.display=(panes[i].id===id)?'':'none';
+    var btns=document.querySelectorAll('.tabnav button');
+    for(var j=0;j<btns.length;j++) btns[j].classList.toggle('active', btns[j].getAttribute('data-tab')===id);
+    requestAnimationFrame(function(){
+      var cvs=document.querySelectorAll('#'+id+' canvas');
+      for(var k=0;k<cvs.length;k++){ try{ var c=(window.Chart&&Chart.getChart)?Chart.getChart(cvs[k]):null; if(c) c.resize(); }catch(e){} }
+      window.scrollTo(0,0);
+    });
+  }
+  function init(){
+    var nav=document.getElementById('tabnav'); if(!nav) return;
+    nav.addEventListener('click',function(e){ var b=e.target.closest('button'); if(b) show(b.getAttribute('data-tab')); });
+  }
+  if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded',init);
+})();
+</script>
+</body></html>
