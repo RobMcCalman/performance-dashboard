@@ -1,0 +1,16 @@
+{
+  "name": "performance-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Auth0-gated MrQ performance marketing dashboard",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "express-openid-connect": "^2.17.1"
+  }
+}
