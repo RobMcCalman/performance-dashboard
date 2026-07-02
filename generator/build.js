@@ -293,8 +293,8 @@ console.log('WX corr idx', wxCorrIdx.toFixed(2), 'ppf', wxCorrPpf.toFixed(2), 'h
 const WC_FIX = { // matches per calendar day (group stage from kickoffadventures schedule; 28 Jun = R32 begins)
   '2026-06-11':2,'2026-06-12':2,'2026-06-13':4,'2026-06-14':4,'2026-06-15':4,'2026-06-16':3,
   '2026-06-17':5,'2026-06-18':4,'2026-06-19':4,'2026-06-20':3,'2026-06-21':5,'2026-06-22':4,
-  '2026-06-23':4,'2026-06-24':6,'2026-06-25':6,'2026-06-26':6,'2026-06-27':6,'2026-06-28':4,'2026-06-29':4,'2026-06-30':4 };
-const WC_ENG = {'2026-06-17':'v Croatia (W 4-2)','2026-06-23':'v Ghana (D 0-0)','2026-06-27':'v Panama (W 2-0)'};
+  '2026-06-23':4,'2026-06-24':6,'2026-06-25':6,'2026-06-26':6,'2026-06-27':6,'2026-06-28':4,'2026-06-29':4,'2026-06-30':4,'2026-07-01':2 };
+const WC_ENG = {'2026-06-17':'v Croatia (W 4-2)','2026-06-23':'v Ghana (D 0-0)','2026-06-27':'v Panama (W 2-0)','2026-07-01':'v DR Congo (R32)'};
 const WC_START='2026-06-11';
 // baseline: pre-tournament & pre-heat (May 12 - Jun 10) day-of-week FTD norms
 const wcBaseSum={}, wcBaseN={};
