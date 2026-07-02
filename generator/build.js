@@ -91,11 +91,24 @@ const trailWk = {s:t4s/4, f:t4f/4, p:t4p/4};
 trailWk.cpa=div(trailWk.s,trailWk.f); trailWk.ltv=div(trailWk.p,trailWk.s);
 const dailyAvg = {s:t4s/28, f:t4f/28, p:t4p/28};
 
-// ---------- THIS-WEEK forecast ----------
+// ---------- day-of-week FTD shape (from last 8 complete weeks; stable) ----------
+const DOW=d=>(new Date(d+'T00:00:00Z').getUTCDay()+6)%7;   // 0=Mon..6=Sun
+const _8s=new Date(_t4e); _8s.setUTCDate(_8s.getUTCDate()-55);  // 8 weeks back from last complete Sun
+const _8start=_8s.toISOString().slice(0,10);
+const dwSum=[0,0,0,0,0,0,0], dwN=[0,0,0,0,0,0,0];
+dailyG.forEach(d=>{ if(d.date>=_8start && d.date<=T4E){ const k=DOW(d.date); dwSum[k]+=d.f; dwN[k]++; } });
+const _8mean = dailyG.filter(d=>d.date>=_8start&&d.date<=T4E).reduce((a,d)=>a+d.f,0) / dwN.reduce((a,b)=>a+b,0);
+const dowIdx = dwSum.map((s,i)=> dwN[i]&&_8mean ? (s/dwN[i])/_8mean : 1);  // index vs daily mean, ~mean 1
+// ---------- THIS-WEEK forecast (remaining days weighted by day-of-week shape) ----------
 const wtdDays = dailyG.filter(d=>d.date>=curWeekStart && d.date<=ASOF);
 const DAYS_LANDED_WK = wtdDays.length;
+const landedDows = wtdDays.map(d=>DOW(d.date));
+const DOWNM=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const remDows=[0,1,2,3,4,5,6].filter(k=>!landedDows.includes(k));
+const REMW = remDows.reduce((a,k)=>a+dowIdx[k],0); // Σ dow-index over remaining days (flat = 7−landed)
+const REM_SHAPE = remDows.map(k=>`${DOWNM[k]} ${dowIdx[k].toFixed(2)}×`).join(', ');
 const wtd = {s:0,f:0,p:0}; wtdDays.forEach(d=>{ wtd.s+=d.sg; wtd.f+=d.f; wtd.p+=d.p; });
-const wkFcst = { s: wtd.s + (7-DAYS_LANDED_WK)*dailyAvg.s, f: wtd.f + (7-DAYS_LANDED_WK)*dailyAvg.f, p: wtd.p + (7-DAYS_LANDED_WK)*dailyAvg.p };
+const wkFcst = { s: wtd.s + REMW*dailyAvg.s, f: wtd.f + REMW*dailyAvg.f, p: wtd.p + REMW*dailyAvg.p };
 wkFcst.cpa=div(wkFcst.s,wkFcst.f); wkFcst.ltv=div(wkFcst.p,wkFcst.s);
 
 // ---------- MTD June (gap-filled) + full-month forecast ----------
@@ -386,7 +399,7 @@ ${swings.filter(s=>!['Affiliate App','Email'].includes(s.ch)).map(s=>`<li><b>${s
   const twc = mixRows.map(r=>{
     const w=wtdCh[r.ch]||{s:0,f:0,p:0}, t=t4Ch[r.ch]||{s:0,f:0,p:0};
     const wS=(r.ch==='Affiliate'? w.s+AFF_GAP_28 : w.s);      // WTD spend (affiliate gap-filled for the lagging day)
-    const s=wS+(7-DAYS_LANDED_WK)*(t.s/28), f=w.f+(7-DAYS_LANDED_WK)*(t.f/28), p=w.p+(7-DAYS_LANDED_WK)*(t.p/28);
+    const s=wS+REMW*(t.s/28), f=w.f+REMW*(t.f/28), p=w.p+REMW*(t.p/28);
     return {ch:r.ch,s,f,p,ltv:div(p,s),cpa:div(s,f)};
   }).sort((a,b)=>b.s-a.s);
   const rows = twc.filter(r=>r.s>0||r.f>0).map(r=>({cells:[
@@ -395,7 +408,7 @@ ${swings.filter(s=>!['Affiliate App','Email'].includes(s.ch)).map(s=>`<li><b>${s
     r.f? `<span class="pill ${ragLtv(r.ltv)}">${f2(r.ltv)}</span>` : pill('grey','n/a')
   ]}));
   panes.s1 = `<h2 class="sec">This week — week-to-date + forecast</h2>
-<div class="callout">Current ISO week (from Mon 29 Jun) has <b>${DAYS_LANDED_WK} fully-landed day${DAYS_LANDED_WK===1?'':'s'}</b> so far. Forecast = week-to-date (${num(wtd.f)} FTDs) + (7 − ${DAYS_LANDED_WK}) × the trailing-4-complete-week daily average — never a naive ×7/days scale, since early-week days run low. Trailing weekly average shown for context.</div>
+<div class="callout">Current ISO week (from Mon 29 Jun) has <b>${DAYS_LANDED_WK} fully-landed day${DAYS_LANDED_WK===1?'':'s'}</b> so far. Forecast = week-to-date (${num(wtd.f)} FTDs) + the trailing-4-complete-week daily average applied to each remaining day, <b>weighted by its day-of-week shape</b> (8-week profile) — so the busy Fri/Sat aren't under-counted the way a flat ×(7−landed) average would. Remaining days this week: ${REM_SHAPE} (1.00× = an average day). Trailing weekly average shown for context.</div>
 <div class="kpis" style="margin-top:14px">
 ${kpi('Forecast spend', gbpM(wkFcst.s), `trailing wk ${gbpM(trailWk.s)}`)}
 ${kpi('Forecast FTDs', num(wkFcst.f), `trailing wk ${num(trailWk.f)}`)}
