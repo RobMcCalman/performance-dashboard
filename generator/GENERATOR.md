@@ -63,3 +63,6 @@ STATIC (set once; carry forward unchanged):
 - y2025ytd: date BETWEEN '2025-01-01' AND (2025 same day) SUM(ftd_players), SUM(sum_pltv) gross, SUM(apd_2_players).
 
 After updating data.json: `node build.js`, verify RECON ~0% and stub, then publish.
+
+## Month-boundary handling (added)
+build.js derives a **reference month (RM)**: during the first 7 days of a new month it keeps the just-completed month as the headline (MTD/mix/pacing/MoM anchor) while YTD/daily/this-week advance to ASOF. All month/day counts derive from data.json asOf. Daily refresh only needs: append current-month rows to monch, append daily/affDaily, refresh ytdProbe/y2025ytd/traffic/wtdCh/wxTemps; trailing sets (trail4Ch, adg, td, aff) stay on the last 4 complete weeks / reference month.

@@ -13,7 +13,19 @@ const DAYS_ELAPSED = _AD.getUTCDate(); // day-of-month of ASOF
 const DD = DAYS_ELAPSED;
 const YEAR_ELAPSED_DAYS = Math.round((_AD - new Date(Date.UTC(_AD.getUTCFullYear(),0,0)))/86400000);
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const MO_CUR = MONTHS[CUR_MO-1], MO_PREV = MONTHS[(CUR_MO-2+12)%12]; // current & prior month names
+// ---------- reference-month framing ----------
+// NM = months that have any data (1..CUR_MO). RM = the headline "reference month":
+// during the first week of a new month we keep the just-completed month as the story anchor
+// (its calendar-MTD panels are meaningful), while YTD/daily/this-week still advance to ASOF.
+const NM = CUR_MO;
+const RM = DAYS_ELAPSED>=7 ? CUR_MO : CUR_MO-1;
+const RMdim = new Date(Date.UTC(_AD.getUTCFullYear(), RM, 0)).getUTCDate();
+const RMcomplete = RM < CUR_MO;                 // reference month fully landed?
+const MD = RMcomplete ? RMdim : DAYS_ELAPSED;   // days elapsed within the reference month
+const MO_CUR = MONTHS[RM-1], MO_PREV = MONTHS[(RM-2+12)%12];
+const GAPLBL = DAYS_ELAPSED + ' ' + MONTHS[CUR_MO-1]; // the lagging/as-of day label (e.g. "1 Jul")
+const RMSTART = _AD.getUTCFullYear()+'-'+String(RM).padStart(2,'0')+'-01';
+const RMEND = RMcomplete ? _AD.getUTCFullYear()+'-'+String(RM).padStart(2,'0')+'-'+String(RMdim).padStart(2,'0') : ASOF;
 const CH_ORDER_PAID = ['Affiliate','ATL','PPC Brand','Google UAC','Meta App','Meta Paid Social','PPC Generic','Apple Ads Brand','Apple Ads Non Brand'];
 const PAID = new Set(CH_ORDER_PAID);
 
@@ -44,11 +56,11 @@ function moTotals(mo){
   let s=0,f=0,p=0,apd=0; Object.values(monByMo[mo]).forEach(r=>{s+=r.s;f+=r.f;p+=r.pn;apd+=r.apd;});
   return {s,f,p,apd};
 }
-const moTot = {}; for(let m=1;m<=6;m++) moTot[m]=moTotals(m);
+const moTot = {}; for(let m=1;m<=NM;m++) moTot[m]=moTotals(m);
 
 // ---------- YTD 2026 ----------
 const ytd = {s:0,f:0,p:0,apd:0};
-for(let m=1;m<=6;m++){ ytd.s+=moTot[m].s; ytd.f+=moTot[m].f; ytd.p+=moTot[m].p; ytd.apd+=moTot[m].apd; }
+for(let m=1;m<=NM;m++){ ytd.s+=moTot[m].s; ytd.f+=moTot[m].f; ytd.p+=moTot[m].p; ytd.apd+=moTot[m].apd; }
 
 // ---------- affiliate trailing CPA & gap-fill ----------
 let aS=0,aF=0;
@@ -87,9 +99,10 @@ const wkFcst = { s: wtd.s + (7-DAYS_LANDED_WK)*dailyAvg.s, f: wtd.f + (7-DAYS_LA
 wkFcst.cpa=div(wkFcst.s,wkFcst.f); wkFcst.ltv=div(wkFcst.p,wkFcst.s);
 
 // ---------- MTD June (gap-filled) + full-month forecast ----------
-const mtd = {s: moTot[6].s + AFF_GAP_28, f: moTot[6].f, p: moTot[6].p, apd: moTot[6].apd};
+const mtd = {s: moTot[RM].s + (RMcomplete?0:AFF_GAP_28), f: moTot[RM].f, p: moTot[RM].p, apd: moTot[RM].apd};
 mtd.cpa=div(mtd.s,mtd.f); mtd.ltv=div(mtd.p,mtd.s); mtd.ppf=div(mtd.p,mtd.f);
-const moFcst = { s: mtd.s*DIM/DAYS_ELAPSED, f: mtd.f*DIM/DAYS_ELAPSED, p: mtd.p*DIM/DAYS_ELAPSED };
+const moFcst = RMcomplete ? {s:mtd.s,f:mtd.f,p:mtd.p}
+  : { s: mtd.s+(RMdim-DAYS_ELAPSED)*dailyAvg.s, f: mtd.f+(RMdim-DAYS_ELAPSED)*dailyAvg.f, p: mtd.p+(RMdim-DAYS_ELAPSED)*dailyAvg.p };
 moFcst.cpa=div(moFcst.s,moFcst.f); moFcst.ltv=div(moFcst.p,moFcst.s);
 
 // ---------- PLAN (June net, FY, YTD-to-date) ----------
@@ -99,11 +112,11 @@ function planMo(mo){ // 0-indexed month
   for(const ch in PLAN){ const c=PLAN[ch]; s+=c.s[mo]; f+=c.f[mo]; p+= (ch==='Affiliate'? c.p[mo]*0.85 : c.p[mo]); }
   return {s,f,p};
 }
-const planJune = planMo(5);
+const planRef = planMo(RM-1);
 let planFY={s:0,f:0,p:0}; for(let m=0;m<12;m++){ const x=planMo(m); planFY.s+=x.s; planFY.f+=x.f; planFY.p+=x.p; }
-// plan to-date = Jan-May + June*28/30
-let planYTD={s:0,f:0,p:0}; for(let m=0;m<5;m++){ const x=planMo(m); planYTD.s+=x.s; planYTD.f+=x.f; planYTD.p+=x.p; }
-{ const j=planMo(5); planYTD.s+=j.s*DAYS_ELAPSED/DIM; planYTD.f+=j.f*DAYS_ELAPSED/DIM; planYTD.p+=j.p*DAYS_ELAPSED/DIM; }
+// plan to-date = full completed months (0..CUR_MO-2) + current month pro-rated by days elapsed
+let planYTD={s:0,f:0,p:0}; for(let m=0;m<CUR_MO-1;m++){ const x=planMo(m); planYTD.s+=x.s; planYTD.f+=x.f; planYTD.p+=x.p; }
+{ const j=planMo(CUR_MO-1); planYTD.s+=j.s*DAYS_ELAPSED/DIM; planYTD.f+=j.f*DAYS_ELAPSED/DIM; planYTD.p+=j.p*DAYS_ELAPSED/DIM; }
 // per-channel plan helper (net)
 function planCh(ch,mo){ const c=PLAN[ch]; if(!c) return {s:0,f:0,p:0}; return {s:c.s[mo],f:c.f[mo],p:(ch==='Affiliate'?c.p[mo]*0.85:c.p[mo])}; }
 const planMonthlyF = []; for(let m=0;m<12;m++) planMonthlyF.push(planMo(m).f);
@@ -111,10 +124,10 @@ const planMonthlyF = []; for(let m=0;m<12;m++) planMonthlyF.push(planMo(m).f);
 const PLAN_RATIO = {}; for(const ch in PLAN){ let tp=0,tf=0; for(let m=0;m<12;m++){ tp+=(ch==='Affiliate'?PLAN[ch].p[m]*0.85:PLAN[ch].p[m]); tf+=PLAN[ch].f[m]; } PLAN_RATIO[ch]=tf?tp/tf:0; }
 
 // pace
-const paceP = div(moFcst.p, planJune.p), paceF = div(moFcst.f, planJune.f), paceS = div(moFcst.s, planJune.s);
+const paceP = div(moFcst.p, planRef.p), paceF = div(moFcst.f, planRef.f), paceS = div(moFcst.s, planRef.s);
 
 // ---------- YoY (YTD like-for-like Jan1-Jun28) ----------
-const y25spendYTD = D.y2025spend.slice(0,5).reduce((a,b)=>a+b,0) + D.y2025spend[5]*DAYS_ELAPSED/DIM;
+const y25spendYTD = D.y2025spend.slice(0,CUR_MO-1).reduce((a,b)=>a+b,0) + D.y2025spend[CUR_MO-1]*DAYS_ELAPSED/DIM;
 const yoy = {
   ftds26: ytd.f, ftds25: D.y2025ytd.f,
   cpa26: div(ytd.s, ytd.f), cpa25: div(y25spendYTD, D.y2025ytd.f),
@@ -140,9 +153,9 @@ seg.paidFD=div(seg.p26.f,seg.p25f)-1; seg.orgFD=div(seg.o26.f,seg.o25f)-1;
 
 // ---------- MoM May1-28 vs Jun1-28 (matched) ----------
 const mayCh = {}; D.mayMTD.forEach(r=>mayCh[r.channel]=r);
-const junCh = monByMo[6];
+const junCh = monByMo[RM];
 const mayTot = D.mayMTD.reduce((a,r)=>({s:a.s+r.s,f:a.f+r.f,p:a.p+r.p}),{s:0,f:0,p:0});
-const junMTDraw = {s:moTot[6].s,f:moTot[6].f,p:moTot[6].p};
+const junMTDraw = {s:moTot[RM].s,f:moTot[RM].f,p:moTot[RM].p};
 const momMovers = [];
 const allCh = new Set([...Object.keys(mayCh), ...Object.keys(junCh)]);
 allCh.forEach(ch=>{ const m=mayCh[ch]||{p:0,f:0}; const j=junCh[ch]||{pn:0,f:0}; momMovers.push({ch, dP:(j.pn||0)-(m.p||0), mp:m.p||0, jp:j.pn||0}); });
@@ -157,10 +170,10 @@ mom.volEffect = mom.dF * mom.mayPPF;
 mom.rateEffect = junMTDraw.f * (mom.junPPF - mom.mayPPF);
 
 // ---------- monthly blended ppf + look-alike ----------
-const moBlend = []; for(let m=1;m<=6;m++){ moBlend.push({mo:m, ppf: div(moTot[m].p, moTot[m].f), f: moTot[m].f}); }
+const moBlend = []; for(let m=1;m<=NM;m++){ moBlend.push({mo:m, ppf: div(moTot[m].p, moTot[m].f), f: moTot[m].f}); }
 // standout low-value channel in June (share>=3%, ftd>=100, min ppf)
 let standout=null;
-Object.values(junCh).forEach(r=>{ const share=r.f/moTot[6].f; const ppf=div(r.pn,r.f); if(share>=0.03 && r.f>=100){ if(!standout||ppf<standout.ppf) standout={ch:r.channel,ppf,share,f:r.f}; } });
+Object.values(junCh).forEach(r=>{ const share=r.f/moTot[RM].f; const ppf=div(r.pn,r.f); if(share>=0.03 && r.f>=100){ if(!standout||ppf<standout.ppf) standout={ch:r.channel,ppf,share,f:r.f}; } });
 
 // ---------- channel mix last-4-week (June) ----------
 const mixRows = Object.values(junCh).map(r=>({ch:r.channel,s:r.s,f:r.f,p:r.pn,apd:r.apd})).sort((a,b)=>b.s-a.s);
@@ -175,11 +188,11 @@ const apdBlendCost = div(ytd.s, ytd.apd);
 const platYTD = {};
 D.plat.forEach(r=>{ const o=platYTD[r.plat]||(platYTD[r.plat]={s:0,f:0,p:0,apd:0}); o.s+=r.s;o.f+=r.f;o.p+=r.p;o.apd+=r.apd; });
 const platMonthly = {Web:[],App:[],Other:[]};
-for(let m=1;m<=6;m++){ ['Web','App','Other'].forEach(pl=>{ const row=D.plat.find(r=>r.mo===m&&r.plat===pl); platMonthly[pl].push(row?row.f:0); }); }
+for(let m=1;m<=RM;m++){ ['Web','App','Other'].forEach(pl=>{ const row=D.plat.find(r=>r.mo===m&&r.plat===pl); platMonthly[pl].push(row?row.f:0); }); }
 
 // ---------- ATL implied cost/FTD ----------
 const atlYTD = D.monch.filter(r=>r.channel==='ATL').reduce((a,r)=>a+r.s,0);
-const atlMonthly = []; for(let m=1;m<=6;m++){ const r=monByMo[m]['ATL']; atlMonthly.push(r?r.s:0); }
+const atlMonthly = []; for(let m=1;m<=RM;m++){ const r=monByMo[m]['ATL']; atlMonthly.push(r?r.s:0); }
 const atlCostPerFtd = div(atlYTD, ytd.f);
 
 // ---------- channel optimisation trailing-4wk (June) ----------
@@ -213,7 +226,7 @@ const affMomMovers = [...AFF_MOM].sort((a,b)=>Math.abs(b.dP)-Math.abs(a.dP)).sli
 const trendCh = {};
 Object.keys(apdYTD).filter(ch=>apdYTD[ch].f>50).forEach(ch=>{
   const s=[],f=[],p=[],cpa=[],ltv=[];
-  for(let m=1;m<=6;m++){ const r=monByMo[m][ch]; const ss=r?r.s:0, ff=r?r.f:0, pp=r?r.pn:0; s.push(ss);f.push(ff);p.push(pp);cpa.push(div(ss,ff));ltv.push(div(pp,ss)); }
+  for(let m=1;m<=RM;m++){ const r=monByMo[m][ch]; const ss=r?r.s:0, ff=r?r.f:0, pp=r?r.pn:0; s.push(ss);f.push(ff);p.push(pp);cpa.push(div(ss,ff));ltv.push(div(pp,ss)); }
   trendCh[ch]={s,f,p,cpa,ltv};
 });
 
@@ -293,7 +306,7 @@ const TRAF_CH = ((D.traffic&&D.traffic.chan)||[]).map(r=>({ch:r[0],sess:r[1],sne
 // ---- EMBED for client charts ----
 const EMBED = {
   daily30: dailyG.slice(-30).map(d=>({d:d.date.slice(5), s:d.sg, f:d.f, p:d.p})),
-  mtdDaily: dailyG.filter(d=>d.date>='2026-06-01').map(d=>({d:d.date.slice(8), s:d.sg, f:d.f, p:d.p, ppf:div(d.p,d.f), cpa:div(d.sg,d.f)})),
+  mtdDaily: dailyG.filter(d=>d.date>=RMSTART&&d.date<=RMEND).map(d=>({d:d.date.slice(8), s:d.sg, f:d.f, p:d.p, ppf:div(d.p,d.f), cpa:div(d.sg,d.f)})),
   mtdCpaAvg: mtd.cpa,
   mtdBlendPPF: mtd.ppf,
   weeks: last26.map(w=>({w:w.wk.slice(5), s:w.s, f:w.f, p:w.p, cpa:w.cpa, ltv:w.ltv, ppf:w.ppf})),
@@ -301,10 +314,10 @@ const EMBED = {
   apdRatioWk: last26.map(w=>({w:w.wk.slice(5), r:+(div(w.apd,w.f)*100).toFixed(1)})),
   traffic: { wk:TRAF_WK, chan:TRAF_CH },
   apdScatter: (()=>{ const ch={}; D.monch.forEach(r=>{const o=ch[r.channel]||(ch[r.channel]={f:0,p:0,apd:0});o.f+=r.f;o.p+=r.pn;o.apd+=r.apd;}); return Object.entries(ch).filter(([k,v])=>v.f>=500&&v.apd>=50).map(([k,v])=>({ch:k, x:+(div(v.apd,v.f)*100).toFixed(1), y:r0(div(v.p,v.f)), f:v.f, r:Math.max(4,Math.round(Math.sqrt(v.f)/14))})); })(),
-  months: MONTHS.slice(0,6),
-  monthlyFtd26: [moTot[1].f,moTot[2].f,moTot[3].f,moTot[4].f,moTot[5].f,moTot[6].f],
-  monthlyFtd25: D.y2025mon.slice(0,6).map(r=>r.f),
-  monthlyFtdPlan: planMonthlyF.slice(0,6),
+  months: MONTHS.slice(0,RM),
+  monthlyFtd26: Array.from({length:RM},(_,i)=>moTot[i+1].f),
+  monthlyFtd25: D.y2025mon.slice(0,RM).map(r=>r.f),
+  monthlyFtdPlan: planMonthlyF.slice(0,RM),
   weeklyFtdPlan: last26.map(w=>{ const mo=parseInt(w.wk.slice(5,7),10); const dim=new Date(Date.UTC(2026,mo,0)).getUTCDate(); return planMonthlyF[mo-1]*7/dim; }),
   mix: mixRows.filter(r=>r.f>0).map(r=>({ch:r.ch, s:r.s, f:r.f})),
   platMonthly, atlMonthly,
@@ -344,8 +357,8 @@ ${kpi('MTD FTDs', num(mtd.f), `full-month fcst ${num(moFcst.f)}`)}
 ${kpi('MTD LTV:CAC', f2(mtd.ltv), `net · CPA ${gbp(mtd.cpa)}`)}
 </div>
 <div class="kpis" style="margin-top:14px">
-${kpi('June pace — PLTV', `<span class="pill ${ragPace(paceP)} big">${pct(paceP)}</span>`, `fcst ${gbpM(moFcst.p)} vs plan ${gbpM(planJune.p)}`)}
-${kpi('June pace — FTDs', `<span class="pill ${ragPace(paceF)} big">${pct(paceF)}</span>`, `fcst ${num(moFcst.f)} vs plan ${num(planJune.f)}`)}
+${kpi('June pace — PLTV', `<span class="pill ${ragPace(paceP)} big">${pct(paceP)}</span>`, `fcst ${gbpM(moFcst.p)} vs plan ${gbpM(planRef.p)}`)}
+${kpi('June pace — FTDs', `<span class="pill ${ragPace(paceF)} big">${pct(paceF)}</span>`, `fcst ${num(moFcst.f)} vs plan ${num(planRef.f)}`)}
 ${kpi('YoY FTDs', (yoy.ftdsD>=0?'+':'')+pct(yoy.ftdsD), `CPA ${pct1(yoy.cpaD)} · LTV:CAC ${(yoy.ltvD>=0?'+':'')+pct(yoy.ltvD)}`)}
 ${kpi('Budget used (spend)', pct(div(ytd.s,planFY.s)), `${pct(YEAR_ELAPSED_DAYS/365)} of year elapsed`)}
 </div>
@@ -357,8 +370,8 @@ ${kpi('Budget used (spend)', pct(div(ytd.s,planFY.s)), `${pct(YEAR_ELAPSED_DAYS/
 </ol></div>
 <div class="health"><h3>Data health &amp; anomaly check <span>last complete week (22 Jun) vs prior (15 Jun) + lag watch</span></h3><ul>
 <li><b>Reconciliation OK.</b> YTD spend ${gbpM(ytd.s)}, FTDs ${num(ytd.f)}, net PLTV ${gbpM(ytd.p)} — channel rows reconcile to blended totals (err ${(reconErr*100).toFixed(2)}%).</li>
-<li><b>Affiliate spend lag.</b> ${DD} ${MO_CUR} Affiliate spend posted £0 (Raventrack lags ~2–4 days); gap-filled at trailing CPA ${gbp(AFF_CPA)} → +${gbpK(AFF_GAP_28)} for the day. The prior day has since back-filled. FTDs land on time.</li>
-<li><b>APD2+ ~2-day lag.</b> ${DD} ${MO_CUR} APD2+ shows only ${(dailyG.find(d=>d.date===ASOF)||{}).apd||0} vs ~500/day — recent-day quality metrics understated and will back-fill.</li>
+<li><b>Affiliate spend lag.</b> ${GAPLBL} Affiliate spend posted £0 (Raventrack lags ~2–4 days); gap-filled at trailing CPA ${gbp(AFF_CPA)} → +${gbpK(AFF_GAP_28)} for the day. The prior day has since back-filled. FTDs land on time.</li>
+<li><b>APD2+ ~2-day lag.</b> ${GAPLBL} APD2+ shows only ${(dailyG.find(d=>d.date===ASOF)||{}).apd||0} vs ~500/day — recent-day quality metrics understated and will back-fill.</li>
 <li><b>Email channel near-zero.</b> Email FTDs collapsed to ~1/week (was ~100/week in Q1) — likely tracking/CRM tagging break, investigate.</li>
 <li><b>Affiliate App collapsed.</b> ${LAST2.find(x=>x.ch==='Affiliate App').f22} FTDs last week (was ~120/week earlier in the year) and spend ~£0 — tagging/feed issue.</li>
 ${swings.filter(s=>!['Affiliate App','Email'].includes(s.ch)).map(s=>`<li><b>${s.ch}</b> FTDs ${s.d>=0?'+':''}${pct(s.d)} WoW (${s.f15}→${s.f22}).</li>`).join('')}
@@ -397,7 +410,7 @@ ${(()=>{
     wt={s:wtRow.spend, f:wtRow.ftds, p:wtRow.pltv}; ltvT=wtRow.ltv; cpaT=wtRow.cpa;
     srcNote=`Weekly targets from the H2 weekly plan workbook (week ${wtRow.wk}, w/c ${curWeekStart.slice(8)} Jun, ${String(wtRow.type).toLowerCase()}${wtRow.pay==='P'?', payday week':''}). FTDs, spend &amp; CPA are taken directly from the sheet; net 12m PLTV is derived as weekly FTDs × the plan's net PLTV-per-FTD by channel.`;
   } else {
-    wt={s:planJune.s*7/DIM, f:planJune.f*7/DIM, p:planJune.p*7/DIM}; ltvT=div(planJune.p,planJune.s); cpaT=div(wt.s,wt.f);
+    wt={s:planRef.s*7/DIM, f:planRef.f*7/DIM, p:planRef.p*7/DIM}; ltvT=div(planRef.p,planRef.s); cpaT=div(wt.s,wt.f);
     srcNote=`No weekly-plan row for this week — falling back to the monthly plan ÷ (30÷7) run-rate.`;
   }
   const pcS=div(wkFcst.s,wt.s), pcF=div(wkFcst.f,wt.f), pcP=div(wkFcst.p,wt.p), pcL=div(wkFcst.ltv,ltvT);
@@ -450,7 +463,7 @@ ${(()=>{
   const mtdRows = mixRows.map(r=>{ const s=(r.ch==='Affiliate'? r.s+AFF_GAP_28 : r.s); return {ch:r.ch,s,f:r.f,p:r.p,apd:r.apd,ltv:div(r.p,s),cpa:div(s,r.f)}; }).filter(r=>r.s>0||r.f>0).sort((a,b)=>b.s-a.s);
   const rows = mtdRows.map(r=>({cells:[ r.ch+(r.ch==='Affiliate'?' *':''), gbpK(r.s), num(r.f), r.f?gbp(r.cpa):'—', gbpK(r.p), r.f?`<span class="pill ${ragLtv(r.ltv)}">${f2(r.ltv)}</span>`:pill('grey','n/a') ]}));
   rows.push({cls:'tot',cells:['TOTAL', gbpM(mtd.s), num(mtd.f), gbp(mtd.cpa), gbpM(mtd.p), `<span class="pill ${ragLtv(mtd.ltv)}">${f2(mtd.ltv)}</span>`]});
-  panes.s2 = `<h2 class="sec">Month-to-date — ${MO_CUR} 1–${DD} (gap-filled) + full-month forecast</h2>
+  panes.s2 = `<h2 class="sec">Reference month — ${MO_CUR} 1–${MD}${RMcomplete?' (complete)':', gap-filled'} + forecast</h2>
 <div class="kpis">
 ${kpi('MTD spend', gbpM(mtd.s), `fcst ${gbpM(moFcst.s)}`)}
 ${kpi('MTD FTDs', num(mtd.f), `fcst ${num(moFcst.f)}`)}
@@ -460,13 +473,13 @@ ${kpi('MTD LTV:CAC', f2(mtd.ltv), `CPA ${gbp(mtd.cpa)} · PLTV/FTD ${gbp(mtd.ppf
 <div class="grid2" style="margin-top:14px">${chartbox('c_mtd_spend')}${chartbox('c_mtd_ftd')}</div>
 <h2 class="sec">CPA — daily (MTD, net)</h2>
 ${chartbox('c_mtd_cpa')}
-<p class="note">${DD} ${MO_CUR} CPA reflects the gap-filled affiliate spend (+${gbpK(AFF_GAP_28)}); dashed line = MTD blended CPA ${gbp(mtd.cpa)}.</p>
+<p class="note">Net CPA per day across ${MO_CUR}; dashed line = blended CPA ${gbp(mtd.cpa)}.</p>
 <h2 class="sec">PLTV per FTD — daily (MTD, net of affiliate revshare)</h2>
 ${chartbox('c_mtd_ppf')}
 <p class="note">Recent-day cohorts are least matured and typically revise <b>up</b>. MTD blended PLTV/FTD ${gbp(mtd.ppf)}.</p>
 <h2 class="sec">MTD by channel</h2>
 ${tbl([{t:'Channel'},{t:'Spend',r:1},{t:'FTDs',r:1},{t:'CPA',r:1},{t:'12m PLTV',r:1},{t:'LTV:CAC',r:1}], rows)}
-<p class="note">* Affiliate spend gap-filled for ${DD} ${MO_CUR}. Full-month forecast = MTD × ${DIM}/${DAYS_ELAPSED} (sanity-checked vs trailing run-rate ${gbpM(dailyAvg.s*30)}).</p>`;
+<p class="note">* ${RMcomplete?`${MO_CUR} is a complete month — forecast equals actuals`:`Affiliate spend gap-filled for ${GAPLBL}; forecast = MTD + remaining days × trailing daily average`}.</p>`;
 }
 
 // ---- S2b TARGETS ----
@@ -474,13 +487,13 @@ ${tbl([{t:'Channel'},{t:'Spend',r:1},{t:'FTDs',r:1},{t:'CPA',r:1},{t:'12m PLTV',
   const chans = Object.keys(PLAN).filter(c=>c!=='Display/Programmatic');
   // Table A: June plan vs full-month forecast by channel
   // forecast by channel = MTD channel * 30/28 (affiliate gap-filled)
-  function fcstCh(ch){ const r=junCh[ch]; if(!r) return {s:0,f:0,p:0}; const s=(ch==='Affiliate'? r.s+AFF_GAP_28 : r.s)*DIM/DAYS_ELAPSED; return {s, f:r.f*DIM/DAYS_ELAPSED, p:r.pn*DIM/DAYS_ELAPSED}; }
-  const aRows = chans.map(ch=>{ const pl=planCh(ch,5); const fc=fcstCh(ch); return {ch,pl,fc, pcS:div(fc.s,pl.s),pcF:div(fc.f,pl.f),pcP:div(fc.p,pl.p), lpl:div(pl.p,pl.s), lfc:div(fc.p,fc.s)}; })
+  function fcstCh(ch){ const r=junCh[ch]; if(!r) return {s:0,f:0,p:0}; if(RMcomplete) return {s:r.s,f:r.f,p:r.pn}; const t=(D.trail4Ch&&D.trail4Ch[ch])||{s:0,f:0,p:0}, k=RMdim-DAYS_ELAPSED; return {s:(ch==='Affiliate'?r.s+AFF_GAP_28:r.s)+k*(t.s/28), f:r.f+k*(t.f/28), p:r.pn+k*(t.p/28)}; }
+  const aRows = chans.map(ch=>{ const pl=planCh(ch,RM-1); const fc=fcstCh(ch); return {ch,pl,fc, pcS:div(fc.s,pl.s),pcF:div(fc.f,pl.f),pcP:div(fc.p,pl.p), lpl:div(pl.p,pl.s), lfc:div(fc.p,fc.s)}; })
     .filter(r=>r.pl.s>0||r.pl.f>0||r.fc.f>0).sort((a,b)=>b.pl.p-a.pl.p);
   const tA = aRows.map(r=>({cells:[ r.ch, gbpK(r.pl.s), gbpK(r.fc.s), r.pl.s?`<span class="pill ${ragPace(r.pcS)}">${pct(r.pcS)}</span>`:'—', num(r.pl.f), num(r.fc.f), r.pl.f?`<span class="pill ${ragPace(r.pcF)}">${pct(r.pcF)}</span>`:'—', gbpK(r.pl.p), gbpK(r.fc.p), r.pl.p?`<span class="pill ${ragPace(r.pcP)}">${pct(r.pcP)}</span>`:'—', `${f2(r.lpl)}→${f2(r.lfc)}` ]}));
-  tA.push({cls:'tot',cells:['TOTAL',gbpM(planJune.s),gbpM(moFcst.s),`<span class="pill ${ragPace(paceS)}">${pct(paceS)}</span>`,num(planJune.f),num(moFcst.f),`<span class="pill ${ragPace(paceF)}">${pct(paceF)}</span>`,gbpM(planJune.p),gbpM(moFcst.p),`<span class="pill ${ragPace(paceP)}">${pct(paceP)}</span>`,`${f2(div(planJune.p,planJune.s))}→${f2(moFcst.ltv)}`]});
+  tA.push({cls:'tot',cells:['TOTAL',gbpM(planRef.s),gbpM(moFcst.s),`<span class="pill ${ragPace(paceS)}">${pct(paceS)}</span>`,num(planRef.f),num(moFcst.f),`<span class="pill ${ragPace(paceF)}">${pct(paceF)}</span>`,gbpM(planRef.p),gbpM(moFcst.p),`<span class="pill ${ragPace(paceP)}">${pct(paceP)}</span>`,`${f2(div(planRef.p,planRef.s))}→${f2(moFcst.ltv)}`]});
   // Table B: YTD pacing by channel (actual YTD vs plan-to-date)
-  function ytdCh(ch){ let s=0,f=0,p=0; for(let m=1;m<=6;m++){ const r=monByMo[m][ch]; if(r){s+=r.s;f+=r.f;p+=r.pn;} } if(ch==='Affiliate') s+=AFF_GAP_28; return {s,f,p}; }
+  function ytdCh(ch){ let s=0,f=0,p=0; for(let m=1;m<=NM;m++){ const r=monByMo[m][ch]; if(r){s+=r.s;f+=r.f;p+=r.pn;} } if(ch==='Affiliate') s+=AFF_GAP_28; return {s,f,p}; }
   function planTDch(ch){ let s=0,f=0,p=0; for(let m=0;m<5;m++){ const x=planCh(ch,m); s+=x.s;f+=x.f;p+=x.p; } const j=planCh(ch,5); s+=j.s*DAYS_ELAPSED/DIM; f+=j.f*DAYS_ELAPSED/DIM; p+=j.p*DAYS_ELAPSED/DIM; return {s,f,p}; }
   const bRows = chans.map(ch=>{ const a=ytdCh(ch); const pl=planTDch(ch); return {ch,a,pl,pcF:div(a.f,pl.f),pcP:div(a.p,pl.p)}; }).filter(r=>r.pl.f>0||r.a.f>0).sort((a,b)=>b.a.p-a.a.p);
   const tB = bRows.map(r=>({cells:[ r.ch, gbpK(r.pl.s), gbpK(r.a.s), num(r.pl.f), num(r.a.f), r.pl.f?`<span class="pill ${ragPace(r.pcF)}">${pct(r.pcF)}</span>`:'—', gbpK(r.pl.p), gbpK(r.a.p), r.pl.p?`<span class="pill ${ragPace(r.pcP)}">${pct(r.pcP)}</span>`:'—' ]}));
@@ -492,14 +505,14 @@ ${tbl([{t:'Channel'},{t:'Spend',r:1},{t:'FTDs',r:1},{t:'CPA',r:1},{t:'12m PLTV',
   panes.s2b = `<h2 class="sec">Targets — plan vs actual</h2>
 <div class="callout"><b>Affiliate PLTV — plan and actual — is net of the 15% revshare haircut, so pacing is like-for-like.</b> Pace % = forecast ÷ plan (green ≥100, amber ≥90, red &lt;90).</div>
 <div class="kpis" style="margin-top:14px">
-${kpi('June PLTV pace', `<span class="pill ${ragPace(paceP)} big">${pct(paceP)}</span>`, `${gbpM(moFcst.p)} / ${gbpM(planJune.p)}`)}
-${kpi('June FTDs pace', `<span class="pill ${ragPace(paceF)} big">${pct(paceF)}</span>`, `${num(moFcst.f)} / ${num(planJune.f)}`)}
+${kpi('June PLTV pace', `<span class="pill ${ragPace(paceP)} big">${pct(paceP)}</span>`, `${gbpM(moFcst.p)} / ${gbpM(planRef.p)}`)}
+${kpi('June FTDs pace', `<span class="pill ${ragPace(paceF)} big">${pct(paceF)}</span>`, `${num(moFcst.f)} / ${num(planRef.f)}`)}
 ${kpi('YTD PLTV pace', `<span class="pill ${ragPace(div(ytd.p,planYTD.p))} big">${pct(div(ytd.p,planYTD.p))}</span>`, `${gbpM(ytd.p)} / ${gbpM(planYTD.p)}`)}
 ${kpi('YTD FTDs pace', `<span class="pill ${ragPace(div(ytd.f,planYTD.f))} big">${pct(div(ytd.f,planYTD.f))}</span>`, `${num(ytd.f)} / ${num(planYTD.f)}`)}
 </div>
 <h2 class="sec">Table A — June: plan vs full-month forecast by channel</h2>
 ${tbl([{t:'Channel'},{t:'Plan spend',r:1},{t:'Fcst spend',r:1},{t:'Spend %',r:1},{t:'Plan FTDs',r:1},{t:'Fcst FTDs',r:1},{t:'FTDs %',r:1},{t:'Plan PLTV',r:1},{t:'Fcst PLTV',r:1},{t:'PLTV %',r:1},{t:'LTV:CAC',r:1}], tA)}
-<h2 class="sec">Table B — YTD pacing by channel (vs plan-to-date, ${MO_CUR} pro-rated ${DD}/${DIM})</h2>
+<h2 class="sec">Table B — YTD pacing by channel (vs plan-to-date, ${MONTHS[CUR_MO-1]} pro-rated ${DAYS_ELAPSED}/${DIM})</h2>
 ${tbl([{t:'Channel'},{t:'Plan spend',r:1},{t:'Act spend',r:1},{t:'Plan FTDs',r:1},{t:'Act FTDs',r:1},{t:'FTDs %',r:1},{t:'Plan PLTV',r:1},{t:'Act PLTV',r:1},{t:'PLTV %',r:1}], tB)}
 <h2 class="sec">Table C — full-year plan by channel</h2>
 ${tbl([{t:'Channel'},{t:'Plan spend',r:1},{t:'Plan FTDs',r:1},{t:'Plan PLTV',r:1},{t:'LTV:CAC',r:1}], tC)}`;
@@ -518,13 +531,13 @@ ${tbl([{t:'Channel'},{t:'Plan spend',r:1},{t:'Plan FTDs',r:1},{t:'Plan PLTV',r:1
   // by-channel media budget table (paid channels w/ spend plan)
   const mediaRows = Object.keys(PLAN).filter(ch=>{let t=0;for(let m=0;m<12;m++)t+=PLAN[ch].s[m];return t>0;}).map(ch=>{
     let fy=0; for(let m=0;m<12;m++) fy+=PLAN[ch].s[m];
-    let ytdA=0; for(let m=1;m<=6;m++){const r=monByMo[m][ch]; if(r) ytdA+=r.s;} if(ch==='Affiliate') ytdA+=AFF_GAP_28;
+    let ytdA=0; for(let m=1;m<=NM;m++){const r=monByMo[m][ch]; if(r) ytdA+=r.s;} if(ch==='Affiliate') ytdA+=AFF_GAP_28;
     return {ch,fy,ytdA,used:div(ytdA,fy)};
   }).sort((a,b)=>b.fy-a.fy);
   const mr = mediaRows.map(r=>({cells:[r.ch, gbpM(r.fy), gbpM(r.ytdA), `<span class="pill ${r.used>yearElapsed+0.05?'amber':'green'}">${pct(r.used)}</span>`]}));
   mr.push({cls:'tot',cells:['TOTAL media', gbpM(planFY.s), gbpM(ytd.s), `${pct(div(ytd.s,planFY.s))}`]});
   panes.s2c = `<h2 class="sec">Budget progress — YTD actual vs full-year plan</h2>
-<div class="callout">${pct(yearElapsed)} of the year has elapsed (through ${DD} ${MO_CUR}). Pink marker = plan-to-date; bar fill = YTD actual ÷ FY plan.</div>
+<div class="callout">${pct(yearElapsed)} of the year has elapsed (through ${GAPLBL}). Pink marker = plan-to-date; bar fill = YTD actual ÷ FY plan.</div>
 ${bar('Spend', ytd.s, planFY.s, planYTD.s)}
 ${bar('FTDs', ytd.f, planFY.f, planYTD.f)}
 ${bar('Net PLTV', ytd.p, planFY.p, planYTD.p)}
@@ -536,14 +549,14 @@ ${tbl([{t:'Channel'},{t:'FY plan spend',r:1},{t:'YTD actual',r:1},{t:'% used',r:
 // ---- S3 YTD & YoY ----
 {
   const rows = [];
-  for(let m=1;m<=6;m++){
-    const a=moTot[m]; const s25=D.y2025spend[m-1]*(m===6?DAYS_ELAPSED/DIM:1); const f25=D.y2025mon[m-1].f*(m===6?DAYS_ELAPSED/DIM:1); const p25=D.y2025mon[m-1].pg*(m===6?DAYS_ELAPSED/DIM:1);
+  for(let m=1;m<=RM;m++){
+    const a=moTot[m]; const pr=(m===CUR_MO?DAYS_ELAPSED/DIM:1); const s25=D.y2025spend[m-1]*pr; const f25=D.y2025mon[m-1].f*pr; const p25=D.y2025mon[m-1].pg*pr;
     const cpa26=div(a.s,a.f), cpa25=div(s25,f25), l26=div(a.p,a.s), l25=div(p25,s25);
     rows.push({cells:[ MONTHS[m-1]+(m===6?' *':''), num(a.f), num(r0(f25)), (a.f/f25-1>=0?'+':'')+pct(a.f/f25-1), gbp(cpa26), gbp(cpa25), f2(l26), f2(l25) ]});
   }
   rows.push({cls:'tot',cells:['YTD *', num(ytd.f), num(r0(yoy.ftds25)), (yoy.ftdsD>=0?'+':'')+pct(yoy.ftdsD), gbp(yoy.cpa26), gbp(yoy.cpa25), f2(yoy.ltv26), f2(yoy.ltv25)]});
   panes.s3 = `<h2 class="sec">YTD &amp; year-on-year (hybrid 2025 baseline)</h2>
-<div class="callout">2025 baseline uses <b>FY25-tracker spend</b> with <b>model FTDs &amp; PLTV (gross)</b> from BigQuery. 2026 Affiliate PLTV is net of the 15% revshare, so the <b>YoY LTV:CAC uplift is conservative</b> (2026 net vs 2025 gross). * June &amp; YTD are through ${DD} ${MO_CUR} (2025 pro-rated to match).</div>
+<div class="callout">2025 baseline uses <b>FY25-tracker spend</b> with <b>model FTDs &amp; PLTV (gross)</b> from BigQuery. 2026 Affiliate PLTV is net of the 15% revshare, so the <b>YoY LTV:CAC uplift is conservative</b> (2026 net vs 2025 gross). * June &amp; YTD are through ${GAPLBL} (2025 pro-rated to match).</div>
 <div class="kpis" style="margin-top:14px">
 ${kpi('YTD FTDs', num(ytd.f), `2025 ${num(r0(yoy.ftds25))} · ${(yoy.ftdsD>=0?'+':'')+pct(yoy.ftdsD)}`)}
 ${kpi('YTD CPA', gbp(yoy.cpa26), `2025 ${gbp(yoy.cpa25)} · ${pct1(yoy.cpaD)}`)}
@@ -575,12 +588,12 @@ ${tbl([{t:'Segment'},{t:'25 spend',r:1},{t:'26 spend',r:1},{t:'25 FTDs',r:1},{t:
 {
   const top = momMovers.slice(0,6), bot = momMovers.slice(-6).reverse();
   const mvRow = a=>({cells:[a.ch, gbpK(a.mp), gbpK(a.jp), (a.dP>=0?'+':'')+gbpK(a.dP)]});
-  panes.s3b = `<h2 class="sec">Month-on-month PLTV drivers — May vs June (matched 1–${DD})</h2>
+  panes.s3b = `<h2 class="sec">Month-on-month PLTV drivers — May vs June (matched 1–${MD})</h2>
 <div class="kpis">
 ${kpi('Net PLTV ΔMoM', (mom.dPLTV>=0?'+':'')+gbpK(mom.dPLTV), `May ${gbpM(mom.mayP)} → Jun ${gbpM(mom.junP)}`)}
 ${kpi('FTDs ΔMoM', (mom.dF>=0?'+':'')+num(mom.dF), `May ${num(mom.mayF)} → Jun ${num(mom.junF)}`)}
 ${kpi('Blended PLTV/FTD', gbp(mom.junPPF), `May ${gbp(mom.mayPPF)}`)}
-${kpi('Like-for-like ΔPLTV', (div(mom.junP,mom.mayP)-1>=0?'+':'')+pct1(div(mom.junP,mom.mayP)-1), `matched ${DD}-day window`)}
+${kpi('Like-for-like ΔPLTV', (div(mom.junP,mom.mayP)-1>=0?'+':'')+pct1(div(mom.junP,mom.mayP)-1), `matched ${MD}-day window`)}
 </div>
 <div class="callout" style="margin-top:14px"><b>Volume vs rate.</b> Of the ${(mom.dPLTV>=0?'+':'')}${gbpK(mom.dPLTV)} MoM PLTV move, volume (more/fewer FTDs at May's rate) contributes ${(mom.volEffect>=0?'+':'')}${gbpK(mom.volEffect)} and value-per-FTD (mix/maturity) contributes ${(mom.rateEffect>=0?'+':'')}${gbpK(mom.rateEffect)}. Blended PLTV/FTD slipped to ${gbp(mom.junPPF)} — a <b>mix</b> shift, not within-channel decay.</div>
 <div class="chartbox" style="margin-top:14px"><canvas id="c_mom"></canvas></div>
@@ -588,13 +601,13 @@ ${kpi('Like-for-like ΔPLTV', (div(mom.junP,mom.mayP)-1>=0?'+':'')+pct1(div(mom.
 <div>${tbl([{t:'Top + movers'},{t:'May',r:1},{t:'Jun',r:1},{t:'ΔPLTV',r:1}], top.map(mvRow))}</div>
 <div>${tbl([{t:'Top − movers'},{t:'May',r:1},{t:'Jun',r:1},{t:'ΔPLTV',r:1}], bot.map(mvRow))}</div>
 </div>
-<div class="callout"><b>Why April &amp; June look alike — the mix story.</b> Both months show a low blended PLTV/FTD (Apr ${gbp(moBlend[3].ppf)}, Jun ${gbp(moBlend[5].ppf)}) vs neighbours (Mar ${gbp(moBlend[2].ppf)}, May ${gbp(moBlend[4].ppf)}). April was driven by a Meta Paid Social surge (~2,542 FTDs, ~${pct1(div(2542,moTot[4].f))} share at ~£80/FTD vs £120–127 normally). June is driven by a ${standout.ch} shift (${pct1(standout.share)} share at ${gbp(standout.ppf)}/FTD) plus a high iOS Organic share (${pct1(div(junCh['iOS Organic'].f,moTot[6].f))}) and Affiliate at ~${pct1(div(junCh['Affiliate'].f,moTot[6].f))}. Common thread: premium channels (Organic Search, PPC Generic, Google UAC, Unattributed) lost FTD <b>share</b>, so the blend is diluted by mix — not within-channel value. <b>Caveat:</b> roughly half of June's extra dip is cohort maturity and should revise up toward April's matured ~£144.</div>`;
+<div class="callout"><b>Why April &amp; June look alike — the mix story.</b> Both months show a low blended PLTV/FTD (Apr ${gbp(moBlend[3].ppf)}, Jun ${gbp(moBlend[5].ppf)}) vs neighbours (Mar ${gbp(moBlend[2].ppf)}, May ${gbp(moBlend[4].ppf)}). April was driven by a Meta Paid Social surge (~2,542 FTDs, ~${pct1(div(2542,moTot[4].f))} share at ~£80/FTD vs £120–127 normally). June is driven by a ${standout.ch} shift (${pct1(standout.share)} share at ${gbp(standout.ppf)}/FTD) plus a high iOS Organic share (${pct1(div(junCh["iOS Organic"].f,moTot[RM].f))}) and Affiliate at ~${pct1(div(junCh["Affiliate"].f,moTot[RM].f))}. Common thread: premium channels (Organic Search, PPC Generic, Google UAC, Unattributed) lost FTD <b>share</b>, so the blend is diluted by mix — not within-channel value. <b>Caveat:</b> roughly half of June's extra dip is cohort maturity and should revise up toward April's matured ~£144.</div>`;
 }
 
 // ---- S4 DAILY ----
 panes.s4 = `<h2 class="sec">Daily view — last 30 days (gap-filled)</h2>
 <div class="grid2">${chartbox('c_daily_sf')}${chartbox('c_daily_p')}</div>
-<p class="note">${DD} ${MO_CUR} Affiliate spend gap-filled (+${gbpK(AFF_GAP_28)}); APD2+ for the latest 1–2 days is understated by the quality-metric lag.</p>`;
+<p class="note">${GAPLBL} Affiliate spend gap-filled (+${gbpK(AFF_GAP_28)}); APD2+ for the latest 1–2 days is understated by the quality-metric lag.</p>`;
 
 // ---- S4b TIMING ----
 {
@@ -614,13 +627,13 @@ panes.s4 = `<h2 class="sec">Daily view — last 30 days (gap-filled)</h2>
 panes.s4c = `<h2 class="sec">Weather impact — June heatwave</h2>
 <div class="kpis">
 ${kpi('Peak-heat FTDs (24–27 Jun)', pct1(wxPeak), 'vs same-weekday norm')}
-${kpi('Heatwave (19–${DD} Jun)', pct1(wxHeatwave), 'vs day-of-week norm')}
+${kpi(`Heatwave (19 Jun–${GAPLBL})`, pct1(wxHeatwave), 'vs day-of-week norm')}
 ${kpi('Latest weekend (27–28 Jun)', pct1(wxWeekend), 'Sat+Sun under continued heat')}
 ${kpi('Corr. temp vs FTD index', f2(wxCorrIdx), `temp vs PLTV/FTD ${f2(wxCorrPpf)}`)}
 </div>
 <div class="grid2" style="margin-top:14px">${chartbox('wxFtd')}${chartbox('wxPf')}</div>
 ${chartbox('wxScatter')}
-<div class="callout"><b>Read:</b> the June heatwave (built from ~19 Jun, peaked 24–27 Jun with a Met Office <b>Red Extreme Heat</b> warning, ~36–38°C highs in SE England, easing from 28 Jun) tracks a clear FTD slowdown. Day-of-week adjusted, FTDs ran <b>${pct1(wxHeatwave)}</b> below normal across the 19–${DD} Jun heatwave and <b>${pct1(wxPeak)}</b> on the peak-heat days (24–27 Jun). Spend held roughly normal, so CPA rose: heat hit conversion, not budget. The 27–28 Jun weekend — normally a volume <i>lift</i> — came in <b>${pct1(wxWeekend)}</b> below the weekend norm while temperatures stayed ~27–29°C, reinforcing the signal. Correlation of approx temperature with the day-of-week-adjusted FTD index is <b>${f2(wxCorrIdx)}</b> (negative); with PLTV/FTD only <b>${f2(wxCorrPpf)}</b>, so players who do sign up in the heat are of broadly normal value — it is a <b>volume</b> effect. <b>Caveats:</b> temperature is an <i>approximation reconstructed from Met Office reporting</i> (27 Jun ≈ 29°C, 28 Jun ≈ 27°C, 29 Jun ≈ 23°C, 30 Jun ≈ 21°C this run — hot spell broken), not a measured daily feed — swap in an exact series for precision. FTD counts are reliable but the most recent PLTV/FTD points are the least-matured cohort and revise up; the latest day's spend is understated by the affiliate-feed lag. Correlation ≠ causation — school terms, holidays and major sport can co-move with hot spells.</div>`;
+<div class="callout"><b>Read:</b> the June heatwave (built from ~19 Jun, peaked 24–27 Jun with a Met Office <b>Red Extreme Heat</b> warning, ~36–38°C highs in SE England, easing from 28 Jun) tracks a clear FTD slowdown. Day-of-week adjusted, FTDs ran <b>${pct1(wxHeatwave)}</b> below normal across the 19 Jun–${GAPLBL} heatwave and <b>${pct1(wxPeak)}</b> on the peak-heat days (24–27 Jun). Spend held roughly normal, so CPA rose: heat hit conversion, not budget. The 27–28 Jun weekend — normally a volume <i>lift</i> — came in <b>${pct1(wxWeekend)}</b> below the weekend norm while temperatures stayed ~27–29°C, reinforcing the signal. Correlation of approx temperature with the day-of-week-adjusted FTD index is <b>${f2(wxCorrIdx)}</b> (negative); with PLTV/FTD only <b>${f2(wxCorrPpf)}</b>, so players who do sign up in the heat are of broadly normal value — it is a <b>volume</b> effect. <b>Caveats:</b> temperature is an <i>approximation reconstructed from Met Office reporting</i> (27 Jun ≈ 29°C, 28 Jun ≈ 27°C, 29 Jun ≈ 23°C, 30 Jun ≈ 21°C this run — hot spell broken), not a measured daily feed — swap in an exact series for precision. FTD counts are reliable but the most recent PLTV/FTD points are the least-matured cohort and revise up; the latest day's spend is understated by the affiliate-feed lag. Correlation ≠ causation — school terms, holidays and major sport can co-move with hot spells.</div>`;
 
 // ---- S4d WORLD CUP ----
 {
@@ -629,19 +642,19 @@ ${chartbox('wxScatter')}
     `<span class="pill ${r.idx>=100?'green':r.idx>=90?'amber':'red'}">${r0(r.idx)}</span>`,
     r.heat?'Y':'—', r.eng? `<b>ENG</b> ${r.eng}`:''
   ]}));
-  panes.s4d = `<h2 class="sec">World Cup impact — FTD volume vs fixtures (11–${DD} Jun)</h2>
+  panes.s4d = `<h2 class="sec">World Cup impact — FTD volume vs fixtures (11 Jun–${GAPLBL})</h2>
 <div class="callout">Index = daily FTDs ÷ the pre-tournament day-of-week norm (baseline 12 May–10 Jun, pre-WC &amp; pre-heat). 100 = a normal day for that weekday. The 2026 group stage ran 11–27 Jun (72 matches); England (Group L) played 17, 23 &amp; 27 Jun — all UK prime-time evening kick-offs. <b>The heatwave from 19 Jun overlaps the back half and is the dominant confound.</b></div>
 <div class="kpis" style="margin-top:14px">
-${kpi('Tournament avg index', r0(wcAll)+'%', '11–${DD} Jun vs pre-WC norm')}
+${kpi('Tournament avg index', r0(wcAll)+'%', `11 Jun–${GAPLBL} vs pre-WC norm`)}
 ${kpi('Pre-heat (11–18 Jun)', r0(wcPreHeat)+'%', 'WC live, heat not yet')}
-${kpi('Heat period (19–${DD} Jun)', r0(wcHeatSeg)+'%', 'WC + heatwave')}
+${kpi(`Heat period (19 Jun–${GAPLBL})`, r0(wcHeatSeg)+'%', 'WC + heatwave')}
 ${kpi('England match days', r0(wcEng)+'%', '17, 23, 27 Jun')}
 </div>
 <div class="chartbox" style="margin-top:14px"><canvas id="wcIdx"></canvas></div>
-<div class="grid2" style="margin-top:14px">${chartbox('wcScatter')}<div class="callout" style="margin-top:0"><b>Read — all fixtures.</b> Across the whole group stage, blended FTDs ran <b>${r0(wcAll)}%</b> of the pre-tournament norm, but that shortfall is almost entirely the heatwave: <b>${r0(wcPreHeat)}%</b> before the heat (11–18 Jun, essentially normal) vs <b>${r0(wcHeatSeg)}%</b> once it hit (19–${DD} Jun). Fixture density (2–6 games/day) shows only a weak relationship with the index (corr <b>${f2(wcCorrFix)}</b>), and the heaviest fixture days (MD3, 24–27 Jun, 6 games) coincide with peak heat — so that's confounded, not a clean "more football = fewer sign-ups" signal.<br><br><b>England specifically.</b> The cleanest read is the <b>17 Jun opener</b> (pre-heat, biggest game): FTDs came in at <b>${r0(wcRows.find(r=>r.date==='2026-06-17').idx)}%</b> of the Wednesday norm — slightly <i>above</i>. The softer England days (23rd ${r0(wcRows.find(r=>r.date==='2026-06-23').idx)}%, 27th ${r0(wcRows.find(r=>r.date==='2026-06-27').idx)}%) both fall in peak heat. <b>No evidence England matches suppress casino sign-ups</b> at a daily level.</div></div>
+<div class="grid2" style="margin-top:14px">${chartbox('wcScatter')}<div class="callout" style="margin-top:0"><b>Read — all fixtures.</b> Across the whole group stage, blended FTDs ran <b>${r0(wcAll)}%</b> of the pre-tournament norm, but that shortfall is almost entirely the heatwave: <b>${r0(wcPreHeat)}%</b> before the heat (11–18 Jun, essentially normal) vs <b>${r0(wcHeatSeg)}%</b> once it hit (19 Jun–${GAPLBL}). Fixture density (2–6 games/day) shows only a weak relationship with the index (corr <b>${f2(wcCorrFix)}</b>), and the heaviest fixture days (MD3, 24–27 Jun, 6 games) coincide with peak heat — so that's confounded, not a clean "more football = fewer sign-ups" signal.<br><br><b>England specifically.</b> The cleanest read is the <b>17 Jun opener</b> (pre-heat, biggest game): FTDs came in at <b>${r0(wcRows.find(r=>r.date==='2026-06-17').idx)}%</b> of the Wednesday norm — slightly <i>above</i>. The softer England days (23rd ${r0(wcRows.find(r=>r.date==='2026-06-23').idx)}%, 27th ${r0(wcRows.find(r=>r.date==='2026-06-27').idx)}%) both fall in peak heat. <b>No evidence England matches suppress casino sign-ups</b> at a daily level.</div></div>
 <h2 class="sec">Day-by-day — tournament window</h2>
 ${tbl([{t:'Date'},{t:'Day'},{t:'Fixtures',r:1},{t:'FTDs',r:1},{t:'Norm',r:1},{t:'Index',r:1},{t:'Heat'},{t:'England'}], rows)}
-<p class="note">World-Cup-themed UAC ad groups were among June's best acquisition performers (<b>world cup – brand focus</b> 82 FTDs @ LTV:CAC 2.34, <b>world cup – game focus</b> 62 @ 1.87) — the tournament was a positive <i>targeted</i> lever even though blended daily volume didn't lift. Caveats: daily granularity can't show an intra-evening dip during the ~2-hour match windows; the heatwave overlaps two of three England games; fixture counts are as-scheduled (Iran's Group G withdrawal noted); 28–${DD} Jun are Round-of-32 days (count approximate).</p>`;
+<p class="note">World-Cup-themed UAC ad groups were among June's best acquisition performers (<b>world cup – brand focus</b> 82 FTDs @ LTV:CAC 2.34, <b>world cup – game focus</b> 62 @ 1.87) — the tournament was a positive <i>targeted</i> lever even though blended daily volume didn't lift. Caveats: daily granularity can't show an intra-evening dip during the ~2-hour match windows; the heatwave overlaps two of three England games; fixture counts are as-scheduled (Iran's Group G withdrawal noted); 28 Jun–${GAPLBL} are Round-of-32 days (count approximate).</p>`;
 }
 
 // ---- STRAFFIC — SITE TRAFFIC & SESSIONS ----
@@ -678,7 +691,7 @@ ${tbl([{t:'Channel'},{t:'Sessions',r:1},{t:'% new',r:1},{t:'New sessions',r:1},{
 <li><b>June is pacing slightly behind plan</b> — PLTV ${pct(paceP)} and FTDs ${pct(paceF)} of target. The gap is value-mix, not volume: blended PLTV/FTD ${gbp(mtd.ppf)} vs May ${gbp(moBlend[4].ppf)}.</li>
 <li><b>${standout.ch} is the June dilutant</b> — ${pct1(standout.share)} of FTDs at ${gbp(standout.ppf)}/FTD. Premium channels (Organic Search, PPC Generic) held value but lost share.</li>
 <li><b>Best-returning paid channel:</b> ${bestCh? bestCh.ch+' at '+f2(bestCh.ltv)+' net LTV:CAC':'—'}. Brand search and UAC ad groups top the leaderboard.</li>
-<li><b>Affiliate is the largest paid channel</b> (${pct1(div(junCh['Affiliate'].f,moTot[6].f))} of June FTDs) and the softest premium spend — ${affAlerts.length? affAlerts.length+' large affiliate(s) below 0.8 net':'no large affiliate below 0.8 net'} this 4-week window.</li>
+<li><b>Affiliate is the largest paid channel</b> (${pct1(div(junCh["Affiliate"].f,moTot[RM].f))} of June FTDs) and the softest premium spend — ${affAlerts.length? affAlerts.length+' large affiliate(s) below 0.8 net':'no large affiliate below 0.8 net'} this 4-week window.</li>
 <li><b>Quality holding:</b> blended cost per APD2+ ${gbp(apdBlendCost)} YTD; value-per-FTD is stable week to week, so FTD volume — not per-player value — drives PLTV.</li>
 </ol></div>`;
 }
@@ -782,7 +795,7 @@ ${tbl(head, adgWorst.map(mk))}
     `${m.may_s?f2(m.mayL):'—'}→${m.jun_s?f2(m.junL):'—'}`
   ]}));
   const affMomLtvMay=div(affMayTot.p,affMayTot.s), affMomLtvJun=div(affJunTot.p,affJunTot.s);
-  panes.s10b += `<h2 class="sec">Affiliate month-on-month — May vs June (matched 1–${DD}, net)</h2>
+  panes.s10b += `<h2 class="sec">Affiliate month-on-month — May vs June (matched 1–${MD}, net)</h2>
 <div class="kpis">
 ${kpi('Net PLTV MoM', (div(affJunTot.p,affMayTot.p)-1>=0?'+':'')+pct1(div(affJunTot.p,affMayTot.p)-1), `May ${gbpM(affMayTot.p)} → Jun ${gbpM(affJunTot.p)}`)}
 ${kpi('FTDs MoM', (div(affJunTot.f,affMayTot.f)-1>=0?'+':'')+pct1(div(affJunTot.f,affMayTot.f)-1), `May ${num(affMayTot.f)} → Jun ${num(affJunTot.f)}`)}
@@ -791,7 +804,7 @@ ${kpi('Net LTV:CAC', `${f2(affMomLtvMay)}→${f2(affMomLtvJun)}`, 'channel blend
 </div>
 <div class="chartbox" style="margin-top:14px"><canvas id="affMom"></canvas></div>
 <div style="margin-top:14px">${tbl([{t:'Affiliate (username)'},{t:'May spend',r:1},{t:'Jun spend',r:1},{t:'Δ spend',r:1},{t:'May FTDs',r:1},{t:'Jun FTDs',r:1},{t:'May PLTV',r:1},{t:'Jun PLTV',r:1},{t:'Δ PLTV',r:1},{t:'LTV:CAC',r:1}], momR)}</div>
-<p class="note">Matched 1–${DD} window so it is like-for-like with ${MO_CUR} MTD. Net of the 15% revshare. ${MO_CUR} spend is marginally understated by the ${DD} ${MO_CUR} affiliate-feed lag (£0 posted, back-fills). Biggest swings: ${affName('2014')} scaled up (+${gbpK(AFF_MOM.find(m=>m.aid==='2014').dS)} spend) while ${affName('2990')} pulled back sharply (${gbpK(AFF_MOM.find(m=>m.aid==='2990').dS)} spend, ${gbpK(AFF_MOM.find(m=>m.aid==='2990').dP)} PLTV); ${affName('6071')} and ${affName('2053')} are new this month.</p>`;
+<p class="note">Matched 1–${MD} window so it is like-for-like with ${MO_CUR}. Net of the 15% revshare. ${MO_CUR} spend is marginally understated by the ${GAPLBL} affiliate-feed lag (£0 posted, back-fills). Biggest swings: ${affName('2014')} scaled up (+${gbpK(AFF_MOM.find(m=>m.aid==='2014').dS)} spend) while ${affName('2990')} pulled back sharply (${gbpK(AFF_MOM.find(m=>m.aid==='2990').dS)} spend, ${gbpK(AFF_MOM.find(m=>m.aid==='2990').dP)} PLTV); ${affName('6071')} and ${affName('2053')} are new this month.</p>`;
 }
 
 // ---- S11 PER-CHANNEL ----
@@ -800,7 +813,7 @@ ${kpi('Net LTV:CAC', `${f2(affMomLtvMay)}→${f2(affMomLtvJun)}`, 'channel blend
   panes.s11 = `<h2 class="sec">Per-channel trends (monthly, Jan–Jun · June = partial MTD)</h2>
 <div class="selrow"><select id="chanSel">${opts}</select></div>
 <div class="grid2" style="margin-top:8px">${chartbox('c_pc_sf')}${chartbox('c_pc_cl')}</div>
-<p class="note">${MO_CUR} is ${DD<DIM?`a partial month (1–${DD}); the final point will rise to a full-month total`:`complete`}. Granularity is monthly for stability across all 25 channels.</p>`;
+<p class="note">${MO_CUR} is ${!RMcomplete?`a partial month (1–${MD}); the final point will rise to a full-month total`:`complete`}. Granularity is monthly for stability across all 25 channels.</p>`;
 }
 
 // ---- S12 WEEKLY TRENDS ----
@@ -957,7 +970,7 @@ function buildPane(id){
     ]},options:baseOpts({plugins:{title:{display:true,text:'CPA YoY — Paid & Blended (£/FTD; organic ~£0)'}},scales:{y:{title:{display:true,text:'£ / FTD'}}}})});
   }
   if(id==='s3b'){
-    mkChart('c_mom',{type:'bar',data:{labels:EMBED.momMovers.map(m=>m.ch),datasets:[{label:'ΔPLTV May→Jun (£)',data:EMBED.momMovers.map(m=>Math.round(m.dP)),backgroundColor:EMBED.momMovers.map(m=>m.dP>=0?COL.green:COL.pink)}]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Per-channel ΔPLTV (matched 1–${DD})'},legend:{display:false}}})});
+    mkChart('c_mom',{type:'bar',data:{labels:EMBED.momMovers.map(m=>m.ch),datasets:[{label:'ΔPLTV May→Jun (£)',data:EMBED.momMovers.map(m=>Math.round(m.dP)),backgroundColor:EMBED.momMovers.map(m=>m.dP>=0?COL.green:COL.pink)}]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Per-channel ΔPLTV (matched 1–${MD})'},legend:{display:false}}})});
   }
   if(id==='s4'){
     const d=EMBED.daily30;
@@ -1043,7 +1056,7 @@ function buildPane(id){
   }
   if(id==='s10b'){
     const a=EMBED.affMom;
-    mkChart('affMom',{type:'bar',data:{labels:a.map(x=>x.n),datasets:[{label:'Δ net PLTV May→Jun (£)',data:a.map(x=>x.dP),backgroundColor:a.map(x=>x.dP>=0?COL.green:COL.pink)}]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Affiliate ΔPLTV — biggest movers (matched 1–${DD})'},legend:{display:false}}})});
+    mkChart('affMom',{type:'bar',data:{labels:a.map(x=>x.n),datasets:[{label:'Δ net PLTV May→Jun (£)',data:a.map(x=>x.dP),backgroundColor:a.map(x=>x.dP>=0?COL.green:COL.pink)}]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Affiliate ΔPLTV — biggest movers (matched 1–${MD})'},legend:{display:false}}})});
   }
   if(id==='s11'){ drawChannel(); }
   if(id==='s12'){
