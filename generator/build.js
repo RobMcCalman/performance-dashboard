@@ -488,7 +488,7 @@ ${(()=>{
   trows.push({cls:'tot',cells:['TOTAL', num(T.tf), num(T.ff), `<span class="pill ${ragPace(div(T.ff,T.tf))}">${pct(div(T.ff,T.tf))}</span>`, gbpK(T.ts), gbpK(T.fs), `${gbp(div(T.ts,T.tf))}→${gbp(div(T.fs,T.ff))}`, gbpK(T.tp), gbpK(T.fp), `<span class="pill ${ragPace(div(T.fp,T.tp))}">${pct(div(T.fp,T.tp))}</span>`, `${f2(div(T.tp,T.ts))}→${f2(div(T.fp,T.fs))}`]});
   return tbl([{t:'Channel'},{t:'Tgt FTDs',r:1},{t:'Fcst FTDs',r:1},{t:'FTDs %',r:1},{t:'Tgt spend',r:1},{t:'Fcst spend',r:1},{t:'CPA',r:1},{t:'Tgt PLTV',r:1},{t:'Fcst PLTV',r:1},{t:'PLTV %',r:1},{t:'LTV:CAC',r:1}], trows);
 })()}
-<p class="note">Targets = the H2 weekly-plan workbook by channel (FTDs &amp; spend direct from the sheet; PLTV = target FTDs × plan net PLTV-per-FTD). Forecast = trailing-4-week weekly average by channel. Pace = forecast ÷ target. * Affiliate forecast spend gap-filled for 29 Jun at trailing CPA ${gbp(AFF_CPA)}; ATL carries spend with 0 FTDs (brand). PLTV net of the 15% affiliate revshare.</p>`;
+<p class="note">Targets = the H2 weekly-plan workbook by channel (FTDs &amp; spend direct from the sheet; PLTV = target FTDs × plan net PLTV-per-FTD). Forecast = trailing-4-week weekly average by channel. Pace = forecast ÷ target. * Affiliate forecast spend gap-filled for ${GAPLBL} at trailing CPA ${gbp(AFF_CPA)}; ATL carries spend with 0 FTDs (brand). PLTV net of the 15% affiliate revshare.</p>`;
 }
 
 // ---- S2 MONTH-TO-DATE ----
