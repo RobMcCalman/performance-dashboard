@@ -330,6 +330,18 @@ const wcEng = wcMean(wcRows.filter(r=>r.eng).map(r=>r.idx));
 const wcCorrFix = pearson(wcRows.map(r=>r.fix), wcRows.map(r=>r.idx));
 const wcPreWCavg = wcMean(dailyG.filter(d=>d.date>='2026-05-12'&&d.date<='2026-06-10').map(d=>d.f/wcNorm((new Date(d.date+'T00:00:00Z').getUTCDay()+6)%7)*100));
 console.log('WC allIdx',wcAll.toFixed(1),'preHeat',wcPreHeat.toFixed(1),'heat',wcHeatSeg.toFixed(1),'eng',wcEng.toFixed(1),'corrFix',wcCorrFix.toFixed(2));
+// ---- WC VALUE CHECK: PLTV/FTD (value per depositor) vs fixtures ----
+const wcPpfBase={}, wcPpfBaseN={};
+dailyG.filter(d=>d.date>='2026-05-12'&&d.date<='2026-06-10').forEach(d=>{const k=(new Date(d.date+'T00:00:00Z').getUTCDay()+6)%7; wcPpfBase[k]=(wcPpfBase[k]||0)+d.p/d.f; wcPpfBaseN[k]=(wcPpfBaseN[k]||0)+1;});
+const wcPpfNorm=k=>wcPpfBase[k]/wcPpfBaseN[k];
+const dgMap={}; dailyG.forEach(d=>dgMap[d.date]=d);
+wcRows.forEach(r=>{const k=(new Date(r.date+'T00:00:00Z').getUTCDay()+6)%7; const d=dgMap[r.date]; r.ppf=d.p/d.f; r.ppfIdx=r.ppf/wcPpfNorm(k)*100;});
+const wcBasePpf=wcMean(dailyG.filter(d=>d.date>='2026-05-12'&&d.date<='2026-06-10').map(d=>d.p/d.f));
+const wcWinPpf=wcMean(wcRows.map(r=>r.ppf));
+const wcCorrPpf=pearson(wcRows.map(r=>r.fix), wcRows.map(r=>r.ppfIdx));
+const wcPeakPpf=wcMean(wcRows.filter(r=>r.date>='2026-06-24'&&r.date<='2026-06-27').map(r=>r.ppf));
+const wcEarlyPpf=wcMean(wcRows.filter(r=>r.date>='2026-06-11'&&r.date<='2026-06-18').map(r=>r.ppf));
+console.log('WC value: basePpf',r0(wcBasePpf),'winPpf',r0(wcWinPpf),'corrFixPpf',wcCorrPpf.toFixed(2),'peak',r0(wcPeakPpf),'early',r0(wcEarlyPpf));
 
 // ---------- SITE TRAFFIC / SESSIONS ----------
 const TRAF_KPI = (D.traffic&&D.traffic.kpi)||{sess:0,snew:0,sret:0,reg:0,legreg:0,ftd:0};
@@ -372,7 +384,8 @@ const EMBED = {
     idx: wcRows.map(r=>+r.idx.toFixed(1)),
     fix: wcRows.map(r=>r.fix),
     eng: wcRows.map(r=>r.eng?+r.idx.toFixed(1):null),
-    scatter: wcRows.map(r=>({x:r.fix, y:+r.idx.toFixed(1), eng:!!r.eng}))
+    scatter: wcRows.map(r=>({x:r.fix, y:+r.idx.toFixed(1), eng:!!r.eng})),
+    ppfScatter: wcRows.map(r=>({x:r.fix, y:+r.ppfIdx.toFixed(1), eng:!!r.eng}))
   }
 };
 
@@ -687,6 +700,13 @@ ${kpi('England match days', r0(wcEng)+'%', '17, 23, 27 Jun + 1 Jul R32')}
 </div>
 <div class="chartbox" style="margin-top:14px"><canvas id="wcIdx"></canvas></div>
 <div class="grid2" style="margin-top:14px">${chartbox('wcScatter')}<div class="callout" style="margin-top:0"><b>Read — all fixtures.</b> Across the whole group stage, blended FTDs ran <b>${r0(wcAll)}%</b> of the pre-tournament norm, but that shortfall is almost entirely the heatwave: <b>${r0(wcPreHeat)}%</b> before the heat (11–18 Jun, essentially normal) vs <b>${r0(wcHeatSeg)}%</b> once it hit (19 Jun–${GAPLBL}). Fixture density (2–6 games/day) shows only a weak relationship with the index (corr <b>${f2(wcCorrFix)}</b>), and the heaviest fixture days (MD3, 24–27 Jun, 6 games) coincide with peak heat — so that's confounded, not a clean "more football = fewer sign-ups" signal.<br><br><b>England specifically.</b> The cleanest read is the <b>17 Jun opener</b> (pre-heat, biggest game): FTDs came in at <b>${r0(wcRows.find(r=>r.date==='2026-06-17').idx)}%</b> of the Wednesday norm — slightly <i>above</i>. The softer England days (23rd ${r0(wcRows.find(r=>r.date==='2026-06-23').idx)}%, 27th ${r0(wcRows.find(r=>r.date==='2026-06-27').idx)}%) both fall in peak heat. <b>No evidence England matches suppress casino sign-ups</b> at a daily level.</div></div>
+<h2 class="sec">Value check — does the World Cup bring lower-value players?</h2>
+<div class="kpis" style="margin-top:6px">
+${kpi('WC-window PLTV/FTD', gbp(wcWinPpf), `11 Jun–${GAPLBL}`)}
+${kpi('Pre-WC baseline', gbp(wcBasePpf), '12 May–10 Jun norm')}
+${kpi('Fixtures × PLTV/FTD corr', (wcCorrPpf>=0?'+':'')+f2(wcCorrPpf), 'mildly positive, not negative')}
+</div>
+<div class="grid2" style="margin-top:14px">${chartbox('wcPpfScatter')}<div class="callout" style="margin-top:0"><b>No — value per depositor is flat through the tournament.</b> PLTV/FTD across the WC window was <b>${gbp(wcWinPpf)}</b>, essentially level with the pre-tournament norm <b>${gbp(wcBasePpf)}</b>. Fixture density vs PLTV/FTD correlates <b>${wcCorrPpf>=0?'+':''}${f2(wcCorrPpf)}</b> — mildly <i>positive</i>: the heaviest football days (24–27 Jun, 6 games) ran the <i>highest</i> value (<b>${gbp(wcPeakPpf)}</b> vs <b>${gbp(wcEarlyPpf)}</b> in early WC), and England match days sat around the value norm.<br><br><b>Caveat — cohort maturation.</b> The 12-month PLTV model under-reports the most recent cohorts, so late-Jun/Jul days read artificially low and revise up over the following weeks. The <b>−8% MoM PLTV</b> is a <b>value-mix shift</b> (growth in lower-PLTV organic channels) plus the heatwave dampening volume — <b>not</b> the World Cup pulling in low-value players.</div></div>
 <h2 class="sec">Day-by-day — tournament window</h2>
 ${tbl([{t:'Date'},{t:'Day'},{t:'Fixtures',r:1},{t:'FTDs',r:1},{t:'Norm',r:1},{t:'Index',r:1},{t:'Heat'},{t:'England'}], rows)}
 <h2 class="sec">Round of 32 — fixtures &amp; results</h2>
@@ -1047,6 +1067,10 @@ function buildPane(id){
     mkChart('wcScatter',{type:'scatter',data:{datasets:[
       {label:'Day · pink = England',data:w.scatter,pointBackgroundColor:w.scatter.map(p=>p.eng?COL.pink:COL.blue),pointRadius:w.scatter.map(p=>p.eng?7:4)}
     ]},options:baseOpts({plugins:{title:{display:true,text:'Fixtures per day vs FTD index'},legend:{display:true}},scales:{x:{title:{display:true,text:'fixtures that day'},suggestedMin:0,suggestedMax:7},y:{title:{display:true,text:'FTD index'}}}})});
+    mkChart('wcPpfScatter',{type:'scatter',data:{datasets:[
+      {label:'Day · pink = England',data:w.ppfScatter,pointBackgroundColor:w.ppfScatter.map(p=>p.eng?COL.pink:COL.green),pointRadius:w.ppfScatter.map(p=>p.eng?7:4)},
+      {type:'line',label:'Norm (100)',data:[{x:0,y:100},{x:7,y:100}],borderColor:COL.grey,borderDash:[5,4],pointRadius:0,showLine:true}
+    ]},options:baseOpts({plugins:{title:{display:true,text:'Fixtures per day vs PLTV/FTD index (100 = pre-WC norm)'},legend:{display:true}},scales:{x:{title:{display:true,text:'fixtures that day'},suggestedMin:0,suggestedMax:7},y:{title:{display:true,text:'PLTV/FTD index'}}}})});
   }
   if(id==='straffic'){
     const t=EMBED.traffic;
