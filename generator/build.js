@@ -843,7 +843,37 @@ ${tbl(head, adgWorst.map(mk))}
   const rows = affRows.map(a=>({cells:[ affLabel(a.aid), gbpK(a.s), num(a.f), gbp(a.cpa), gbpK(a.p), `<span class="pill ${ragLtv(a.ltv)}">${f2(a.ltv)}</span>`, num(a.apd) ]}));
   const affTot = affRows.reduce((x,a)=>({s:x.s+a.s,f:x.f+a.f,p:x.p+a.p,apd:x.apd+a.apd}),{s:0,f:0,p:0,apd:0});
   rows.push({cls:'tot',cells:['Top-20 total', gbpM(affTot.s), num(affTot.f), gbp(div(affTot.s,affTot.f)), gbpM(affTot.p), `<span class="pill ${ragLtv(div(affTot.p,affTot.s))}">${f2(div(affTot.p,affTot.s))}</span>`, num(affTot.apd)]});
-  panes.s10b = `<h2 class="sec">Within Affiliate — top 20 by spend (last 4 weeks, actual net of revshare)</h2>
+  // ---- top-10 daily FTD heatmap (trailing 30 days, by FTDs) ----
+  let affHeat='';
+  const AFT=(D.affTop30||[]).filter(r=>r.date<=ASOF);
+  if(AFT.length){
+    const MONS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const dd=s=>{const p=s.split('-');return{m:+p[1],d:+p[2]};};
+    const dates=[...new Set(AFT.map(r=>r.date))].sort();
+    const byId={}; AFT.forEach(r=>{const o=byId[r.aid]||(byId[r.aid]={aid:r.aid,cell:{},tot:0});o.cell[r.date]=r.f;o.tot+=r.f;});
+    const parts=Object.values(byId).sort((a,b)=>b.tot-a.tot);
+    const maxV=Math.max(1,...AFT.map(r=>r.f));
+    const dtot=dates.map(d=>parts.reduce((a,p)=>a+(p.cell[d]||0),0));
+    const grand=dtot.reduce((a,b)=>a+b,0);
+    let pm=null, head='<th class="hnm">Affiliate</th>';
+    dates.forEach(d=>{const q=dd(d);const bl=(pm!==null&&pm!==q.m)?'border-left:2px solid var(--muted);':'';pm=q.m;head+=`<th class="hd" style="${bl}">${q.d}</th>`;});
+    head+='<th class="hd" style="text-align:right">30d</th>';
+    let body='';
+    parts.forEach(p=>{ pm=null;
+      body+=`<tr><td class="hnm" title="${affName(p.aid)} (${p.aid})">${affName(p.aid)}</td>`;
+      dates.forEach(d=>{const v=p.cell[d]||0;const q=dd(d);const bl=(pm!==null&&pm!==q.m)?'border-left:2px solid var(--muted);':'';pm=q.m;const a=v<=0?0:Math.max(0.10,Math.min(1,v/maxV));body+=`<td class="hc" title="${affName(p.aid)} · ${MONS[q.m-1]} ${q.d}: ${v} FTDs" style="background:rgba(10,46,203,${a.toFixed(3)});${bl}"></td>`;});
+      body+=`<td class="hd" style="text-align:right;font-weight:800;color:var(--ink)">${num(p.tot)}</td></tr>`;
+    });
+    pm=null; body+='<tr class="htot"><td class="hnm">All 10 / day</td>';
+    dates.forEach((d,i)=>{const q=dd(d);const bl=(pm!==null&&pm!==q.m)?'border-left:2px solid var(--muted);':'';pm=q.m;body+=`<td class="hd" title="${MONS[q.m-1]} ${q.d}: ${dtot[i]}">${dtot[i]}</td>`;});
+    body+=`<td class="hd" style="text-align:right;font-weight:800;color:var(--ink)">${num(grand)}</td></tr>`;
+    const a0=dd(dates[0]),a1=dd(dates[dates.length-1]);
+    affHeat=`<h2 class="sec">Top 10 affiliates — daily FTDs (last ${dates.length} days: ${MONS[a0.m-1]} ${a0.d} – ${MONS[a1.m-1]} ${a1.d})</h2>
+<div class="tablewrap"><table class="heat"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>
+<div class="heatleg"><span>Fewer</span>${[0.10,0.30,0.55,0.80,1.0].map(a=>`<i style="background:rgba(10,46,203,${a})"></i>`).join('')}<span>More</span><span style="margin-left:auto">Hover a cell for date &amp; count · colour scaled 0–${maxV} FTDs/day · rows ranked by 30-day total</span></div>
+<p class="note">Top 10 affiliate partners by FTDs over the trailing 30 days (to ${ASOF}), net-of-revshare value shown in the LTV:CAC table below. The final day or two may firm up as the affiliate feed lands (Raventrack lag). Volume ≠ value: the largest-volume partners (${affName('2164')}, ${affName('2630')}, ${affName('2014')}) sit below break-even on net LTV:CAC, while ${affName('2242')} and smaller ${affName('2195')}/${affName('6071')} are the profitable ones.</p>`;
+  }
+  panes.s10b = affHeat + `<h2 class="sec">Within Affiliate — top 20 by spend (last 4 weeks, actual net of revshare)</h2>
 <div class="callout">Per-affiliate KPIs are <b>actual</b> from attribution_spend_metrics with PLTV haircut ×0.85. Profile usernames applied from the affiliate_groups export (matched on Affiliate Profile ID); affiliate_id shown in brackets.${(()=>{const u=affRows.filter(a=>!AFF_NAMES[a.aid]).map(a=>a.aid);return u.length?` Unmapped (not in export): ${u.join(', ')}.`:' All shown affiliates mapped.';})()}</div>
 <div style="margin-top:14px">${tbl([{t:'Affiliate (username)'},{t:'Spend',r:1},{t:'FTDs',r:1},{t:'CPA',r:1},{t:'Net PLTV',r:1},{t:'LTV:CAC',r:1},{t:'APD2+',r:1}], rows)}</div>
 <p class="note">${affAlerts.length? `Below 0.8 net LTV:CAC at ≥£20k spend: ${affAlerts.map(a=>affName(a.aid)+' ('+f2(a.ltv)+')').join(', ')}.` : 'No affiliate above £20k spend is below 0.8 net LTV:CAC this window.'} The three largest by spend (${affName('2164')}, ${affName('2630')}, ${affName('2014')}) drive the channel — ${affName('2014')} is the weakest of them.</p>`;
@@ -952,6 +982,14 @@ th{background:#f0f2fb;font-size:11px;text-transform:uppercase;letter-spacing:.04
 td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
 span.camp{white-space:normal;font-size:11px;color:var(--muted)}
 tr.tot td{font-weight:800;background:#f7f8fd;border-top:2px solid var(--line)}
+table.heat{min-width:770px;border-collapse:separate;border-spacing:2px;font-size:11px}
+table.heat th,table.heat td{border:0;padding:0;white-space:nowrap}
+table.heat th.hd,table.heat td.hd{width:20px;text-align:center;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:600;background:transparent;position:static}
+table.heat td.hc{width:20px;height:20px;border-radius:3px}
+table.heat .hnm{text-align:left;color:var(--ink);font-weight:600;padding-right:8px;max-width:140px;overflow:hidden;text-overflow:ellipsis;background:transparent;position:static}
+table.heat tr.htot td{padding-top:4px;color:var(--muted)}
+.heatleg{display:flex;align-items:center;gap:6px;margin:9px 2px;font-size:12px;color:var(--muted)}
+.heatleg i{width:20px;height:12px;border-radius:2px;display:inline-block}
 .chartbox{background:#fff;border:1px solid var(--line);border-radius:13px;padding:12px;height:340px;margin-top:14px;position:relative}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .grid2 .chartbox{margin-top:0}
