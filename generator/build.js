@@ -446,6 +446,7 @@ ${swings.filter(s=>!['Affiliate App','Email'].includes(s.ch)).map(s=>`<li><b>${s
 ${kpi('Forecast spend', gbpM(wkFcst.s), `trailing wk ${gbpM(trailWk.s)}`)}
 ${kpi('Forecast FTDs', num(wkFcst.f), `trailing wk ${num(trailWk.f)}`)}
 ${kpi('Forecast CPA', gbp(wkFcst.cpa), `net`)}
+${kpi('Forecast PLTV/FTD', gbp(div(wkFcst.p,wkFcst.f)), `net · value per FTD`)}
 ${kpi('Forecast LTV:CAC', f2(wkFcst.ltv), `net of affiliate revshare`)}
 </div>
 <h2 class="sec">This week vs target</h2>
@@ -460,10 +461,12 @@ ${(()=>{
     srcNote=`No weekly-plan row for this week — falling back to the monthly plan ÷ (30÷7) run-rate.`;
   }
   const pcS=div(wkFcst.s,wt.s), pcF=div(wkFcst.f,wt.f), pcP=div(wkFcst.p,wt.p), pcL=div(wkFcst.ltv,ltvT);
+  const ppfT=div(wt.p,wt.f), ppfFcst=div(wkFcst.p,wkFcst.f), pcPPF=div(ppfFcst,ppfT);
   const trows=[
     {cells:['Spend', gbpM(wt.s), gbpK(wtd.s), gbpM(wkFcst.s), `<span class="pill ${ragPace(pcS)}">${pct(pcS)}</span>`]},
     {cells:['FTDs', num(wt.f), num(wtd.f), num(wkFcst.f), `<span class="pill ${ragPace(pcF)}">${pct(pcF)}</span>`]},
     {cells:['Net 12m PLTV', gbpM(wt.p), gbpK(wtd.p), gbpM(wkFcst.p), `<span class="pill ${ragPace(pcP)}">${pct(pcP)}</span>`]},
+    {cells:['PLTV/FTD', gbp(ppfT), gbp(div(wtd.p,wtd.f)), gbp(ppfFcst), `<span class="pill ${ragPace(pcPPF)}">${pct(pcPPF)}</span>`]},
     {cells:['CPA', gbp(cpaT), '—', gbp(wkFcst.cpa), `<span class="pill ${wkFcst.cpa<=cpaT?'green':wkFcst.cpa<=cpaT*1.1?'amber':'red'}">${pct(div(cpaT,wkFcst.cpa))}</span>`]},
     {cells:['LTV:CAC', f2(ltvT), '—', f2(wkFcst.ltv), `<span class="pill ${ragPace(pcL)}">${pct(pcL)}</span>`]}
   ];
