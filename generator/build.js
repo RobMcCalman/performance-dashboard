@@ -567,6 +567,56 @@ ${tbl([{t:'Channel'},{t:'Plan spend',r:1},{t:'Act spend',r:1},{t:'Plan FTDs',r:1
 ${tbl([{t:'Channel'},{t:'Plan spend',r:1},{t:'Plan FTDs',r:1},{t:'Plan PLTV',r:1},{t:'LTV:CAC',r:1}], tC)}`;
 }
 
+// ---- S2j JULY MTD vs PLAN ----
+if(CUR_MO>RM){
+  const MI=CUR_MO-1;                        // plan index for the current month (0-based)
+  const kRem=DIM-DAYS_ELAPSED;              // remaining days in the current month
+  const cur=monByMo[CUR_MO]||{};
+  const chansJ=Object.keys(PLAN).filter(c=>c!=='Display/Programmatic');
+  const jmtd=ch=>{ const r=cur[ch]; const s=(r?r.s:0)+(ch==='Affiliate'?AFF_GAP_28:0); return {s,f:r?r.f:0,p:r?r.pn:0}; };
+  const jptd=ch=>{ const x=planCh(ch,MI); return {s:x.s*DAYS_ELAPSED/DIM,f:x.f*DAYS_ELAPSED/DIM,p:x.p*DAYS_ELAPSED/DIM}; };
+  const jfc =ch=>{ const m=jmtd(ch); const t=(D.trail4Ch&&D.trail4Ch[ch])||{s:0,f:0,p:0}; return {s:m.s+kRem*(t.s/28),f:m.f+kRem*(t.f/28),p:m.p+kRem*(t.p/28)}; };
+  const jpl =ch=>planCh(ch,MI);
+  const sumT=fn=>chansJ.reduce((a,ch)=>{const x=fn(ch);return {s:a.s+x.s,f:a.f+x.f,p:a.p+x.p};},{s:0,f:0,p:0});
+  const ptdT=sumT(jptd), planT=sumT(jpl), fcT=sumT(jfc);
+  // all-channel MTD headline (incl organic not in plan)
+  let jmAll={s:0,f:0,p:0,apd:0}; Object.values(cur).forEach(r=>{jmAll.s+=r.s;jmAll.f+=r.f;jmAll.p+=r.pn;jmAll.apd+=r.apd;}); jmAll.s+=AFF_GAP_28;
+  jmAll.cpa=div(jmAll.s,jmAll.f); jmAll.ltv=div(jmAll.p,jmAll.s); jmAll.ppf=div(jmAll.p,jmAll.f);
+  const jfcAll={s:jmAll.s+kRem*dailyAvg.s, f:jmAll.f+kRem*dailyAvg.f, p:jmAll.p+kRem*dailyAvg.p};
+  jfcAll.cpa=div(jfcAll.s,jfcAll.f); jfcAll.ltv=div(jfcAll.p,jfcAll.s); jfcAll.ppf=div(jfcAll.p,jfcAll.f);
+  const paceMtdF=div(jmAll.f,ptdT.f), paceMtdP=div(jmAll.p,ptdT.p), paceMtdS=div(jmAll.s,ptdT.s);
+  const paceFcF=div(jfcAll.f,planT.f), paceFcP=div(jfcAll.p,planT.p), paceFcS=div(jfcAll.s,planT.s);
+  const MOJ=MONTHS[CUR_MO-1];
+  // Table A — MTD vs plan-to-date by channel
+  const aR=chansJ.map(ch=>{const m=jmtd(ch),pd=jptd(ch);return {ch,m,pd,pcF:div(m.f,pd.f),pcP:div(m.p,pd.p)};}).filter(r=>r.pd.f>0||r.m.f>0).sort((a,b)=>b.m.p-a.m.p);
+  const tA=aR.map(r=>({cells:[ r.ch, gbpK(r.pd.s), gbpK(r.m.s), num(r.pd.f), num(r.m.f), r.pd.f?`<span class="pill ${ragPace(r.pcF)}">${pct(r.pcF)}</span>`:'—', gbpK(r.pd.p), gbpK(r.m.p), r.pd.p?`<span class="pill ${ragPace(r.pcP)}">${pct(r.pcP)}</span>`:'—' ]}));
+  tA.push({cls:'tot',cells:['TOTAL',gbpK(ptdT.s),gbpK(jmAll.s),num(ptdT.f),num(jmAll.f),`<span class="pill ${ragPace(paceMtdF)}">${pct(paceMtdF)}</span>`,gbpK(ptdT.p),gbpK(jmAll.p),`<span class="pill ${ragPace(paceMtdP)}">${pct(paceMtdP)}</span>`]});
+  // Table B — full-month forecast vs full plan by channel
+  const bR=chansJ.map(ch=>{const pl=jpl(ch),fc=jfc(ch);return {ch,pl,fc,pcS:div(fc.s,pl.s),pcF:div(fc.f,pl.f),pcP:div(fc.p,pl.p),lpl:div(pl.p,pl.s),lfc:div(fc.p,fc.s)};}).filter(r=>r.pl.s>0||r.pl.f>0||r.fc.f>0).sort((a,b)=>b.pl.p-a.pl.p);
+  const tB=bR.map(r=>({cells:[ r.ch, gbpK(r.pl.s), gbpK(r.fc.s), r.pl.s?`<span class="pill ${ragPace(r.pcS)}">${pct(r.pcS)}</span>`:'—', num(r.pl.f), num(r.fc.f), r.pl.f?`<span class="pill ${ragPace(r.pcF)}">${pct(r.pcF)}</span>`:'—', gbpK(r.pl.p), gbpK(r.fc.p), r.pl.p?`<span class="pill ${ragPace(r.pcP)}">${pct(r.pcP)}</span>`:'—', r.fc.s?`${f2(r.lpl)}→${f2(r.lfc)}`:'—' ]}));
+  tB.push({cls:'tot',cells:['TOTAL',gbpK(planT.s),gbpK(jfcAll.s),`<span class="pill ${ragPace(paceFcS)}">${pct(paceFcS)}</span>`,num(planT.f),num(jfcAll.f),`<span class="pill ${ragPace(paceFcF)}">${pct(paceFcF)}</span>`,gbpK(planT.p),gbpK(jfcAll.p),`<span class="pill ${ragPace(paceFcP)}">${pct(paceFcP)}</span>`,`${f2(div(planT.p,planT.s))}→${f2(jfcAll.ltv)}`]});
+  panes.s2j = `<h2 class="sec">${MOJ} month-to-date vs plan — 1–${DAYS_ELAPSED} ${MOJ} (${DAYS_ELAPSED}/${DIM} days)</h2>
+<div class="callout">${MOJ} is the live month (June remains the headline reference until it is 7+ days old). MTD actuals are compared with the plan pro-rated to date (plan × ${DAYS_ELAPSED}/${DIM}); the full-month forecast = MTD + remaining ${kRem} days × trailing-4-week daily average. Affiliate spend gap-filled for ${GAPLBL} at ${gbp(AFF_CPA)} CPA; PLTV net of the 15% revshare.</div>
+<div class="kpis" style="margin-top:14px">
+${kpi('MTD spend', gbpM(jmAll.s), `fcst ${gbpM(jfcAll.s)} · plan ${gbpM(planT.s)}`)}
+${kpi('MTD FTDs', num(jmAll.f), `fcst ${num(jfcAll.f)} · plan ${num(planT.f)}`)}
+${kpi('MTD net PLTV', gbpM(jmAll.p), `fcst ${gbpM(jfcAll.p)} · plan ${gbpM(planT.p)}`)}
+${kpi('MTD LTV:CAC', f2(jmAll.ltv), `CPA ${gbp(jmAll.cpa)} · PLTV/FTD ${gbp(jmAll.ppf)}`)}
+</div>
+<h2 class="sec">Pace</h2>
+<div class="kpis">
+${kpi('FTDs vs plan-to-date', `<span class="pill ${ragPace(paceMtdF)} big">${pct(paceMtdF)}</span>`, `MTD ${num(jmAll.f)} vs ${num(ptdT.f)}`)}
+${kpi('PLTV vs plan-to-date', `<span class="pill ${ragPace(paceMtdP)} big">${pct(paceMtdP)}</span>`, `MTD ${gbpM(jmAll.p)} vs ${gbpM(ptdT.p)}`)}
+${kpi('Full-month FTDs fcst vs plan', `<span class="pill ${ragPace(paceFcF)} big">${pct(paceFcF)}</span>`, `${num(jfcAll.f)} vs ${num(planT.f)}`)}
+${kpi('Full-month PLTV fcst vs plan', `<span class="pill ${ragPace(paceFcP)} big">${pct(paceFcP)}</span>`, `${gbpM(jfcAll.p)} vs ${gbpM(planT.p)}`)}
+</div>
+<h2 class="sec">Table A — ${MOJ} MTD vs plan-to-date by channel</h2>
+${tbl([{t:'Channel'},{t:'Plan-TD spend',r:1},{t:'MTD spend',r:1},{t:'Plan-TD FTDs',r:1},{t:'MTD FTDs',r:1},{t:'FTDs %',r:1},{t:'Plan-TD PLTV',r:1},{t:'MTD PLTV',r:1},{t:'PLTV %',r:1}], tA)}
+<h2 class="sec">Table B — ${MOJ} full-month forecast vs plan by channel</h2>
+${tbl([{t:'Channel'},{t:'Plan spend',r:1},{t:'Fcst spend',r:1},{t:'Spend %',r:1},{t:'Plan FTDs',r:1},{t:'Fcst FTDs',r:1},{t:'FTDs %',r:1},{t:'Plan PLTV',r:1},{t:'Fcst PLTV',r:1},{t:'PLTV %',r:1},{t:'LTV:CAC',r:1}], tB)}
+<p class="note">Only ${DAYS_ELAPSED} day${DAYS_ELAPSED===1?'':'s'} of ${MOJ} have landed, so MTD and the full-month forecast are volatile and recent-day PLTV is under-matured (revises up). Pace = actual ÷ plan (green ≥100, amber ≥90, red &lt;90). TOTAL rows use all-channel actuals/forecast vs the plan total.</p>`;
+}
+
 // ---- S2c BUDGET ----
 {
   const yearElapsed = DAYS_ELAPSED/365 + (31+28+31+30+31)/365; // through Jun28
@@ -920,7 +970,7 @@ ${chartbox('c_wk_ppf')}
 // ====================================================================
 // Assemble HTML
 // ====================================================================
-const TABS = [['summary','Summary'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],['s9','Channel opt'],['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
+const TABS = [['summary','Summary'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],['s9','Channel opt'],['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
 const tabbar = TABS.map((t,i)=>`<button class="tab${i===0?' active':''}" data-pane="${t[0]}">${t[1]}</button>`).join('');
 const paneHTML = TABS.map((t,i)=>`<section class="pane${i===0?' active':''}" id="pane-${t[0]}">${panes[t[0]]||''}</section>`).join('');
 
