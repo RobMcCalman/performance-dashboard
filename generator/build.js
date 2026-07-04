@@ -595,6 +595,8 @@ if(CUR_MO>RM){
   const bR=chansJ.map(ch=>{const pl=jpl(ch),fc=jfc(ch);return {ch,pl,fc,pcS:div(fc.s,pl.s),pcF:div(fc.f,pl.f),pcP:div(fc.p,pl.p),lpl:div(pl.p,pl.s),lfc:div(fc.p,fc.s)};}).filter(r=>r.pl.s>0||r.pl.f>0||r.fc.f>0).sort((a,b)=>b.pl.p-a.pl.p);
   const tB=bR.map(r=>({cells:[ r.ch, gbpK(r.pl.s), gbpK(r.fc.s), r.pl.s?`<span class="pill ${ragPace(r.pcS)}">${pct(r.pcS)}</span>`:'—', num(r.pl.f), num(r.fc.f), r.pl.f?`<span class="pill ${ragPace(r.pcF)}">${pct(r.pcF)}</span>`:'—', gbpK(r.pl.p), gbpK(r.fc.p), r.pl.p?`<span class="pill ${ragPace(r.pcP)}">${pct(r.pcP)}</span>`:'—', r.fc.s?`${f2(r.lpl)}→${f2(r.lfc)}`:'—' ]}));
   tB.push({cls:'tot',cells:['TOTAL',gbpK(planT.s),gbpK(jfcAll.s),`<span class="pill ${ragPace(paceFcS)}">${pct(paceFcS)}</span>`,num(planT.f),num(jfcAll.f),`<span class="pill ${ragPace(paceFcF)}">${pct(paceFcF)}</span>`,gbpK(planT.p),gbpK(jfcAll.p),`<span class="pill ${ragPace(paceFcP)}">${pct(paceFcP)}</span>`,`${f2(div(planT.p,planT.s))}→${f2(jfcAll.ltv)}`]});
+  EMBED.julPace = bR.filter(r=>r.pl.p>0).map(r=>({ch:r.ch, pcP:Math.round(r.pcP*100)})).sort((a,b)=>b.pcP-a.pcP);
+  EMBED.julPaceMo = MOJ;
   panes.s2j = `<h2 class="sec">${MOJ} month-to-date vs plan — 1–${DAYS_ELAPSED} ${MOJ} (${DAYS_ELAPSED}/${DIM} days)</h2>
 <div class="callout">${MOJ} is the live month (June remains the headline reference until it is 7+ days old). MTD actuals are compared with the plan pro-rated to date (plan × ${DAYS_ELAPSED}/${DIM}); the full-month forecast = MTD + remaining ${kRem} days × trailing-4-week daily average. Affiliate spend gap-filled for ${GAPLBL} at ${gbp(AFF_CPA)} CPA; PLTV net of the 15% revshare.</div>
 <div class="kpis" style="margin-top:14px">
@@ -610,6 +612,9 @@ ${kpi('PLTV vs plan-to-date', `<span class="pill ${ragPace(paceMtdP)} big">${pct
 ${kpi('Full-month FTDs fcst vs plan', `<span class="pill ${ragPace(paceFcF)} big">${pct(paceFcF)}</span>`, `${num(jfcAll.f)} vs ${num(planT.f)}`)}
 ${kpi('Full-month PLTV fcst vs plan', `<span class="pill ${ragPace(paceFcP)} big">${pct(paceFcP)}</span>`, `${gbpM(jfcAll.p)} vs ${gbpM(planT.p)}`)}
 </div>
+<h2 class="sec">Forecast vs plan by channel — net PLTV pace</h2>
+${chartbox('c_jul_pace')}
+<p class="note">Full-month net-PLTV forecast ÷ full-month plan, by channel (green ≥100%, amber 90–99%, red &lt;90%). Ranked best-to-worst pace; PLTV is under-matured this early so treat as directional.</p>
 <h2 class="sec">Table A — ${MOJ} MTD vs plan-to-date by channel</h2>
 ${tbl([{t:'Channel'},{t:'Plan-TD spend',r:1},{t:'MTD spend',r:1},{t:'Plan-TD FTDs',r:1},{t:'MTD FTDs',r:1},{t:'FTDs %',r:1},{t:'Plan-TD PLTV',r:1},{t:'MTD PLTV',r:1},{t:'PLTV %',r:1}], tA)}
 <h2 class="sec">Table B — ${MOJ} full-month forecast vs plan by channel</h2>
@@ -1088,6 +1093,10 @@ function buildPane(id){
   if(built[id]) return;
   built[id]=true;
   try{
+  if(id==='s2j' && EMBED.julPace){
+    const jp=EMBED.julPace, col=v=>v>=100?'#1c8f53':v>=90?'#B9860B':'#C01262';
+    mkChart('c_jul_pace',{type:'bar',data:{labels:jp.map(r=>r.ch),datasets:[{label:'Net PLTV forecast ÷ plan (%)',data:jp.map(r=>r.pcP),backgroundColor:jp.map(r=>col(r.pcP))}]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:(EMBED.julPaceMo||'')+' — net PLTV forecast vs plan by channel (%)'},legend:{display:false}},scales:{x:{ticks:{callback:v=>v+'%'}}}})});
+  }
   if(id==='s2'){
     mkChart('c_mtd_spend',{type:'line',data:{labels:EMBED.mtdDaily.map(d=>d.d),datasets:[{label:'Daily spend (£)',data:EMBED.mtdDaily.map(d=>Math.round(d.s)),borderColor:COL.blue,backgroundColor:'rgba(10,46,203,.08)',fill:true,tension:.3,pointRadius:0}]},options:baseOpts({plugins:{title:{display:true,text:'MTD daily spend'}}})});
     mkChart('c_mtd_ftd',{type:'line',data:{labels:EMBED.mtdDaily.map(d=>d.d),datasets:[{label:'Daily FTDs',data:EMBED.mtdDaily.map(d=>d.f),borderColor:COL.green,backgroundColor:'rgba(28,143,83,.10)',fill:true,tension:.3,pointRadius:0}]},options:baseOpts({plugins:{title:{display:true,text:'MTD daily FTDs'}}})});
