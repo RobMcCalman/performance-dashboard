@@ -982,6 +982,10 @@ let wkChNote='';
   let hasOther=false;
   rows.forEach(r=>{ if(topSet.has(r.channel)){byCh[r.channel].data[idx[r.wk]]+=r.f;} else {other.data[idx[r.wk]]+=r.f;hasOther=true;} });
   EMBED.wkChFtd={weeks:weeks.map(w=>w.slice(5)), series:[...series,...(hasOther?[other]:[])]};
+  // per-channel small multiples — ALL channels with any FTDs, ranked by total
+  const pal2=['#0A2ECB','#00B2FF','#1c8f53','#FF63F6','#FFDF00','#0B2595','#42D486','#7a86c9','#9aa3bf','#c9d0ee','#46527f','#7a5cd0','#d98ce0','#3aa0a0','#e0a500','#c01262','#6e7bd6','#00857a'];
+  const sep=ranked.filter(ch=>tot[ch]>0).map((ch,i)=>{ const data=weeks.map(()=>0); rows.forEach(r=>{ if(r.channel===ch) data[idx[r.wk]]+=r.f; }); return {ch,color:pal2[i%pal2.length],data}; });
+  EMBED.wkChSep={weeks:weeks.map(w=>w.slice(5)), channels:sep};
   const d0=weeks[0].slice(5), d1=weeks[weeks.length-1].slice(5);
   wkChNote=`Weekly FTDs by channel, ${weeks.length} complete ISO weeks (w/c ${d0} – ${d1}). Top 8 channels by total FTDs shown; the rest grouped as Other. Stacked bar height = total weekly FTDs.`;
 })();
@@ -990,7 +994,8 @@ panes.s12 = `<h2 class="sec">Six-month weekly trends (last 26 complete ISO weeks
 <h2 class="sec">Weekly PLTV per FTD — 6-month trend (net of affiliate revshare)</h2>
 ${chartbox('c_wk_ppf')}
 <p class="note">Value-per-FTD is broadly stable across the half-year (dashed line = 26-week average ${gbp(last26.reduce((a,w)=>a+w.ppf,0)/last26.length)}), so weekly FTD volume — not per-player value — drives PLTV. Plan FTD line dashed on the FTD chart.</p>
-${EMBED.wkChFtd?`<h2 class="sec">Weekly FTDs by channel</h2>${chartbox('c_wk_ch')}<p class="note">${wkChNote}</p>`:''}`;
+${EMBED.wkChFtd?`<h2 class="sec">Weekly FTDs by channel</h2>${chartbox('c_wk_ch')}<p class="note">${wkChNote}</p>`:''}
+${EMBED.wkChSep?`<h2 class="sec">Weekly FTDs — separate chart per channel (all channels)</h2><div class="gridch">${EMBED.wkChSep.channels.map((c,i)=>`<div class="chartbox"><canvas id="c_wkc_${i}"></canvas></div>`).join('')}</div><p class="note">One bar chart per channel (all ${EMBED.wkChSep.channels.length} channels with FTDs), ordered by total volume; same ${EMBED.wkChSep.weeks.length}-week window. Note each chart has its own y-axis scale, so compare shape/trend rather than height across channels.</p>`:''}`;
 
 // ====================================================================
 // Assemble HTML
@@ -1071,6 +1076,8 @@ table.heat tr.htot td{padding-top:4px;color:var(--muted)}
 .chartbox{background:#fff;border:1px solid var(--line);border-radius:13px;padding:12px;height:340px;margin-top:14px;position:relative}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .grid2 .chartbox{margin-top:0}
+.gridch{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:8px}
+.gridch .chartbox{height:210px;margin-top:0;padding:8px}
 .prog{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 16px;margin-top:12px}
 .prog-h{display:flex;justify-content:space-between;font-weight:700;font-size:13px;margin-bottom:8px}
 .prog-bar{position:relative;height:18px;background:#eef0f7;border-radius:10px;overflow:visible}
@@ -1253,6 +1260,11 @@ function buildPane(id){
     if(EMBED.wkChFtd){
       const wc=EMBED.wkChFtd;
       mkChart('c_wk_ch',{type:'bar',data:{labels:wc.weeks,datasets:wc.series.map(s=>({label:s.label,data:s.data,backgroundColor:s.color,stack:'ftd'}))},options:baseOpts({plugins:{title:{display:true,text:'Weekly FTDs by channel (stacked)'},legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}},tooltip:{mode:'index'}},scales:{x:{stacked:true},y:{stacked:true}}})});
+    }
+    if(EMBED.wkChSep){
+      EMBED.wkChSep.channels.forEach((c,i)=>{
+        mkChart('c_wkc_'+i,{type:'bar',data:{labels:EMBED.wkChSep.weeks,datasets:[{label:c.ch,data:c.data,backgroundColor:c.color}]},options:baseOpts({plugins:{title:{display:true,text:c.ch,font:{size:12}},legend:{display:false}},scales:{x:{ticks:{font:{size:8},maxRotation:0,autoSkip:true,maxTicksLimit:6}},y:{ticks:{font:{size:9}},beginAtZero:true}}})});
+      });
     }
   }
   }catch(e){ console.error('buildPane '+id+' failed:', e.message); }
