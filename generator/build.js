@@ -984,7 +984,9 @@ let wkChNote='';
   EMBED.wkChFtd={weeks:weeks.map(w=>w.slice(5)), series:[...series,...(hasOther?[other]:[])]};
   // per-channel small multiples — ALL channels with any FTDs, ranked by total
   const pal2=['#0A2ECB','#00B2FF','#1c8f53','#FF63F6','#FFDF00','#0B2595','#42D486','#7a86c9','#9aa3bf','#c9d0ee','#46527f','#7a5cd0','#d98ce0','#3aa0a0','#e0a500','#c01262','#6e7bd6','#00857a'];
-  const sep=ranked.filter(ch=>tot[ch]>0).map((ch,i)=>{ const data=weeks.map(()=>0); rows.forEach(r=>{ if(r.channel===ch) data[idx[r.wk]]+=r.f; }); return {ch,color:pal2[i%pal2.length],data}; });
+  const totS={}; rows.forEach(r=>totS[r.channel]=(totS[r.channel]||0)+(r.s||0));
+  const sepChs=[...new Set(rows.map(r=>r.channel))].filter(ch=>(tot[ch]||0)>0||(totS[ch]||0)>0).sort((a,b)=>(tot[b]||0)-(tot[a]||0));
+  const sep=sepChs.map((ch,i)=>{ const data=weeks.map(()=>0), sdata=weeks.map(()=>0); rows.forEach(r=>{ if(r.channel===ch){ data[idx[r.wk]]+=r.f; sdata[idx[r.wk]]+=(r.s||0); } }); return {ch,color:pal2[i%pal2.length],data,sdata}; });
   EMBED.wkChSep={weeks:weeks.map(w=>w.slice(5)), channels:sep};
   const d0=weeks[0].slice(5), d1=weeks[weeks.length-1].slice(5);
   wkChNote=`Weekly FTDs by channel, ${weeks.length} complete ISO weeks (w/c ${d0} – ${d1}). Top 8 channels by total FTDs shown; the rest grouped as Other. Stacked bar height = total weekly FTDs.`;
@@ -995,7 +997,7 @@ panes.s12 = `<h2 class="sec">Six-month weekly trends (last 26 complete ISO weeks
 ${chartbox('c_wk_ppf')}
 <p class="note">Value-per-FTD is broadly stable across the half-year (dashed line = 26-week average ${gbp(last26.reduce((a,w)=>a+w.ppf,0)/last26.length)}), so weekly FTD volume — not per-player value — drives PLTV. Plan FTD line dashed on the FTD chart.</p>
 ${EMBED.wkChFtd?`<h2 class="sec">Weekly FTDs by channel</h2>${chartbox('c_wk_ch')}<p class="note">${wkChNote}</p>`:''}
-${EMBED.wkChSep?`<h2 class="sec">Weekly FTDs — separate chart per channel (all channels)</h2><div class="gridch">${EMBED.wkChSep.channels.map((c,i)=>`<div class="chartbox"><canvas id="c_wkc_${i}"></canvas></div>`).join('')}</div><p class="note">One bar chart per channel (all ${EMBED.wkChSep.channels.length} channels with FTDs), ordered by total volume; same ${EMBED.wkChSep.weeks.length}-week window. Note each chart has its own y-axis scale, so compare shape/trend rather than height across channels.</p>`:''}`;
+${EMBED.wkChSep?`<h2 class="sec">Weekly spend vs FTDs — separate chart per channel (all channels)</h2><div class="gridch">${EMBED.wkChSep.channels.map((c,i)=>`<div class="chartbox"><canvas id="c_wkc_${i}"></canvas></div>`).join('')}</div><p class="note">One chart per channel (all ${EMBED.wkChSep.channels.length}), ordered by FTD volume; same ${EMBED.wkChSep.weeks.length}-week window. <b>Bars = FTDs</b> (left axis); <b>line = spend £</b> (right axis). Each chart auto-scales its own axes, so read shape/trend per channel; organic lines sit at £0, and ATL shows spend with no attributed FTDs.</p>`:''}`;
 
 // ====================================================================
 // Assemble HTML
@@ -1263,7 +1265,10 @@ function buildPane(id){
     }
     if(EMBED.wkChSep){
       EMBED.wkChSep.channels.forEach((c,i)=>{
-        mkChart('c_wkc_'+i,{type:'bar',data:{labels:EMBED.wkChSep.weeks,datasets:[{label:c.ch,data:c.data,backgroundColor:c.color}]},options:baseOpts({plugins:{title:{display:true,text:c.ch,font:{size:12}},legend:{display:false}},scales:{x:{ticks:{font:{size:8},maxRotation:0,autoSkip:true,maxTicksLimit:6}},y:{ticks:{font:{size:9}},beginAtZero:true}}})});
+        mkChart('c_wkc_'+i,{type:'bar',data:{labels:EMBED.wkChSep.weeks,datasets:[
+          {type:'bar',label:'FTDs',data:c.data,backgroundColor:c.color,yAxisID:'y',order:2},
+          {type:'line',label:'Spend',data:c.sdata,borderColor:'#0c1430',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y1',order:1}
+        ]},options:baseOpts({plugins:{title:{display:true,text:c.ch,font:{size:12}},legend:{display:false}},scales:{x:{ticks:{font:{size:8},maxRotation:0,autoSkip:true,maxTicksLimit:6}},y:{position:'left',beginAtZero:true,ticks:{font:{size:9}}},y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},ticks:{font:{size:8},callback:v=>'£'+(v>=1000?(v/1000).toFixed(0)+'k':v)}}}})});
       });
     }
   }
