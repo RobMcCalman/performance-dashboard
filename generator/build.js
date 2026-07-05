@@ -966,11 +966,31 @@ ${kpi('Net LTV:CAC', `${f2(affMomLtvMay)}→${f2(affMomLtvJun)}`, 'channel blend
 }
 
 // ---- S12 WEEKLY TRENDS ----
+// weekly FTDs by channel (stacked bars) — top 8 channels + Other
+let wkChNote='';
+(function(){
+  const rows=D.wkCh||[]; if(!rows.length) return;
+  const weeks=[...new Set(rows.map(r=>r.wk))].sort();
+  const tot={}; rows.forEach(r=>tot[r.channel]=(tot[r.channel]||0)+r.f);
+  const ranked=Object.keys(tot).sort((a,b)=>tot[b]-tot[a]);
+  const top=ranked.slice(0,8), topSet=new Set(top);
+  const pal=['#0A2ECB','#00B2FF','#1c8f53','#FF63F6','#FFDF00','#0B2595','#42D486','#7a86c9'];
+  const idx={}; weeks.forEach((w,i)=>idx[w]=i);
+  const series=top.map((ch,i)=>({label:ch,color:pal[i],data:weeks.map(()=>0)}));
+  const byCh={}; series.forEach(s=>byCh[s.label]=s);
+  const other={label:'Other',color:'#9aa3bf',data:weeks.map(()=>0)};
+  let hasOther=false;
+  rows.forEach(r=>{ if(topSet.has(r.channel)){byCh[r.channel].data[idx[r.wk]]+=r.f;} else {other.data[idx[r.wk]]+=r.f;hasOther=true;} });
+  EMBED.wkChFtd={weeks:weeks.map(w=>w.slice(5)), series:[...series,...(hasOther?[other]:[])]};
+  const d0=weeks[0].slice(5), d1=weeks[weeks.length-1].slice(5);
+  wkChNote=`Weekly FTDs by channel, ${weeks.length} complete ISO weeks (w/c ${d0} – ${d1}). Top 8 channels by total FTDs shown; the rest grouped as Other. Stacked bar height = total weekly FTDs.`;
+})();
 panes.s12 = `<h2 class="sec">Six-month weekly trends (last 26 complete ISO weeks)</h2>
 <div class="grid2">${chartbox('c_wk_sf')}${chartbox('c_wk_cl')}</div>
 <h2 class="sec">Weekly PLTV per FTD — 6-month trend (net of affiliate revshare)</h2>
 ${chartbox('c_wk_ppf')}
-<p class="note">Value-per-FTD is broadly stable across the half-year (dashed line = 26-week average ${gbp(last26.reduce((a,w)=>a+w.ppf,0)/last26.length)}), so weekly FTD volume — not per-player value — drives PLTV. Plan FTD line dashed on the FTD chart.</p>`;
+<p class="note">Value-per-FTD is broadly stable across the half-year (dashed line = 26-week average ${gbp(last26.reduce((a,w)=>a+w.ppf,0)/last26.length)}), so weekly FTD volume — not per-player value — drives PLTV. Plan FTD line dashed on the FTD chart.</p>
+${EMBED.wkChFtd?`<h2 class="sec">Weekly FTDs by channel</h2>${chartbox('c_wk_ch')}<p class="note">${wkChNote}</p>`:''}`;
 
 // ====================================================================
 // Assemble HTML
@@ -1230,6 +1250,10 @@ function buildPane(id){
     mkChart('c_wk_cl',{type:'line',data:{labels:w.map(x=>x.w),datasets:[{label:'CPA (£)',data:w.map(x=>Math.round(x.cpa)),borderColor:COL.navy,yAxisID:'y',tension:.3,pointRadius:0},{label:'LTV:CAC',data:w.map(x=>+x.ltv.toFixed(3)),borderColor:COL.green,yAxisID:'y1',tension:.3,pointRadius:0}]},options:baseOpts({plugins:{title:{display:true,text:'Weekly CPA & LTV:CAC'}},scales:{y:{position:'left'},y1:{position:'right',grid:{drawOnChartArea:false}}}})});
     const avg=w.reduce((a,x)=>a+x.ppf,0)/w.length;
     mkChart('c_wk_ppf',{type:'line',data:{labels:w.map(x=>x.w),datasets:[{label:'Net PLTV/FTD (£)',data:w.map(x=>Math.round(x.ppf)),borderColor:COL.sky,backgroundColor:'rgba(0,178,255,.10)',fill:true,tension:.3,pointRadius:0},{label:'26-wk avg',data:w.map(()=>Math.round(avg)),borderColor:COL.pink,borderDash:[6,4],pointRadius:0}]},options:baseOpts({plugins:{title:{display:true,text:'Weekly net PLTV per FTD'}}})});
+    if(EMBED.wkChFtd){
+      const wc=EMBED.wkChFtd;
+      mkChart('c_wk_ch',{type:'bar',data:{labels:wc.weeks,datasets:wc.series.map(s=>({label:s.label,data:s.data,backgroundColor:s.color,stack:'ftd'}))},options:baseOpts({plugins:{title:{display:true,text:'Weekly FTDs by channel (stacked)'},legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}},tooltip:{mode:'index'}},scales:{x:{stacked:true},y:{stacked:true}}})});
+    }
   }
   }catch(e){ console.error('buildPane '+id+' failed:', e.message); }
 }
