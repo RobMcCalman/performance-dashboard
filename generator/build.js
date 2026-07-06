@@ -1035,6 +1035,14 @@ let wkChNote='';
   const sepChs=[...new Set(rows.map(r=>r.channel))].filter(ch=>(tot[ch]||0)>0||(totS[ch]||0)>0).sort((a,b)=>(tot[b]||0)-(tot[a]||0));
   const sep=sepChs.map((ch,i)=>{ const data=weeks.map(()=>0), sdata=weeks.map(()=>0), pdata=weeks.map(()=>0); rows.forEach(r=>{ if(r.channel===ch){ data[idx[r.wk]]+=r.f; sdata[idx[r.wk]]+=(r.s||0); pdata[idx[r.wk]]+=(r.p||0); } }); const ldata=weeks.map((_,k)=>sdata[k]>0?+(pdata[k]/sdata[k]).toFixed(2):null); return {ch,color:pal2[i%pal2.length],data,sdata,ldata}; });
   EMBED.wkChSep={weeks:weeks.map(w=>w.slice(5)), channels:sep};
+  // grouped weekly reviews (combined member channels)
+  const GRP=[
+    {name:'iOS — iOS Organic + Apple Ads Brand + Generics', ch:['iOS Organic','Apple Ads Brand','Apple Ads Non Brand']},
+    {name:'Android — Meta App + Android Organic + Google UAC', ch:['Meta App','Android Organic','Google UAC']},
+    {name:'Brand Search — PPC Brand + Organic Search', ch:['PPC Brand','Organic Search']}
+  ];
+  const groups=GRP.map(g=>{ const f=weeks.map(()=>0),s=weeks.map(()=>0),p=weeks.map(()=>0); rows.forEach(r=>{ if(g.ch.indexOf(r.channel)>=0){ f[idx[r.wk]]+=r.f; s[idx[r.wk]]+=(r.s||0); p[idx[r.wk]]+=(r.p||0); } }); const ltv=weeks.map((_,k)=>s[k]>0?+(p[k]/s[k]).toFixed(2):null); return {name:g.name, f:f.map(r0), s:s.map(r0), p:p.map(r0), ltv}; });
+  EMBED.wkGroups={weeks:weeks.map(w=>w.slice(5)), groups};
   const d0=weeks[0].slice(5), d1=weeks[weeks.length-1].slice(5);
   wkChNote=`Weekly FTDs by channel, ${weeks.length} complete ISO weeks (w/c ${d0} – ${d1}). Top 8 channels by total FTDs shown; the rest grouped as Other. Stacked bar height = total weekly FTDs.`;
 })();
@@ -1044,6 +1052,7 @@ panes.s12 = `<h2 class="sec">Six-month weekly trends (last 26 complete ISO weeks
 ${chartbox('c_wk_ppf')}
 <p class="note">Value-per-FTD is broadly stable across the half-year (dashed line = 26-week average ${gbp(last26.reduce((a,w)=>a+w.ppf,0)/last26.length)}), so weekly FTD volume — not per-player value — drives PLTV. Plan FTD line dashed on the FTD chart.</p>
 ${EMBED.wkChFtd?`<h2 class="sec">Weekly FTDs by channel</h2>${chartbox('c_wk_ch')}<p class="note">${wkChNote}</p>`:''}
+${EMBED.wkGroups?`<h2 class="sec">Grouped weekly reviews — iOS · Android · Brand Search</h2><div class="gridch">${EMBED.wkGroups.groups.map((g,i)=>`<div class="chartbox"><canvas id="c_grp_${i}"></canvas></div>`).join('')}</div><p class="note">Combined weekly view per group. <b>Bars = FTDs</b> (left); <b>solid line = spend £</b>; <b>dashed green = net LTV:CAC</b> (right axes). Members — <b>iOS</b>: iOS Organic + Apple Ads Brand + Apple Ads Non Brand (generics); <b>Android</b>: Meta App + Android Organic + Google UAC; <b>Brand Search</b>: PPC Brand + Organic Search. LTV:CAC = combined net PLTV ÷ combined spend (blank weeks = no spend).</p>`:''}
 ${EMBED.wkChSep?`<h2 class="sec">Weekly spend vs FTDs — separate chart per channel (all channels)</h2><div class="gridch">${EMBED.wkChSep.channels.map((c,i)=>`<div class="chartbox"><canvas id="c_wkc_${i}"></canvas></div>`).join('')}</div><p class="note">One chart per channel (all ${EMBED.wkChSep.channels.length}), ordered by FTD volume; same ${EMBED.wkChSep.weeks.length}-week window. <b>Bars = FTDs</b> (left); <b>solid line = spend £</b>; <b>dashed green = net LTV:CAC</b> (right axes). Each chart auto-scales its own axes, so read shape/trend per channel; LTV:CAC is blank where there is no spend (organic), and ATL shows spend with no attributed FTDs.</p>`:''}`;
 
 // ====================================================================
@@ -1316,6 +1325,15 @@ function buildPane(id){
     if(EMBED.wkChFtd){
       const wc=EMBED.wkChFtd;
       mkChart('c_wk_ch',{type:'bar',data:{labels:wc.weeks,datasets:wc.series.map(s=>({label:s.label,data:s.data,backgroundColor:s.color,stack:'ftd'}))},options:baseOpts({plugins:{title:{display:true,text:'Weekly FTDs by channel (stacked)'},legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}},tooltip:{mode:'index'}},scales:{x:{stacked:true},y:{stacked:true}}})});
+    }
+    if(EMBED.wkGroups){
+      EMBED.wkGroups.groups.forEach((g,i)=>{
+        mkChart('c_grp_'+i,{type:'bar',data:{labels:EMBED.wkGroups.weeks,datasets:[
+          {type:'bar',label:'FTDs',data:g.f,backgroundColor:'rgba(10,46,203,.30)',yAxisID:'y',order:3},
+          {type:'line',label:'Spend £',data:g.s,borderColor:'#0c1430',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y1',order:2},
+          {type:'line',label:'LTV:CAC',data:g.ltv,borderColor:'#1c8f53',borderWidth:1.5,borderDash:[4,3],pointRadius:0,tension:.3,spanGaps:true,yAxisID:'y2',order:1}
+        ]},options:baseOpts({plugins:{title:{display:true,text:g.name,font:{size:11}},legend:{display:true,position:'bottom',labels:{font:{size:8},boxWidth:8,padding:6}}},scales:{x:{ticks:{font:{size:8},maxRotation:0,autoSkip:true,maxTicksLimit:7}},y:{position:'left',beginAtZero:true,ticks:{font:{size:9}}},y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},ticks:{font:{size:8},maxTicksLimit:4,callback:v=>'£'+(v>=1000?(v/1000).toFixed(0)+'k':v)}},y2:{position:'right',beginAtZero:true,offset:true,grid:{drawOnChartArea:false},ticks:{font:{size:8},maxTicksLimit:4,callback:v=>v+'x'}}}})});
+      });
     }
     if(EMBED.wkChSep){
       EMBED.wkChSep.channels.forEach((c,i)=>{
