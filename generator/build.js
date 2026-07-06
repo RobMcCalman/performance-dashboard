@@ -313,8 +313,9 @@ const WC_FIX = { // matches per calendar day (group stage from kickoffadventures
   '2026-06-11':2,'2026-06-12':2,'2026-06-13':4,'2026-06-14':4,'2026-06-15':4,'2026-06-16':3,
   '2026-06-17':5,'2026-06-18':4,'2026-06-19':4,'2026-06-20':3,'2026-06-21':5,'2026-06-22':4,
   '2026-06-23':4,'2026-06-24':6,'2026-06-25':6,'2026-06-26':6,'2026-06-27':6,
-  '2026-06-28':1,'2026-06-29':3,'2026-06-30':3,'2026-07-01':3,'2026-07-02':3,'2026-07-03':3 }; // 28 Jun→ = Round of 32 (real fixtures)
-const WC_ENG = {'2026-06-17':'v Croatia (W 4-2)','2026-06-23':'v Ghana (D 0-0)','2026-06-27':'v Panama (W 2-0)','2026-07-01':'v DR Congo (W 2-1, Kane ×2 — R32)'};
+  '2026-06-28':1,'2026-06-29':3,'2026-06-30':3,'2026-07-01':3,'2026-07-02':3,'2026-07-03':3,
+  '2026-07-04':2,'2026-07-05':2,'2026-07-06':2,'2026-07-07':2 }; // 28 Jun–3 Jul = Round of 32; 4–7 Jul = Round of 16
+const WC_ENG = {'2026-06-17':'v Croatia (W 4-2)','2026-06-23':'v Ghana (D 0-0)','2026-06-27':'v Panama (W 2-0)','2026-07-01':'v DR Congo (W 2-1, Kane ×2 — R32)','2026-07-05':'v Mexico (W 3-1, Kane — R16)'};
 // 2026 World Cup Round of 32 — fixtures & results (US match dates; results confirmed through 1 Jul, later ties scheduled)
 const WC_R32 = [
   {d:'2026-06-28', m:'South Africa v Canada', r:'0–1'},
@@ -327,12 +328,23 @@ const WC_R32 = [
   {d:'2026-07-01', m:'England v DR Congo', r:'2–1'},
   {d:'2026-07-01', m:'Belgium v Senegal', r:'3–2 (AET)'},
   {d:'2026-07-01', m:'United States v Bosnia & Herz.', r:'2–0'},
-  {d:'2026-07-02', m:'Spain v Austria', r:''},
-  {d:'2026-07-02', m:'Portugal v Croatia', r:''},
-  {d:'2026-07-02', m:'Switzerland v Algeria', r:''},
-  {d:'2026-07-03', m:'Australia v Egypt', r:''},
-  {d:'2026-07-03', m:'Argentina v Cape Verde', r:''},
-  {d:'2026-07-03', m:'Colombia v Ghana', r:''},
+  {d:'2026-07-02', m:'Spain v Austria', r:'2–0'},
+  {d:'2026-07-02', m:'Portugal v Croatia', r:'2–1'},
+  {d:'2026-07-02', m:'Switzerland v Algeria', r:'1–0'},
+  {d:'2026-07-03', m:'Australia v Egypt', r:'1–2'},
+  {d:'2026-07-03', m:'Argentina v Cape Verde', r:'3–0'},
+  {d:'2026-07-03', m:'Colombia v Ghana', r:'1–0'},
+];
+// 2026 World Cup Round of 16 — 4–7 Jul (US match dates); results in through ASOF, later ties scheduled
+const WC_R16 = [
+  {d:'2026-07-04', m:'Brazil v Paraguay', r:'2–1'},
+  {d:'2026-07-04', m:'France v Norway', r:'3–1'},
+  {d:'2026-07-05', m:'England v Mexico', r:'3–1'},
+  {d:'2026-07-05', m:'Belgium v United States', r:'2–2 (4–3 pens)'},
+  {d:'2026-07-06', m:'Spain v Morocco', r:''},
+  {d:'2026-07-06', m:'Argentina v Colombia', r:''},
+  {d:'2026-07-07', m:'Portugal v Switzerland', r:''},
+  {d:'2026-07-07', m:'Egypt v Canada', r:''},
 ];
 const WC_START='2026-06-11';
 // baseline: pre-tournament & pre-heat (May 12 - Jun 10) day-of-week FTD norms
@@ -783,7 +795,7 @@ ${kpi('Sensitivity', f2(wxFc.slope)+' idx/°C', `temp↔FTD corr ${f2(wxCorrIdx)
 ${kpi('Tournament avg index', r0(wcAll)+'%', `11 Jun–${GAPLBL} vs pre-WC norm`)}
 ${kpi('Pre-heat (11–18 Jun)', r0(wcPreHeat)+'%', 'WC live, heat not yet')}
 ${kpi(`Heat period (19 Jun–${GAPLBL})`, r0(wcHeatSeg)+'%', 'WC + heatwave')}
-${kpi('England match days', r0(wcEng)+'%', '17, 23, 27 Jun + 1 Jul R32')}
+${kpi('England match days', r0(wcEng)+'%', '17/23/27 Jun · 1 Jul R32 · 5 Jul R16')}
 </div>
 <div class="chartbox" style="margin-top:14px"><canvas id="wcIdx"></canvas></div>
 <div class="grid2" style="margin-top:14px">${chartbox('wcScatter')}<div class="callout" style="margin-top:0"><b>Read — all fixtures.</b> Across the whole group stage, blended FTDs ran <b>${r0(wcAll)}%</b> of the pre-tournament norm, but that shortfall is almost entirely the heatwave: <b>${r0(wcPreHeat)}%</b> before the heat (11–18 Jun, essentially normal) vs <b>${r0(wcHeatSeg)}%</b> once it hit (19 Jun–${GAPLBL}). Fixture density (2–6 games/day) shows only a weak relationship with the index (corr <b>${f2(wcCorrFix)}</b>), and the heaviest fixture days (MD3, 24–27 Jun, 6 games) coincide with peak heat — so that's confounded, not a clean "more football = fewer sign-ups" signal.<br><br><b>England specifically.</b> The cleanest read is the <b>17 Jun opener</b> (pre-heat, biggest game): FTDs came in at <b>${r0(wcRows.find(r=>r.date==='2026-06-17').idx)}%</b> of the Wednesday norm — slightly <i>above</i>. The softer England days (23rd ${r0(wcRows.find(r=>r.date==='2026-06-23').idx)}%, 27th ${r0(wcRows.find(r=>r.date==='2026-06-27').idx)}%) both fall in peak heat. <b>No evidence England matches suppress casino sign-ups</b> at a daily level.</div></div>
@@ -797,8 +809,14 @@ ${kpi('Fixtures × PLTV/FTD corr', (wcCorrPpf>=0?'+':'')+f2(wcCorrPpf), 'mildly 
 <h2 class="sec">Day-by-day — tournament window</h2>
 ${tbl([{t:'Date'},{t:'Day'},{t:'Fixtures',r:1},{t:'FTDs',r:1},{t:'Norm',r:1},{t:'Index',r:1},{t:'Heat'},{t:'England'}], rows)}
 <h2 class="sec">Round of 32 — fixtures &amp; results</h2>
-<div class="callout">The knockout Round of 32 (32 teams, 16 ties) ran 28 Jun–3 Jul. Results confirmed through 1 Jul (${GAPLBL}); later ties scheduled. <b>England 2–1 DR Congo</b> (Atlanta, 1 Jul) — Harry Kane brace after going a goal down — sets up a Round-of-16 tie with co-hosts Mexico. Dates shown are match (US local) dates.</div>
+<div class="callout">The knockout Round of 32 (32 teams, 16 ties) ran 28 Jun–3 Jul and is now <b>complete</b>. <b>England 2–1 DR Congo</b> (Atlanta, 1 Jul) — Harry Kane brace after going a goal down — set up the Round-of-16 tie with co-hosts Mexico. Dates shown are match (US local) dates.</div>
 ${tbl([{t:'Date'},{t:'Match'},{t:'Result'}], WC_R32.map(x=>({cells:[
+  fmtDM(x.d), x.m.includes('England')?`<b>${x.m}</b>`:x.m,
+  x.r? (x.m.includes('England')?`<b>${x.r}</b>`:x.r) : `<span class="pill grey">scheduled</span>`
+]})))}
+<h2 class="sec">Round of 16 — fixtures &amp; results</h2>
+<div class="callout">The Round of 16 (16 teams, 8 ties) runs 4–7 Jul. Results in through ${GAPLBL}; the 6–7 Jul ties are scheduled. <b>England 3–1 Mexico</b> (5 Jul) — Kane again — books a quarter-final. The 4–5 Jul match days now feed the fixtures line and index above. Dates shown are match (US local) dates.</div>
+${tbl([{t:'Date'},{t:'Match'},{t:'Result'}], WC_R16.map(x=>({cells:[
   fmtDM(x.d), x.m.includes('England')?`<b>${x.m}</b>`:x.m,
   x.r? (x.m.includes('England')?`<b>${x.r}</b>`:x.r) : `<span class="pill grey">scheduled</span>`
 ]})))}
