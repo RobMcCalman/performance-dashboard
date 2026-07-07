@@ -1104,7 +1104,39 @@ ${EMBED.wkChSep?`<h2 class="sec">Weekly spend vs FTDs — separate chart per cha
 // ====================================================================
 // Assemble HTML
 // ====================================================================
-const TABS = [['summary','Summary'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],['s9','Channel opt'],['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
+// ---- REC RECOMMENDATIONS ----
+{
+  const scale = optRows.filter(r=>PAID.has(r.ch)&&r.ltv>=1.2&&r.f>=20).sort((a,b)=>b.ltv-a.ltv);
+  const fix = optRows.filter(r=>PAID.has(r.ch)&&r.ch!=='ATL'&&r.f>0&&r.ltv<0.8&&r.s>=5000).sort((a,b)=>b.s-a.s);
+  const watch = optRows.filter(r=>PAID.has(r.ch)&&r.ch!=='ATL'&&r.f>0&&r.ltv>=0.8&&r.ltv<1.0&&r.s>=5000).sort((a,b)=>a.ltv-b.ltv);
+  const affCut = affAlerts.slice().sort((a,b)=>a.ltv-b.ltv);
+  const affGrow = affRows.filter(a=>a.ltv>=1.2&&a.s>=8000).sort((x,y)=>y.ltv-x.ltv).slice(0,5);
+  const q = FTDQCH?FTDQCH.t4:[];
+  const qBest = [...q].sort((a,b)=>b.apd2R-a.apd2R).slice(0,3);
+  const qWorst = [...q].filter(r=>r.ftd>=150).sort((a,b)=>a.apd2R-b.apd2R).slice(0,3);
+  const qVal = [...q].sort((a,b)=>b.ppf-a.ppf).slice(0,3);
+  const lastPpf = FTDQ.length?FTDQ[FTDQ.length-1].ppf:0;
+  const recCard=(n,pri,pcol,title,body)=>`<div class="rec"><div style="display:flex;align-items:center;gap:8px"><b>${n}. ${title}</b><span class="pill ${pcol}">${pri}</span></div><div style="margin-top:6px">${body}</div></div>`;
+  panes.rec = `<h2 class="sec">Recommendations — data-driven (${MO_CUR} / last-4-week view)</h2>
+<div class="callout">Generated from the live dashboard: last-4-week channel LTV:CAC, FTD-quality (APD2+ retention, PLTV/FTD), affiliate economics and the heatwave forecast. Net of the 15% affiliate revshare. Ordered by expected impact — revisit each refresh as figures move.</div>
+${recCard(1,'biggest lever','green','Rebalance affiliate spend — cut the underwater whales, grow the profitable tail',
+  `Affiliate blends to <b>~${f2(div(affRows.reduce((a,x)=>a+x.p,0),affRows.reduce((a,x)=>a+x.s,0)))} net</b> and ~two-thirds of spend sits below break-even. Renegotiate/cap the sub-0.8 partners at ≥£20k${affCut.length?': <b>'+affCut.slice(0,5).map(a=>affName(a.aid)+' '+f2(a.ltv)).join(', ')+'</b>':''}. Redirect toward the profitable tail${affGrow.length?': <b>'+affGrow.map(a=>affName(a.aid)+' '+f2(a.ltv)).join(', ')+'</b>':''} and the high-volume workhorse digadvfree. Compete on dependability + relationships, not blanket CPA increases — hold blended payback at ~12 months.`)}
+${recCard(2,'scale','green','Add budget to the paid winners with headroom',
+  scale.length?`<b>${scale.map(r=>r.ch+' '+f2(r.ltv)).join(', ')}</b> all clear 1.2+ net LTV:CAC — the clearest scale-up candidates. Apple Ads Brand's evening daypart and Google UAC's bingo/World-Cup ad groups have shown the most headroom.`:`No paid channel is currently ≥1.2 net at scale — hold and optimise before pushing spend.`)}
+${recCard(3,'fix','red','Tighten or rework the sub-break-even paid channels before scaling',
+  `${fix.length?'<b>'+fix.map(r=>r.ch+' '+f2(r.ltv)).join(', ')+'</b> sit below break-even on ≥£5k spend — cap CPAs / rework placements (Meta iOS install-vs-purchase, weakest affiliate deals) rather than adding budget.':'No material paid channel is below 0.8 net this window.'} ${watch.length?'Watch: <b>'+watch.map(r=>r.ch+' '+f2(r.ltv)).join(', ')+'</b> (0.8–1.0).':''}`)}
+${recCard(4,'protect value','amber','Defend the value line — skew acquisition to high-PLTV, high-retention channels',
+  `PLTV/FTD has eased to ~<b>${gbp(lastPpf)}</b>/wk (value-mix + heat, plus cohort maturation). Weight growth toward the highest value-per-FTD channels${qVal.length?' — <b>'+qVal.map(r=>r.ch+' '+gbp(r.ppf)).join(', ')+'</b>':''} and lift day-2 activation (welcome-offer/CRM) on the lower-retention lines to protect blended value.`)}
+${recCard(5,'quality','amber','Lean into the highest-retention channels; investigate the laggards',
+  `First-week APD2+ retention is strongest on${qBest.length?' <b>'+qBest.map(r=>r.ch+' '+r0(r.apd2R)+'%</b>').join(', '):''} and weakest on${qWorst.length?' <b>'+qWorst.map(r=>r.ch+' '+r0(r.apd2R)+'%</b>').join(', '):''}. Dig into why the low-retention channels (bonus-seeking, onboarding friction, offer mismatch) convert so few FTDs into 2+-day actives, and rework the offer/journey there.`)}
+${wxFc?recCard(6,'this week','amber','Manage the forecast heatwave',
+  `The heatwave is forecast to cut FTDs <b>~${pct1(wxFc.pct)}</b> this week (~<b>${num(wxFc.short)} fewer</b>). Shift budget to evening/in-play windows, lean on app/retargeting audiences that are less heat-sensitive, avoid front-loading peak-day spend, and expect a rebound as the spell breaks. Value per FTD should hold, so don't over-react on CPA.`):''}
+${recCard(7,'enable','grey','Fix measurement &amp; invest in CRO over higher CPAs',
+  `Given the affiliate economics, <b>CRO is a better use of marginal budget than higher CPAs</b> — it lifts every channel at zero media cost (Amplitude, heatmapping, welcome-offer testing). Fix <b>Affiliate App</b> tagging (it collapses into Affiliate, so we can't size it). Adopt <b>first-click as an analytical lens</b> to value introducer affiliates while keeping last-click for payouts.`)}
+<p class="note">Recommendations are heuristic prompts from the data, not automated decisions — validate against contract terms, seasonality and RG/compliance before acting. LTV:CAC uses the 12-month net PLTV model; recent cohorts revise up as they mature.</p>`;
+}
+
+const TABS = [['summary','Summary'],['rec','Recommendations'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],['s9','Channel opt'],['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
 const tabbar = TABS.map((t,i)=>`<button class="tab${i===0?' active':''}" data-pane="${t[0]}">${t[1]}</button>`).join('');
 const paneHTML = TABS.map((t,i)=>`<section class="pane${i===0?' active':''}" id="pane-${t[0]}">${panes[t[0]]||''}</section>`).join('');
 
