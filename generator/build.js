@@ -709,9 +709,9 @@ ${tbl([{t:'Channel'},{t:'FY plan spend',r:1},{t:'YTD actual',r:1},{t:'% used',r:
   for(let m=1;m<=RM;m++){
     const a=moTot[m]; const pr=(m===CUR_MO?DAYS_ELAPSED/DIM:1); const s25=D.y2025spend[m-1]*pr; const f25=D.y2025mon[m-1].f*pr; const p25=D.y2025mon[m-1].pg*pr;
     const cpa26=div(a.s,a.f), cpa25=div(s25,f25), l26=div(a.p,a.s), l25=div(p25,s25);
-    rows.push({cells:[ MONTHS[m-1]+(m===6?' *':''), num(a.f), num(r0(f25)), (a.f/f25-1>=0?'+':'')+pct(a.f/f25-1), gbp(cpa26), gbp(cpa25), f2(l26), f2(l25) ]});
+    rows.push({cells:[ MONTHS[m-1]+(m===6?' *':''), num(a.f), num(r0(f25)), (a.f/f25-1>=0?'+':'')+pct(a.f/f25-1), gbp(cpa26), gbp(cpa25), f2(l26), f2(l25), gbp(div(a.p,a.f)), gbp(div(p25,f25)) ]});
   }
-  rows.push({cls:'tot',cells:['YTD *', num(ytd.f), num(r0(yoy.ftds25)), (yoy.ftdsD>=0?'+':'')+pct(yoy.ftdsD), gbp(yoy.cpa26), gbp(yoy.cpa25), f2(yoy.ltv26), f2(yoy.ltv25)]});
+  rows.push({cls:'tot',cells:['YTD *', num(ytd.f), num(r0(yoy.ftds25)), (yoy.ftdsD>=0?'+':'')+pct(yoy.ftdsD), gbp(yoy.cpa26), gbp(yoy.cpa25), f2(yoy.ltv26), f2(yoy.ltv25), gbp(div(yoy.pltv26,yoy.ftds26)), gbp(div(yoy.pltv25,yoy.ftds25))]});
   panes.s3 = `<h2 class="sec">YTD &amp; year-on-year (hybrid 2025 baseline)</h2>
 <div class="callout">2025 baseline uses <b>FY25-tracker spend</b> with <b>model FTDs &amp; PLTV (gross)</b> from BigQuery. 2026 Affiliate PLTV is net of the 15% revshare, so the <b>YoY LTV:CAC uplift is conservative</b> (2026 net vs 2025 gross). * June &amp; YTD are through ${GAPLBL} (2025 pro-rated to match).</div>
 <div class="kpis" style="margin-top:14px">
@@ -721,8 +721,8 @@ ${kpi('YTD LTV:CAC', f2(yoy.ltv26), `2025 ${f2(yoy.ltv25)} · ${(yoy.ltvD>=0?'+'
 ${kpi('YTD net PLTV', gbpM(ytd.p), `spend ${gbpM(ytd.s)}`)}
 </div>
 <div class="chartbox" style="margin-top:14px"><canvas id="c_yoy_ftd"></canvas></div>
-<h2 class="sec">Monthly YoY — FTDs, CPA, LTV:CAC</h2>
-${tbl([{t:'Month'},{t:'FTDs 26',r:1},{t:'FTDs 25',r:1},{t:'Δ',r:1},{t:'CPA 26',r:1},{t:'CPA 25',r:1},{t:'LTV:CAC 26',r:1},{t:'LTV:CAC 25',r:1}], rows)}
+<h2 class="sec">Monthly YoY — FTDs, CPA, LTV:CAC, PLTV/FTD</h2>
+${tbl([{t:'Month'},{t:'FTDs 26',r:1},{t:'FTDs 25',r:1},{t:'Δ',r:1},{t:'CPA 26',r:1},{t:'CPA 25',r:1},{t:'LTV:CAC 26',r:1},{t:'LTV:CAC 25',r:1},{t:'PLTV/FTD 26',r:1},{t:'PLTV/FTD 25',r:1}], rows)}
 <h2 class="sec">What drove the CPA drop — spend vs volume (YoY bridge)</h2>
 <div class="chartbox"><canvas id="c_cpa_bridge"></canvas></div>
 <div class="callout">CPA = spend ÷ FTDs. Bridging 2025 → 2026: spend grew +${pct(yoy.spend26/yoy.spend25-1)} which on its own would <b>raise</b> CPA by <b>+${gbp(cpaSpendEff)}</b>, but FTDs grew +${pct(yoy.ftdsD)} which <b>cuts</b> CPA by <b>${gbp(cpaVolEff)}</b>. Net ${gbp(yoy.cpa26-yoy.cpa25)} (£${r0(yoy.cpa25)} → £${r0(yoy.cpa26)}, ${pct1(yoy.cpaD)}). The <b>volume effect dominates</b> — FTDs grew about twice as fast as spend, with fixed brand/ATL investment (~${gbpM(atlYTD)} YTD, 0 attributed FTDs) amortised across a much larger base. The paid-vs-non-paid FTD mix is broadly unchanged YoY (~44% non-paid), so this is leverage, not a shift to organic.</div>
