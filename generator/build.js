@@ -380,7 +380,13 @@ const TRAF_WK = ((D.traffic&&D.traffic.wk)||[]).map(r=>({w:r[0],sn:r[1],sr:r[2],
 const TRAF_CH = ((D.traffic&&D.traffic.chan)||[]).map(r=>({ch:r[0],sess:r[1],snew:r[2],reg:r[3],ftd:r[4],newPct:r[2]/r[1],n2f:div(r[4],r[2])}));
 
 // ---- EMBED for client charts ----
+const FTDQ = (D.ftdq||[]).map(r=>({
+  w:r.wk.slice(5), ftd:r.ftd, apd2:r.apd2, not2:r.ftd-r.apd2, imm:r.imm, conv:r.conv,
+  immR:+(div(r.imm,r.ftd)*100).toFixed(1), apd2R:+(div(r.apd2,r.ftd)*100).toFixed(1),
+  savR:+(div(r.savvy,r.ftd)*100).toFixed(1), avgapd:+(div(r.apdwk,r.ftd)).toFixed(2),
+  ppf:r0(div(r.pltvNet,r.ftd)), cpf:r0(div(r.spend,r.ftd)), cpa2:r0(div(r.spend,r.apd2)) }));
 const EMBED = {
+  ftdq: FTDQ,
   daily30: dailyG.slice(-30).map(d=>({d:d.date.slice(5), s:d.sg, f:d.f, p:d.p})),
   mtdDaily: dailyG.filter(d=>d.date>=RMSTART&&d.date<=RMEND).map(d=>({d:d.date.slice(8), s:d.sg, f:d.f, p:d.p, ppf:div(d.p,d.f), cpa:div(d.sg,d.f)})),
   mtdCpaAvg: mtd.cpa,
@@ -759,6 +765,26 @@ panes.s4 = `<h2 class="sec">Daily view — last 30 days (gap-filled)</h2>
 <p class="note">Weekends and month-end carry the highest daily FTD volume (peak around day ${peakDom} — the late-month payday window). Early-week (Mon–Wed) and early-month days are systematically lowest, which is why the this-week forecast never linearly scales a part-week by 7/days-landed.</p>`;
 }
 
+// ---- SQ FTD QUALITY ----
+if(FTDQ.length){
+  const L=FTDQ[FTDQ.length-1];
+  const qrows = FTDQ.map(r=>({cells:[ r.w, num(r.ftd), pct1(r.immR/100), num(r.apd2), `<span class="pill ${r.apd2R>=48?'green':r.apd2R>=44?'amber':'red'}">${r.apd2R}%</span>`, r.avgapd.toFixed(2), pct1(r.savR/100), gbp(r.ppf), gbp(r.cpf), gbp(r.cpa2) ]}));
+  panes.sq = `<h2 class="sec">FTD quality — weekly trends (last ${FTDQ.length} complete weeks)</h2>
+<div class="callout"><b>What this shows.</b> Front-loaded quality signals for each week's FTD cohort. <b>IMM ratio</b> = immediate FTDs (deposit in the registration session) ÷ all FTDs. <b>APD2+</b> = players active on 2+ days in their first week (the retained group); <b>APD 0–1</b> = the rest. <b>Avg active days/FTD</b> = first-week active player-days ÷ FTDs. <b>Savvy-staker rate</b> = flagged savvy stakers ÷ FTDs. <b>PLTV/FTD (FTDPP)</b> = net 12-month PLTV ÷ FTDs. Cost-per metrics use blended spend. All net of the 15% affiliate revshare.</div>
+<div class="kpis" style="margin-top:14px">
+${kpi('FTDs (latest wk)', num(L.ftd), `w/c ${L.w}`)}
+${kpi('APD2+ rate', L.apd2R+'%', `${num(L.apd2)} retained`)}
+${kpi('PLTV/FTD (FTDPP)', gbp(L.ppf), 'net 12m value/FTD')}
+${kpi('IMM FTD ratio', L.immR+'%', 'immediate ÷ total')}
+${kpi('Cost per FTD', gbp(L.cpf), `cost per APD2+ ${gbp(L.cpa2)}`)}
+</div>
+<div class="grid2" style="margin-top:14px">${chartbox('q_vol')}${chartbox('q_ret')}</div>
+<div class="grid2" style="margin-top:14px">${chartbox('q_ppf')}${chartbox('q_imm')}</div>
+${chartbox('q_cost')}
+<div style="margin-top:14px">${tbl([{t:'Week'},{t:'FTDs',r:1},{t:'IMM %',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'Act.days/FTD',r:1},{t:'Savvy %',r:1},{t:'PLTV/FTD',r:1},{t:'Cost/FTD',r:1},{t:'Cost/APD2+',r:1}], qrows)}</div>
+<p class="note"><b>Not yet available in this view:</b> the explicit <b>APD0 vs APD1</b> split, <b>APD1→APD2+ upgrade</b> rate, and <b>FTD→Qore</b> conversion. The warehouse exposes only APD2+ at this grain (so APD 0/1 show combined as "APD 0–1"), and the gameplay mart is a separate BigQuery project with no deposit/channel key to build FTD cohorts or a player-level PLTV "Qore" tier via a single query. Wire those in once APD0/1 are surfaced in attribution (or a player-id↔user_ref bridge + the Qore threshold are available).</p>`;
+}
+
 // ---- S4c WEATHER ----
 panes.s4c = `<h2 class="sec">Weather impact — June heatwave &amp; July forecast</h2>
 <div class="kpis">
@@ -1058,7 +1084,7 @@ ${EMBED.wkChSep?`<h2 class="sec">Weekly spend vs FTDs — separate chart per cha
 // ====================================================================
 // Assemble HTML
 // ====================================================================
-const TABS = [['summary','Summary'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],['s9','Channel opt'],['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
+const TABS = [['summary','Summary'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],['s9','Channel opt'],['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
 const tabbar = TABS.map((t,i)=>`<button class="tab${i===0?' active':''}" data-pane="${t[0]}">${t[1]}</button>`).join('');
 const paneHTML = TABS.map((t,i)=>`<section class="pane${i===0?' active':''}" id="pane-${t[0]}">${panes[t[0]]||''}</section>`).join('');
 
@@ -1217,6 +1243,28 @@ function buildPane(id){
   }
   if(id==='s3b'){
     mkChart('c_mom',{type:'bar',data:{labels:EMBED.momMovers.map(m=>m.ch),datasets:[{label:'ΔPLTV May→Jun (£)',data:EMBED.momMovers.map(m=>Math.round(m.dP)),backgroundColor:EMBED.momMovers.map(m=>m.dP>=0?COL.green:COL.pink)}]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Per-channel ΔPLTV (matched 1–${MD})'},legend:{display:false}}})});
+  }
+  if(id==='sq' && EMBED.ftdq){
+    const q=EMBED.ftdq;
+    mkChart('q_vol',{type:'bar',data:{labels:q.map(x=>x.w),datasets:[
+      {type:'bar',label:'FTDs',data:q.map(x=>x.ftd),backgroundColor:'rgba(10,46,203,.25)',yAxisID:'y'},
+      {type:'line',label:'APD2+ rate %',data:q.map(x=>x.apd2R),borderColor:COL.green,yAxisID:'y1',tension:.3,pointRadius:0}
+    ]},options:baseOpts({plugins:{title:{display:true,text:'FTDs & APD2+ rate'}},scales:{y:{position:'left',beginAtZero:true},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}}}})});
+    mkChart('q_ret',{type:'bar',data:{labels:q.map(x=>x.w),datasets:[
+      {label:'APD2+ (retained)',data:q.map(x=>x.apd2),backgroundColor:COL.green,stack:'r'},
+      {label:'APD 0–1',data:q.map(x=>x.not2),backgroundColor:'#c9d0ee',stack:'r'}
+    ]},options:baseOpts({plugins:{title:{display:true,text:'FTD retention split — APD2+ vs 0–1'}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}})});
+    mkChart('q_ppf',{type:'line',data:{labels:q.map(x=>x.w),datasets:[
+      {label:'PLTV/FTD (£, net)',data:q.map(x=>x.ppf),borderColor:COL.sky,backgroundColor:'rgba(0,178,255,.10)',fill:true,yAxisID:'y',tension:.3,pointRadius:0},
+      {label:'Savvy-staker rate %',data:q.map(x=>x.savR),borderColor:COL.pink,yAxisID:'y1',tension:.3,pointRadius:0}
+    ]},options:baseOpts({plugins:{title:{display:true,text:'PLTV/FTD (FTDPP) & savvy-staker rate'}},scales:{y:{position:'left'},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}}}})});
+    mkChart('q_imm',{type:'line',data:{labels:q.map(x=>x.w),datasets:[
+      {label:'IMM FTD ratio %',data:q.map(x=>x.immR),borderColor:COL.navy,backgroundColor:'rgba(11,37,149,.08)',fill:true,tension:.3,pointRadius:0}
+    ]},options:baseOpts({plugins:{title:{display:true,text:'Immediate-FTD ratio (imm ÷ total)'},legend:{display:false}},scales:{y:{ticks:{callback:v=>v+'%'}}}})});
+    mkChart('q_cost',{type:'line',data:{labels:q.map(x=>x.w),datasets:[
+      {label:'Cost per FTD (£)',data:q.map(x=>x.cpf),borderColor:COL.blue,tension:.3,pointRadius:0},
+      {label:'Cost per APD2+ (£)',data:q.map(x=>x.cpa2),borderColor:COL.pink,tension:.3,pointRadius:0}
+    ]},options:baseOpts({plugins:{title:{display:true,text:'Cost per FTD & per APD2+'}}})});
   }
   if(id==='s4'){
     const d=EMBED.daily30;
