@@ -493,7 +493,7 @@ function buildPane(id){
     if(EMBED.ftdqCh) drawQualCh();
     if(EMBED.cohMat){ const cm=EMBED.cohMat; const pal=[COL.blue,COL.green,COL.sky,COL.navy,COL.pink,COL.grey]; const pst=['circle','rect','triangle','rectRot','crossRot','star'];
       mkChart('q_mat',{type:'line',data:{datasets:cm.rows.map((r,i)=>({label:r.mo,data:cm.horizons.map((h,j)=>({x:h,y:r.v[j]})).filter(p=>p.y!=null),borderColor:pal[i%pal.length],backgroundColor:pal[i%pal.length],pointStyle:pst[i%pst.length],pointRadius:4,pointHoverRadius:6,borderWidth:2,tension:.25,spanGaps:false}))},
-        options:baseOpts({plugins:{title:{display:true,text:'Realized NGR per player by days since first activity (£)'}},scales:{x:{type:'linear',min:0,max:95,title:{display:true,text:'days since first activity'},ticks:{callback:v=>[7,14,30,60,90].includes(v)?v:''}},y:{ticks:{callback:v=>'£'+v},title:{display:true,text:'cumulative NGR / player'}}})});
+        options:baseOpts({plugins:{title:{display:true,text:'Realized NGR per player by days since first activity (£)'}},scales:{x:{type:'linear',min:0,max:95,title:{display:true,text:'days since first activity'},ticks:{callback:v=>[7,14,30,60,90].includes(v)?v:''}},y:{ticks:{callback:v=>'£'+v},title:{display:true,text:'cumulative NGR / player'}}}})});
     }
   }
   if(id==='s4'){
