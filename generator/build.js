@@ -401,6 +401,7 @@ const FTDQCH = (()=>{
 const EMBED = {
   ftdq: FTDQ,
   ftdqCh: FTDQCH,
+  cohMat: D.cohortMat || null,
   daily30: dailyG.slice(-30).map(d=>({d:d.date.slice(5), s:d.sg, f:d.f, p:d.p})),
   mtdDaily: dailyG.filter(d=>d.date>=RMSTART&&d.date<=RMEND).map(d=>({d:d.date.slice(8), s:d.sg, f:d.f, p:d.p, ppf:div(d.p,d.f), cpa:div(d.sg,d.f)})),
   mtdCpaAvg: mtd.cpa,
@@ -802,6 +803,11 @@ ${FTDQCH?`<h2 class="sec">By channel — quality (last 4 complete weeks: ${FTDQC
 <div class="selrow"><select id="qchSel">${FTDQCH.order.map(c=>`<option value="${c}">${c}</option>`).join('')}</select></div>
 ${chartbox('q_ch')}
 <p class="note">Pick a channel to see its weekly FTDs (bars), APD2+ retention rate and PLTV/FTD. Organic/RAF/Direct/Unattributed carry no media cost, so their cost-per columns show "—".</p>`:''}
+${EMBED.cohMat?`<h2 class="sec">Realized value maturation — cumulative NGR per player by cohort</h2>
+<div class="callout"><b>Actual money, not the model.</b> Each line is a monthly cohort (players by their first-activity month); the y-axis is <b>cumulative net gaming revenue per player</b> at 7/14/30/60/90 days of tenure. Only fully-elapsed windows are drawn, so lines stop where the cohort hasn't aged that far yet (as of ${EMBED.cohMat.asOf}). Value roughly triples from day 7 (~£40) to day 90 (~£120–135); at equal ages the cohorts track closely, so recent intake quality is holding. This realized curve (~£160 by ~6 months for Jan, still rising) is broadly consistent with the ~£145–155 modelled 12-month PLTV — a useful cross-check. Unlike the modelled <code>sum_pltv</code> (a locked prediction that doesn't age), this shows genuine maturation.</div>
+${chartbox('q_mat')}
+<div style="margin-top:14px">${tbl([{t:'Cohort'},{t:'Players',r:1},...EMBED.cohMat.horizons.map(h=>({t:'Day '+h,r:1}))], EMBED.cohMat.rows.map(r=>({cells:[ r.mo, num(r.players), ...r.v.map(x=>x==null?'—':gbp(x)) ]})))}</div>
+<p class="note">Cohort = each player's first gameplay day (proxy for FTD — the gameplay mart carries no deposit/attribution key). NGR = realized net gaming revenue, not identical to the PLTV model's definition, and <b>blended across all channels</b> (the two warehouses can't be joined via these connectors, so no channel split). Source: <code>data-delivery-prod.mart.daily_player_gameplay</code>, 2026 cohorts.</p>`:''}
 <p class="note"><b>Not yet available in this view:</b> the explicit <b>APD0 vs APD1</b> split, <b>APD1→APD2+ upgrade</b> rate, and <b>FTD→Qore</b> conversion. The warehouse exposes only APD2+ at this grain (so APD 0/1 show combined as "APD 0–1"), and the gameplay mart is a separate BigQuery project with no deposit/channel key to build FTD cohorts or a player-level PLTV "Qore" tier via a single query. Wire those in once APD0/1 are surfaced in attribution (or a player-id↔user_ref bridge + the Qore threshold are available).</p>`;
 }
 
@@ -1318,6 +1324,10 @@ function buildPane(id){
       {label:'Cost per APD2+ (£)',data:q.map(x=>x.cpa2),borderColor:COL.pink,tension:.3,pointRadius:0}
     ]},options:baseOpts({plugins:{title:{display:true,text:'Cost per FTD & per APD2+'}}})});
     if(EMBED.ftdqCh) drawQualCh();
+    if(EMBED.cohMat){ const cm=EMBED.cohMat; const pal=[COL.blue,COL.green,COL.sky,COL.navy,COL.pink,COL.grey]; const pst=['circle','rect','triangle','rectRot','crossRot','star'];
+      mkChart('q_mat',{type:'line',data:{datasets:cm.rows.map((r,i)=>({label:r.mo,data:cm.horizons.map((h,j)=>({x:h,y:r.v[j]})).filter(p=>p.y!=null),borderColor:pal[i%pal.length],backgroundColor:pal[i%pal.length],pointStyle:pst[i%pst.length],pointRadius:4,pointHoverRadius:6,borderWidth:2,tension:.25,spanGaps:false}))},
+        options:baseOpts({plugins:{title:{display:true,text:'Realized NGR per player by days since first activity (£)'}},scales:{x:{type:'linear',min:0,max:95,title:{display:true,text:'days since first activity'},ticks:{callback:v=>[7,14,30,60,90].includes(v)?v:''}},y:{ticks:{callback:v=>'£'+v},title:{display:true,text:'cumulative NGR / player'}}})});
+    }
   }
   if(id==='s4'){
     const d=EMBED.daily30;
