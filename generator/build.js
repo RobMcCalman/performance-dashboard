@@ -385,8 +385,22 @@ const FTDQ = (D.ftdq||[]).map(r=>({
   immR:+(div(r.imm,r.ftd)*100).toFixed(1), apd2R:+(div(r.apd2,r.ftd)*100).toFixed(1),
   savR:+(div(r.savvy,r.ftd)*100).toFixed(1), avgapd:+(div(r.apdwk,r.ftd)).toFixed(2),
   ppf:r0(div(r.pltvNet,r.ftd)), cpf:r0(div(r.spend,r.ftd)), cpa2:r0(div(r.spend,r.apd2)) }));
+const FTDQCH = (()=>{
+  const rows=D.ftdqCh||[]; if(!rows.length) return null;
+  const weeks=[...new Set(rows.map(r=>r.wk))].sort(), wi={}; weeks.forEach((w,i)=>wi[w]=i);
+  const chs=[...new Set(rows.map(r=>r.ch))], byCh={};
+  chs.forEach(c=>byCh[c]={ftd:weeks.map(()=>0),imm:weeks.map(()=>0),apd2:weeks.map(()=>0),savvy:weeks.map(()=>0),apdwk:weeks.map(()=>0),pltv:weeks.map(()=>0),spend:weeks.map(()=>0)});
+  rows.forEach(r=>{const o=byCh[r.ch],k=wi[r.wk];o.ftd[k]+=r.ftd;o.imm[k]+=r.imm;o.apd2[k]+=r.apd2;o.savvy[k]+=r.savvy;o.apdwk[k]+=r.apdwk;o.pltv[k]+=r.pltvNet;o.spend[k]+=r.spend;});
+  const tot={}; chs.forEach(c=>tot[c]=byCh[c].ftd.reduce((a,b)=>a+b,0));
+  const order=chs.slice().sort((a,b)=>tot[b]-tot[a]);
+  const series={}; order.forEach(c=>{const o=byCh[c]; series[c]={ftd:o.ftd, apd2R:o.apd2.map((v,i)=>+(div(v,o.ftd[i])*100).toFixed(1)), ppf:o.ftd.map((f,i)=>r0(div(o.pltv[i],f))), immR:o.imm.map((v,i)=>+(div(v,o.ftd[i])*100).toFixed(1))};});
+  const last4=weeks.slice(-4);
+  const t4=order.map(c=>{const o=byCh[c];let ftd=0,imm=0,apd2=0,savvy=0,apdwk=0,pltv=0,spend=0;last4.forEach(w=>{const k=wi[w];ftd+=o.ftd[k];imm+=o.imm[k];apd2+=o.apd2[k];savvy+=o.savvy[k];apdwk+=o.apdwk[k];pltv+=o.pltv[k];spend+=o.spend[k];});return {ch:c,ftd,immR:div(imm,ftd)*100,apd2R:div(apd2,ftd)*100,savR:div(savvy,ftd)*100,ppf:r0(div(pltv,ftd)),cpf:spend>0?r0(div(spend,ftd)):0,cpa2:spend>0?r0(div(spend,apd2)):0,avgapd:+(div(apdwk,ftd)).toFixed(2)};}).filter(r=>r.ftd>0);
+  return {weeks:weeks.map(w=>w.slice(5)), order, series, t4, last4:[last4[0].slice(5),last4[last4.length-1].slice(5)]};
+})();
 const EMBED = {
   ftdq: FTDQ,
+  ftdqCh: FTDQCH,
   daily30: dailyG.slice(-30).map(d=>({d:d.date.slice(5), s:d.sg, f:d.f, p:d.p})),
   mtdDaily: dailyG.filter(d=>d.date>=RMSTART&&d.date<=RMEND).map(d=>({d:d.date.slice(8), s:d.sg, f:d.f, p:d.p, ppf:div(d.p,d.f), cpa:div(d.sg,d.f)})),
   mtdCpaAvg: mtd.cpa,
@@ -782,6 +796,12 @@ ${kpi('Cost per FTD', gbp(L.cpf), `cost per APD2+ ${gbp(L.cpa2)}`)}
 <div class="grid2" style="margin-top:14px">${chartbox('q_ppf')}${chartbox('q_imm')}</div>
 ${chartbox('q_cost')}
 <div style="margin-top:14px">${tbl([{t:'Week'},{t:'FTDs',r:1},{t:'IMM %',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'Act.days/FTD',r:1},{t:'Savvy %',r:1},{t:'PLTV/FTD',r:1},{t:'Cost/FTD',r:1},{t:'Cost/APD2+',r:1}], qrows)}</div>
+${FTDQCH?`<h2 class="sec">By channel — quality (last 4 complete weeks: ${FTDQCH.last4[0]}–${FTDQCH.last4[1]})</h2>
+<div style="margin-top:6px">${tbl([{t:'Channel'},{t:'FTDs',r:1},{t:'IMM %',r:1},{t:'APD2+ %',r:1},{t:'Act.days/FTD',r:1},{t:'Savvy %',r:1},{t:'PLTV/FTD',r:1},{t:'Cost/FTD',r:1},{t:'Cost/APD2+',r:1}], FTDQCH.t4.map(r=>({cells:[ r.ch, num(r.ftd), pct1(r.immR/100), `<span class="pill ${r.apd2R>=48?'green':r.apd2R>=44?'amber':'red'}">${r0(r.apd2R)}%</span>`, r.avgapd.toFixed(2), pct1(r.savR/100), gbp(r.ppf), r.cpf?gbp(r.cpf):'—', r.cpa2?gbp(r.cpa2):'—' ]})))}</div>
+<h2 class="sec">Channel deep-dive — weekly</h2>
+<div class="selrow"><select id="qchSel">${FTDQCH.order.map(c=>`<option value="${c}">${c}</option>`).join('')}</select></div>
+${chartbox('q_ch')}
+<p class="note">Pick a channel to see its weekly FTDs (bars), APD2+ retention rate and PLTV/FTD. Organic/RAF/Direct/Unattributed carry no media cost, so their cost-per columns show "—".</p>`:''}
 <p class="note"><b>Not yet available in this view:</b> the explicit <b>APD0 vs APD1</b> split, <b>APD1→APD2+ upgrade</b> rate, and <b>FTD→Qore</b> conversion. The warehouse exposes only APD2+ at this grain (so APD 0/1 show combined as "APD 0–1"), and the gameplay mart is a separate BigQuery project with no deposit/channel key to build FTD cohorts or a player-level PLTV "Qore" tier via a single query. Wire those in once APD0/1 are surfaced in attribution (or a player-id↔user_ref bridge + the Qore threshold are available).</p>`;
 }
 
@@ -1265,6 +1285,7 @@ function buildPane(id){
       {label:'Cost per FTD (£)',data:q.map(x=>x.cpf),borderColor:COL.blue,tension:.3,pointRadius:0},
       {label:'Cost per APD2+ (£)',data:q.map(x=>x.cpa2),borderColor:COL.pink,tension:.3,pointRadius:0}
     ]},options:baseOpts({plugins:{title:{display:true,text:'Cost per FTD & per APD2+'}}})});
+    if(EMBED.ftdqCh) drawQualCh();
   }
   if(id==='s4'){
     const d=EMBED.daily30;
@@ -1396,6 +1417,16 @@ function buildPane(id){
   }catch(e){ console.error('buildPane '+id+' failed:', e.message); }
 }
 let pcSF=null,pcCL=null;
+let qCh;
+function drawQualCh(){
+  const sel=document.getElementById('qchSel'); if(!sel||!EMBED.ftdqCh) return; const ch=sel.value; const s=EMBED.ftdqCh.series[ch]; if(!s) return;
+  if(qCh) qCh.destroy();
+  qCh=mkChart('q_ch',{type:'bar',data:{labels:EMBED.ftdqCh.weeks,datasets:[
+    {type:'bar',label:'FTDs',data:s.ftd,backgroundColor:'rgba(10,46,203,.25)',yAxisID:'y',order:3},
+    {type:'line',label:'APD2+ rate %',data:s.apd2R,borderColor:COL.green,yAxisID:'y1',tension:.3,pointRadius:0,order:2},
+    {type:'line',label:'PLTV/FTD £',data:s.ppf,borderColor:COL.sky,yAxisID:'y2',tension:.3,pointRadius:0,order:1}
+  ]},options:baseOpts({plugins:{title:{display:true,text:ch+' — weekly FTDs, APD2+ rate & PLTV/FTD'}},scales:{y:{position:'left',beginAtZero:true},y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}},y2:{position:'right',beginAtZero:true,offset:true,grid:{drawOnChartArea:false},ticks:{callback:v=>'£'+v}}}})});
+}
 function drawChannel(){
   const ch=document.getElementById('chanSel').value; const t=EMBED.trendCh[ch]; if(!t) return;
   if(pcSF) pcSF.destroy(); if(pcCL) pcCL.destroy();
@@ -1413,7 +1444,7 @@ document.querySelectorAll('.tab').forEach(btn=>{
     requestAnimationFrame(()=>{ pane.querySelectorAll('canvas').forEach(c=>{ const ch=Chart.getChart(c); if(ch) ch.resize(); }); });
   });
 });
-document.addEventListener('change',e=>{ if(e.target && e.target.id==='chanSel') drawChannel(); });
+document.addEventListener('change',e=>{ if(e.target && e.target.id==='chanSel') drawChannel(); if(e.target && e.target.id==='qchSel') drawQualCh(); });
 // build summary (no charts) + first chart pane lazily; nothing to build for summary
 </script>
 </body></html>`;
