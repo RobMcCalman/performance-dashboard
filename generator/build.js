@@ -495,7 +495,26 @@ ${swings.filter(s=>!['Affiliate App','Email'].includes(s.ch)).map(s=>`<li><b>${s
   ]}));
   panes.s1 = `<h2 class="sec">This week — week-to-date + forecast</h2>
 <div class="callout">Current ISO week (from Mon 29 Jun) has <b>${DAYS_LANDED_WK} fully-landed day${DAYS_LANDED_WK===1?'':'s'}</b> so far. Forecast = week-to-date (${num(wtd.f)} FTDs) + the trailing-4-complete-week daily average applied to each remaining day, <b>weighted by its day-of-week shape</b> (8-week profile) — so the busy Fri/Sat aren't under-counted the way a flat ×(7−landed) average would. Remaining days this week: ${REM_SHAPE} (1.00× = an average day). Trailing weekly average shown for context.</div>
-<div class="kpis" style="margin-top:14px">
+<h3 class="subsec">Actual week-to-date — ${DAYS_LANDED_WK} landed day${DAYS_LANDED_WK===1?'':'s'} of 7</h3>
+<div class="kpis" style="margin-top:8px">
+${kpi('WTD spend', gbpK(wtd.s), `${DAYS_LANDED_WK} of 7 days · affiliate gap-filled`)}
+${kpi('WTD FTDs', num(wtd.f), `actuals so far this week`)}
+${kpi('WTD CPA', wtd.f?gbp(div(wtd.s,wtd.f)):'—', `net`)}
+${kpi('WTD PLTV/FTD', wtd.f?gbp(div(wtd.p,wtd.f)):'—', `net · value per FTD`)}
+${kpi('WTD LTV:CAC', wtd.s?f2(div(wtd.p,wtd.s)):'—', `net of affiliate revshare`)}
+</div>
+<h3 class="subsec">Actual week-to-date by channel</h3>
+${(()=>{
+  const rows = Object.entries(D.wtdCh||{}).map(([ch,w])=>{
+    const s=(ch==='Affiliate'? w.s+AFF_GAP_28 : w.s);
+    return {ch, s, f:w.f, p:w.p, ltv:div(w.p,s), cpa:div(s,w.f)};
+  }).filter(r=>r.s>0||r.f>0).sort((a,b)=>b.f-a.f)
+    .map(r=>({cells:[ r.ch + (r.ch==='Affiliate'?' *':''), gbpK(r.s), num(r.f), r.f?gbp(r.cpa):'—', gbpK(r.p), r.f?`<span class="pill ${ragLtv(r.ltv)}">${f2(r.ltv)}</span>`:pill('grey','n/a') ]}));
+  return tbl([{t:'Channel'},{t:'WTD spend',r:1},{t:'WTD FTDs',r:1},{t:'CPA',r:1},{t:'WTD net PLTV',r:1},{t:'LTV:CAC',r:1}], rows);
+})()}
+<p class="note">Actual landed FTDs, spend and net PLTV so far this ISO week (${DAYS_LANDED_WK} of 7 days), by last-click channel. * Affiliate spend gap-filled for the lagging feed day at the trailing CPA; PLTV net of the 15% revshare. CPA/LTV:CAC on partial-week actuals are noisy — read the full-week forecast below and the pace table for a fuller picture.</p>
+<h3 class="subsec">Full-week forecast</h3>
+<div class="kpis" style="margin-top:8px">
 ${kpi('Forecast spend', gbpM(wkFcst.s), `trailing wk ${gbpM(trailWk.s)}`)}
 ${kpi('Forecast FTDs', num(wkFcst.f), `trailing wk ${num(trailWk.f)}`)}
 ${kpi('Forecast CPA', gbp(wkFcst.cpa), `net`)}
@@ -1180,6 +1199,7 @@ header.hero p{margin:0;opacity:.9;font-size:13px;max-width:880px}
 .pane{display:none}
 .pane.active{display:block}
 h2.sec{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:26px 2px 11px;font-weight:700}
+h3.subsec{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);margin:18px 2px 4px;font-weight:700}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 16px 13px}
 .kpi .lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
