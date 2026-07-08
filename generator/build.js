@@ -398,10 +398,31 @@ const FTDQCH = (()=>{
   const t4=order.map(c=>{const o=byCh[c];let ftd=0,imm=0,apd2=0,savvy=0,apdwk=0,pltv=0,spend=0;last4.forEach(w=>{const k=wi[w];ftd+=o.ftd[k];imm+=o.imm[k];apd2+=o.apd2[k];savvy+=o.savvy[k];apdwk+=o.apdwk[k];pltv+=o.pltv[k];spend+=o.spend[k];});return {ch:c,ftd,immR:div(imm,ftd)*100,apd2R:div(apd2,ftd)*100,savR:div(savvy,ftd)*100,ppf:r0(div(pltv,ftd)),cpf:spend>0?r0(div(spend,ftd)):0,cpa2:spend>0?r0(div(spend,apd2)):0,avgapd:+(div(apdwk,ftd)).toFixed(2)};}).filter(r=>r.ftd>0);
   return {weeks:weeks.map(w=>w.slice(5)), order, series, t4, last4:[last4[0].slice(5),last4[last4.length-1].slice(5)]};
 })();
+// ---- INCREMENTAL / MARGINAL CPA (spend-response elasticity) ----
+const INCR = (()=>{
+  const rows = D.wkCh||[]; if(!rows.length) return null;
+  const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
+  const by={}; rows.forEach(r=>{ if(!PAID.has(r.channel)||r.channel==='ATL')return; (by[r.channel]=by[r.channel]||[]).push(r); });
+  const out=[];
+  Object.entries(by).forEach(([ch,rs])=>{
+    rs.sort((a,b)=>a.wk<b.wk?-1:1);
+    const pts=rs.filter(r=>r.s>0&&r.f>0); if(pts.length<4) return;
+    const xs=pts.map(p=>Math.log(p.s)), ys=pts.map(p=>Math.log(p.f)), n=xs.length;
+    const mx=xs.reduce((a,b)=>a+b,0)/n, my=ys.reduce((a,b)=>a+b,0)/n;
+    let sxy=0,sxx=0,syy=0; for(let i=0;i<n;i++){ sxy+=(xs[i]-mx)*(ys[i]-my); sxx+=(xs[i]-mx)**2; syy+=(ys[i]-my)**2; }
+    const braw = sxx? sxy/sxx : 0, r2 = (sxx&&syy)? (sxy*sxy)/(sxx*syy) : 0, b = clamp(braw,0.1,1.0);
+    const l4=rs.slice(-4), s=l4.reduce((a,r)=>a+r.s,0)/l4.length, f=l4.reduce((a,r)=>a+r.f,0)/l4.length, p=l4.reduce((a,r)=>a+r.p,0)/l4.length;
+    const avgCPA=div(s,f), avgLTV=div(p,s);
+    out.push({ ch, s:r0(s), avgCPA:r0(avgCPA), avgLTV:+avgLTV.toFixed(2), b:+b.toFixed(2), braw:+braw.toFixed(2), r2:+r2.toFixed(2), margCPA:r0(div(avgCPA,b)), margLTV:+(b*avgLTV).toFixed(2) });
+  });
+  out.sort((a,b)=>b.margLTV-a.margLTV);
+  return out.length? out : null;
+})();
 const EMBED = {
   ftdq: FTDQ,
   ftdqCh: FTDQCH,
   cohMat: D.cohortMat || null,
+  incr: INCR,
   daily30: dailyG.slice(-30).map(d=>({d:d.date.slice(5), s:d.sg, f:d.f, p:d.p})),
   mtdDaily: dailyG.filter(d=>d.date>=RMSTART&&d.date<=RMEND).map(d=>({d:d.date.slice(8), s:d.sg, f:d.f, p:d.p, ppf:div(d.p,d.f), cpa:div(d.sg,d.f)})),
   mtdCpaAvg: mtd.cpa,
@@ -1129,6 +1150,31 @@ ${EMBED.wkChSep?`<h2 class="sec">Weekly spend vs FTDs — separate chart per cha
 // ====================================================================
 // Assemble HTML
 // ====================================================================
+// ---- SINC INCREMENTAL CPA ----
+if(INCR){
+  const accr = INCR.filter(r=>r.margLTV>=1).sort((a,b)=>a.margCPA-b.margCPA);
+  const best = accr.length? accr[0] : INCR[0];
+  const conf = r=> r.r2>=0.6?'good':(r.r2>=0.35?'fair':'low');
+  const vrd = r=> r.margLTV>=1?['SCALE','green']:(r.margLTV>=0.85?['HOLD','amber']:['PULL BACK','red']);
+  const irows = INCR.map(r=>{const [vt,vc]=vrd(r); return {cells:[
+    r.ch, gbpK(r.s), gbp(r.avgCPA), `<span class="pill ${ragLtv(r.avgLTV)}">${f2(r.avgLTV)}</span>`,
+    `${r.b.toFixed(2)} <span class="note">(${conf(r)})</span>`, gbp(r.margCPA),
+    `<span class="pill ${r.margLTV>=1?'green':r.margLTV>=0.85?'amber':'red'}">${f2(r.margLTV)}</span>`,
+    `<span class="pill ${vc}">${vt}</span>` ]};});
+  panes.sinc = `<h2 class="sec">Incremental CPA — where the next £ works hardest</h2>
+<div class="callout"><b>The question this answers:</b> not "which channel is most efficient on average" but "where does the <b>next</b> pound of spend do the most good". Average LTV:CAC flatters saturated channels; what matters for scaling is the <b>marginal</b> return. Method: for each paid channel we fit a spend→FTD response curve on the last 12 weeks (log-log elasticity <b>b</b>, capped at 1.0 under a diminishing-returns assumption), then <b>marginal CPA = average CPA ÷ b</b> and <b>marginal LTV:CAC = b × average LTV:CAC</b> (the net PLTV the next £ buys). Break-even at the margin = <b>1.0</b>.</div>
+<div class="kpis" style="margin-top:14px">
+${kpi('Next best £', best.ch, `marginal LTV:CAC ${f2(best.margLTV)} · fit ${conf(best)}`)}
+${kpi('Marginal CPA there', gbp(best.margCPA), `vs avg CPA ${gbp(best.avgCPA)}`)}
+${kpi('Accretive at the margin', `${accr.length} of ${INCR.length}`, 'channels with marginal LTV:CAC ≥ 1.0')}
+${kpi('Most saturated', INCR.slice().sort((a,b)=>a.b-b.b)[0].ch, `elasticity ${INCR.slice().sort((a,b)=>a.b-b.b)[0].b.toFixed(2)} — next £ mostly wasted`)}
+</div>
+${chartbox('c_incr')}
+<div style="margin-top:14px">${tbl([{t:'Channel'},{t:'Wk spend',r:1},{t:'Avg CPA',r:1},{t:'Avg LTV:CAC',r:1},{t:'Elasticity b',r:1},{t:'Marginal CPA',r:1},{t:'Marginal LTV:CAC',r:1},{t:'Verdict'}], irows)}</div>
+<div class="callout"><b>Read of the moment:</b> ${accr.length? `the only channel still clearly value-accretive at the margin is <b>${best.ch}</b> (next £ → ${f2(best.margLTV)} net, marginal CPA ${gbp(best.margCPA)}) — it looks only mid-pack on <em>average</em> LTV:CAC but is far from saturated, so it should get the next increment of budget.` : `no paid channel is value-accretive at the margin right now`} High-average channels like <b>Apple Ads Brand</b> are deceptive: strong average LTV:CAC but a low elasticity means they are near saturation, so extra spend there returns well under £1. When every channel's marginal return sits below ~1, the better lever is <b>CRO / creative / offer</b> (shift the curve up) rather than more media budget.</div>
+<p class="note"><b>Caveats — treat as directional, not causal.</b> Elasticities are fitted on 12 weeks of observational weekly data, so they conflate seasonality, day-of-week mix, World-Cup/heatwave effects and model re-scoring; they are not a controlled spend-lift test. Fit confidence (R²) is shown per channel — <b>low</b>-confidence rows (e.g. thin spend variation) should be treated as indicative only. Elasticity is capped at 1.0 (diminishing returns assumed) so channels that appear to show increasing returns aren't over-recommended. Validate with a proper geo/holdout test before large reallocations. PLTV is the net 12-month model figure (Affiliate net of the 15% revshare).</p>`;
+}
+
 // ---- REC RECOMMENDATIONS ----
 {
   const scale = optRows.filter(r=>PAID.has(r.ch)&&r.ltv>=1.2&&r.f>=20).sort((a,b)=>b.ltv-a.ltv);
@@ -1161,7 +1207,7 @@ ${recCard(7,'enable','grey','Fix measurement &amp; invest in CRO over higher CPA
 <p class="note">Recommendations are heuristic prompts from the data, not automated decisions — validate against contract terms, seasonality and RG/compliance before acting. LTV:CAC uses the 12-month net PLTV model; recent cohorts revise up as they mature.</p>`;
 }
 
-const TABS = [['summary','Summary'],['rec','Recommendations'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],['s9','Channel opt'],['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
+const TABS = [['summary','Summary'],['rec','Recommendations'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],['s9','Channel opt'],...(panes.sinc?[['sinc','Incremental CPA']]:[]),['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
 const tabbar = TABS.map((t,i)=>`<button class="tab${i===0?' active':''}" data-pane="${t[0]}">${t[1]}</button>`).join('');
 const paneHTML = TABS.map((t,i)=>`<section class="pane${i===0?' active':''}" id="pane-${t[0]}">${panes[t[0]]||''}</section>`).join('');
 
@@ -1321,6 +1367,14 @@ function buildPane(id){
   }
   if(id==='s3b'){
     mkChart('c_mom',{type:'bar',data:{labels:EMBED.momMovers.map(m=>m.ch),datasets:[{label:'ΔPLTV May→Jun (£)',data:EMBED.momMovers.map(m=>Math.round(m.dP)),backgroundColor:EMBED.momMovers.map(m=>m.dP>=0?COL.green:COL.pink)}]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Per-channel ΔPLTV (matched 1–${MD})'},legend:{display:false}}})});
+  }
+  if(id==='sinc' && EMBED.incr){
+    const q=EMBED.incr.slice().sort((a,b)=>b.margLTV-a.margLTV);
+    const bc=v=>v>=1?COL.green:v>=0.85?'#B9860B':'#C01262';
+    mkChart('c_incr',{type:'bar',data:{labels:q.map(r=>r.ch),datasets:[
+      {label:'Marginal LTV:CAC (next £)',data:q.map(r=>r.margLTV),backgroundColor:q.map(r=>bc(r.margLTV))},
+      {label:'Average LTV:CAC',data:q.map(r=>r.avgLTV),backgroundColor:'rgba(154,163,191,.45)'}
+    ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Marginal vs average LTV:CAC by channel (break-even = 1.0)'},legend:{labels:{font:{size:11},boxWidth:12}}},scales:{x:{suggestedMin:0,title:{display:true,text:'net PLTV per £ (LTV:CAC)'}}}})});
   }
   if(id==='sq' && EMBED.ftdq){
     const q=EMBED.ftdq;
