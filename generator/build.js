@@ -418,7 +418,21 @@ const INCR = (()=>{
   out.sort((a,b)=>b.margLTV-a.margLTV);
   return out.length? out : null;
 })();
+// ---- ATL: brand spend vs TOTAL FTDs (fixed-overhead framing) ----
+const ATLX = (()=>{
+  const rows=D.wkCh||[]; if(!rows.length) return null;
+  const wk={}; rows.forEach(r=>{ const o=wk[r.wk]=wk[r.wk]||{atl:0,f:0,s:0}; if(r.channel==='ATL')o.atl+=r.s; o.f+=r.f; o.s+=r.s; });
+  const weeks=Object.keys(wk).sort(); if(weeks.length<4) return null;
+  const arr=weeks.map(w=>({wk:w.slice(5), atl:wk[w].atl, f:wk[w].f, s:wk[w].s}));
+  const l4=arr.slice(-4);
+  const atlAvg=l4.reduce((a,r)=>a+r.atl,0)/l4.length, fAvg=l4.reduce((a,r)=>a+r.f,0)/l4.length, sAvg=l4.reduce((a,r)=>a+r.s,0)/l4.length;
+  const mean=arr.reduce((a,r)=>a+r.atl,0)/arr.length, sd=Math.sqrt(arr.reduce((a,r)=>a+(r.atl-mean)**2,0)/arr.length);
+  return { atlAvg:r0(atlAvg), fAvg:r0(fAvg), sAvg:r0(sAvg), cov:+(sd/mean).toFixed(2),
+    atlShare:+(atlAvg/sAvg).toFixed(3), costPerFtd:r0(div(atlAvg,fAvg)), blendedCPA:r0(div(sAvg,fAvg)), exAtlCPA:r0(div(sAvg-atlAvg,fAvg)),
+    scatter:arr.map(r=>({x:r0(r.atl),y:r.f})) };
+})();
 const EMBED = {
+  atl: ATLX,
   ftdq: FTDQ,
   ftdqCh: FTDQCH,
   cohMat: D.cohortMat || null,
@@ -1172,6 +1186,16 @@ ${kpi('Most saturated', INCR.slice().sort((a,b)=>a.b-b.b)[0].ch, `elasticity ${I
 ${chartbox('c_incr')}
 <div style="margin-top:14px">${tbl([{t:'Channel'},{t:'Wk spend',r:1},{t:'Avg CPA',r:1},{t:'Avg LTV:CAC',r:1},{t:'Elasticity b',r:1},{t:'Marginal CPA',r:1},{t:'Marginal LTV:CAC',r:1},{t:'Verdict'}], irows)}</div>
 <div class="callout"><b>Read of the moment:</b> ${accr.length? `the only channel still clearly value-accretive at the margin is <b>${best.ch}</b> (next £ → ${f2(best.margLTV)} net, marginal CPA ${gbp(best.margCPA)}) — it looks only mid-pack on <em>average</em> LTV:CAC but is far from saturated, so it should get the next increment of budget.` : `no paid channel is value-accretive at the margin right now`} High-average channels like <b>Apple Ads Brand</b> are deceptive: strong average LTV:CAC but a low elasticity means they are near saturation, so extra spend there returns well under £1. When every channel's marginal return sits below ~1, the better lever is <b>CRO / creative / offer</b> (shift the curve up) rather than more media budget.</div>
+${ATLX?`<h3 class="subsec">ATL — brand spend vs total FTDs</h3>
+<div class="callout"><b>Why ATL isn't in the table above:</b> ATL carries <b>0 last-click FTDs</b>, so it has no attributed spend-response curve. Its real job is to lift <em>total</em> acquisition (more Direct / Organic / Brand-search FTDs), so the fair lens is <b>ATL spend ÷ total FTDs</b>. But there's a hard limit: weekly ATL spend is effectively <b>flat</b> (~${gbpK(ATLX.atlAvg)}/wk, coefficient of variation just <b>${pct(ATLX.cov)}</b>), so there is <b>no variation to estimate an incremental effect from</b> — a marginal CPA for ATL is <b>not identifiable</b> from this data (any short-run correlation is noise, and comes out spuriously negative). The most we can say is the fully-loaded overhead it adds per FTD.</div>
+<div class="kpis" style="margin-top:8px">
+${kpi('ATL spend / wk', gbpK(ATLX.atlAvg), `${pct(ATLX.atlShare)} of total spend`)}
+${kpi('ATL cost per total FTD', gbp(ATLX.costPerFtd), 'fixed overhead ÷ all FTDs')}
+${kpi('Blended CPA incl. ATL', gbp(ATLX.blendedCPA), `vs ${gbp(ATLX.exAtlCPA)} excl. ATL`)}
+${kpi('Spend variation', pct(ATLX.cov), 'too flat to fit a response curve')}
+</div>
+${chartbox('c_atl')}
+<p class="note">Each point is one week: <b>x = ATL spend</b>, <b>y = total FTDs</b> (all channels). The near-vertical cloud is the point — ATL barely moves, so total FTDs vary for reasons unrelated to ATL. To actually measure ATL's incremental value you need <b>deliberate spend variation</b> (flight it up/down), a <b>geo/holdout test</b>, or a <b>media-mix model</b> that controls for the other channels, seasonality and events. Until then, treat ATL as a fixed brand investment, not a channel you can marginally optimise.</p>`:''}
 <p class="note"><b>Caveats — treat as directional, not causal.</b> Elasticities are fitted on 12 weeks of observational weekly data, so they conflate seasonality, day-of-week mix, World-Cup/heatwave effects and model re-scoring; they are not a controlled spend-lift test. Fit confidence (R²) is shown per channel — <b>low</b>-confidence rows (e.g. thin spend variation) should be treated as indicative only. Elasticity is capped at 1.0 (diminishing returns assumed) so channels that appear to show increasing returns aren't over-recommended. Validate with a proper geo/holdout test before large reallocations. PLTV is the net 12-month model figure (Affiliate net of the 15% revshare).</p>`;
 }
 
@@ -1375,6 +1399,9 @@ function buildPane(id){
       {label:'Marginal LTV:CAC (next £)',data:q.map(r=>r.margLTV),backgroundColor:q.map(r=>bc(r.margLTV))},
       {label:'Average LTV:CAC',data:q.map(r=>r.avgLTV),backgroundColor:'rgba(154,163,191,.45)'}
     ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Marginal vs average LTV:CAC by channel (break-even = 1.0)'},legend:{labels:{font:{size:11},boxWidth:12}}},scales:{x:{suggestedMin:0,title:{display:true,text:'net PLTV per £ (LTV:CAC)'}}}})});
+    if(EMBED.atl){ const a=EMBED.atl;
+      mkChart('c_atl',{type:'scatter',data:{datasets:[{label:'Week: ATL spend vs total FTDs',data:a.scatter,pointBackgroundColor:COL.blue,pointRadius:5}]},options:baseOpts({plugins:{title:{display:true,text:'ATL weekly spend vs total FTDs — flat spend, no response signal'},legend:{display:false}},scales:{x:{title:{display:true,text:'ATL spend / week (£)'},ticks:{callback:v=>'£'+Math.round(v/1000)+'k'}},y:{title:{display:true,text:'total FTDs / week'},suggestedMin:0}}})});
+    }
   }
   if(id==='sq' && EMBED.ftdq){
     const q=EMBED.ftdq;
