@@ -386,7 +386,7 @@ footer{margin:30px 18px 0;font-size:11.5px;color:var(--muted);border-top:1px sol
 <div class="kpi"><div class="lbl">Blended CPA incl. ATL</div><div class="val">£133</div><div class="rng">vs £83 excl. ATL</div></div>
 <div class="kpi"><div class="lbl">Spend variation</div><div class="val">2%</div><div class="rng">too flat to fit a response curve</div></div>
 </div>
-<div class="chartbox"><canvas id="c_atl"></canvas></div>
+<div class="chartbox"><canvas id="c_atlinc"></canvas></div>
 <p class="note">Both series indexed to week 1 = 100: the <b>ATL line stays flat</b> while <b>total FTDs move independently</b> — visually, there's no co-movement to attribute to ATL. To actually measure ATL's incremental value you need <b>deliberate spend variation</b> (flight it up/down), a <b>geo/holdout test</b>, or a <b>media-mix model</b> that controls for the other channels, seasonality and events. Until then, treat ATL as a fixed brand investment, not a channel you can marginally optimise.</p>
 <p class="note"><b>Caveats — treat as directional, not causal.</b> Elasticities are fitted on 12 weeks of observational weekly data, so they conflate seasonality, day-of-week mix, World-Cup/heatwave effects and model re-scoring; they are not a controlled spend-lift test. Fit confidence (R²) is shown per channel — <b>low</b>-confidence rows (e.g. thin spend variation) should be treated as indicative only. Elasticity is capped at 1.0 (diminishing returns assumed) so channels that appear to show increasing returns aren't over-recommended. Validate with a proper geo/holdout test before large reallocations. PLTV is the net 12-month model figure (Affiliate net of the 15% revshare).</p></section><section class="pane" id="pane-s9b"><h2 class="sec">Attribution model — time-decay vs last-click (last 4 weeks)</h2>
 <div class="callout">Time-decay spreads credit across the path. It pulls FTD credit <b>toward early/assist touchpoints</b> (Direct, iOS/Android Organic) and away from last-click closers (Affiliate, Google UAC, paid app). Spend is identical across models; only credit shifts. Affiliate PLTV is haircut ×0.85 in both models.</div>
@@ -489,7 +489,7 @@ function buildPane(id){
       {label:'Average LTV:CAC',data:q.map(r=>r.avgLTV),backgroundColor:'rgba(154,163,191,.45)'}
     ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Marginal vs average LTV:CAC by channel (break-even = 1.0)'},legend:{labels:{font:{size:11},boxWidth:12}}},scales:{x:{suggestedMin:0,title:{display:true,text:'net PLTV per £ (LTV:CAC)'}}}})});
     if(EMBED.atl){ const a=EMBED.atl;
-      mkChart('c_atl',{type:'line',data:{labels:a.labels,datasets:[
+      mkChart('c_atlinc',{type:'line',data:{labels:a.labels,datasets:[
         {label:'ATL spend (indexed to 100)',data:a.atlIdx,borderColor:COL.pink,backgroundColor:'rgba(255,99,246,.06)',tension:.2,pointRadius:2,borderWidth:2},
         {label:'Total FTDs (indexed to 100)',data:a.fIdx,borderColor:COL.blue,backgroundColor:'rgba(10,46,203,.06)',tension:.2,pointRadius:2,borderWidth:2}
       ]},options:baseOpts({plugins:{title:{display:true,text:'ATL spend vs total FTDs — indexed to week 1 (ATL is flat; FTDs move independently)'},legend:{labels:{font:{size:11},boxWidth:12}}},scales:{y:{title:{display:true,text:'index (week 1 = 100)'}}}})});
