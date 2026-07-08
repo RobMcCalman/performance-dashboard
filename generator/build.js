@@ -427,9 +427,10 @@ const ATLX = (()=>{
   const l4=arr.slice(-4);
   const atlAvg=l4.reduce((a,r)=>a+r.atl,0)/l4.length, fAvg=l4.reduce((a,r)=>a+r.f,0)/l4.length, sAvg=l4.reduce((a,r)=>a+r.s,0)/l4.length;
   const mean=arr.reduce((a,r)=>a+r.atl,0)/arr.length, sd=Math.sqrt(arr.reduce((a,r)=>a+(r.atl-mean)**2,0)/arr.length);
+  const a0=arr[0].atl, f0=arr[0].f;
   return { atlAvg:r0(atlAvg), fAvg:r0(fAvg), sAvg:r0(sAvg), cov:+(sd/mean).toFixed(2),
     atlShare:+(atlAvg/sAvg).toFixed(3), costPerFtd:r0(div(atlAvg,fAvg)), blendedCPA:r0(div(sAvg,fAvg)), exAtlCPA:r0(div(sAvg-atlAvg,fAvg)),
-    scatter:arr.map(r=>({x:r0(r.atl),y:r.f})) };
+    labels:arr.map(r=>r.wk), atlIdx:arr.map(r=>r0(100*r.atl/a0)), fIdx:arr.map(r=>r0(100*r.f/f0)) };
 })();
 const EMBED = {
   atl: ATLX,
@@ -1195,7 +1196,7 @@ ${kpi('Blended CPA incl. ATL', gbp(ATLX.blendedCPA), `vs ${gbp(ATLX.exAtlCPA)} e
 ${kpi('Spend variation', pct(ATLX.cov), 'too flat to fit a response curve')}
 </div>
 ${chartbox('c_atl')}
-<p class="note">Each point is one week: <b>x = ATL spend</b>, <b>y = total FTDs</b> (all channels). The near-vertical cloud is the point — ATL barely moves, so total FTDs vary for reasons unrelated to ATL. To actually measure ATL's incremental value you need <b>deliberate spend variation</b> (flight it up/down), a <b>geo/holdout test</b>, or a <b>media-mix model</b> that controls for the other channels, seasonality and events. Until then, treat ATL as a fixed brand investment, not a channel you can marginally optimise.</p>`:''}
+<p class="note">Both series indexed to week 1 = 100: the <b>ATL line stays flat</b> while <b>total FTDs move independently</b> — visually, there's no co-movement to attribute to ATL. To actually measure ATL's incremental value you need <b>deliberate spend variation</b> (flight it up/down), a <b>geo/holdout test</b>, or a <b>media-mix model</b> that controls for the other channels, seasonality and events. Until then, treat ATL as a fixed brand investment, not a channel you can marginally optimise.</p>`:''}
 <p class="note"><b>Caveats — treat as directional, not causal.</b> Elasticities are fitted on 12 weeks of observational weekly data, so they conflate seasonality, day-of-week mix, World-Cup/heatwave effects and model re-scoring; they are not a controlled spend-lift test. Fit confidence (R²) is shown per channel — <b>low</b>-confidence rows (e.g. thin spend variation) should be treated as indicative only. Elasticity is capped at 1.0 (diminishing returns assumed) so channels that appear to show increasing returns aren't over-recommended. Validate with a proper geo/holdout test before large reallocations. PLTV is the net 12-month model figure (Affiliate net of the 15% revshare).</p>`;
 }
 
@@ -1400,7 +1401,10 @@ function buildPane(id){
       {label:'Average LTV:CAC',data:q.map(r=>r.avgLTV),backgroundColor:'rgba(154,163,191,.45)'}
     ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Marginal vs average LTV:CAC by channel (break-even = 1.0)'},legend:{labels:{font:{size:11},boxWidth:12}}},scales:{x:{suggestedMin:0,title:{display:true,text:'net PLTV per £ (LTV:CAC)'}}}})});
     if(EMBED.atl){ const a=EMBED.atl;
-      mkChart('c_atl',{type:'scatter',data:{datasets:[{label:'Week: ATL spend vs total FTDs',data:a.scatter,pointBackgroundColor:COL.blue,pointRadius:5}]},options:baseOpts({plugins:{title:{display:true,text:'ATL weekly spend vs total FTDs — flat spend, no response signal'},legend:{display:false}},scales:{x:{title:{display:true,text:'ATL spend / week (£)'},ticks:{callback:v=>'£'+Math.round(v/1000)+'k'}},y:{title:{display:true,text:'total FTDs / week'},suggestedMin:0}}})});
+      mkChart('c_atl',{type:'line',data:{labels:a.labels,datasets:[
+        {label:'ATL spend (indexed to 100)',data:a.atlIdx,borderColor:COL.pink,backgroundColor:'rgba(255,99,246,.06)',tension:.2,pointRadius:2,borderWidth:2},
+        {label:'Total FTDs (indexed to 100)',data:a.fIdx,borderColor:COL.blue,backgroundColor:'rgba(10,46,203,.06)',tension:.2,pointRadius:2,borderWidth:2}
+      ]},options:baseOpts({plugins:{title:{display:true,text:'ATL spend vs total FTDs — indexed to week 1 (ATL is flat; FTDs move independently)'},legend:{labels:{font:{size:11},boxWidth:12}}},scales:{y:{title:{display:true,text:'index (week 1 = 100)'}}}})});
     }
   }
   if(id==='sq' && EMBED.ftdq){
