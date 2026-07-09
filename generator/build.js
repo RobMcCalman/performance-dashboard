@@ -875,7 +875,9 @@ ${chartbox('q_mat')}
 }
 
 // ---- S4c WEATHER ----
-panes.s4c = `<h2 class="sec">Weather impact — June heatwave &amp; July forecast</h2>
+const _fd = wxFc? wxFc.days : [];
+const fcLbl = _fd.length ? (parseInt(_fd[0].date.slice(8),10)+'–'+parseInt(_fd[_fd.length-1].date.slice(8),10)+' '+MONTHS[parseInt(_fd[0].date.slice(5,7),10)-1]) : '';
+panes.s4c = `<h2 class="sec">Weather impact — heatwave &amp; forward forecast</h2>
 <div class="kpis">
 ${kpi('Peak-heat FTDs (24–27 Jun)', pct1(wxPeak), 'vs same-weekday norm')}
 ${kpi(`Heatwave (19 Jun–${GAPLBL})`, pct1(wxHeatwave), 'vs day-of-week norm')}
@@ -884,8 +886,8 @@ ${kpi('Corr. temp vs FTD index', f2(wxCorrIdx), `temp vs PLTV/FTD ${f2(wxCorrPpf
 </div>
 <div class="grid2" style="margin-top:14px">${chartbox('wxFtd')}${chartbox('wxPf')}</div>
 ${chartbox('wxScatter')}
-<div class="callout"><b>Read:</b> the June heatwave (built from ~19 Jun, peaked 24–27 Jun with a Met Office <b>Red Extreme Heat</b> warning, ~36–38°C highs in SE England, easing from 28 Jun) tracks a clear FTD slowdown. Day-of-week adjusted, FTDs ran <b>${pct1(wxHeatwave)}</b> below normal across the 19 Jun–${GAPLBL} heatwave and <b>${pct1(wxPeak)}</b> on the peak-heat days (24–27 Jun). Spend held roughly normal, so CPA rose: heat hit conversion, not budget. The 27–28 Jun weekend — normally a volume <i>lift</i> — came in <b>${pct1(wxWeekend)}</b> below the weekend norm while temperatures stayed ~27–29°C, reinforcing the signal. Correlation of approx temperature with the day-of-week-adjusted FTD index is <b>${f2(wxCorrIdx)}</b> (negative); with PLTV/FTD only <b>${f2(wxCorrPpf)}</b>, so players who do sign up in the heat are of broadly normal value — it is a <b>volume</b> effect. <b>Caveats:</b> temperature is an <i>approximation reconstructed from Met Office reporting</i> (27 Jun ≈ 29°C, 28 Jun ≈ 27°C, 29 Jun ≈ 23°C, 30 Jun ≈ 21°C this run — hot spell broken), not a measured daily feed — swap in an exact series for precision. FTD counts are reliable but the most recent PLTV/FTD points are the least-matured cohort and revise up; the latest day's spend is understated by the affiliate-feed lag. Correlation ≠ causation — school terms, holidays and major sport can co-move with hot spells.</div>
-${wxFc?`<h2 class="sec">This-week heatwave — forecast impact (w/c 6 Jul)</h2>
+<div class="callout"><b>Read:</b> the June heatwave (built from ~19 Jun, peaked 24–27 Jun with a Met Office <b>Red Extreme Heat</b> warning, ~36–38°C highs in SE England, easing from 28 Jun) tracks a clear FTD slowdown. Day-of-week adjusted, FTDs ran <b>${pct1(wxHeatwave)}</b> below normal across the 19 Jun–${GAPLBL} heatwave and <b>${pct1(wxPeak)}</b> on the peak-heat days (24–27 Jun). Spend held roughly normal, so CPA rose: heat hit conversion, not budget. The 27–28 Jun weekend — normally a volume <i>lift</i> — came in <b>${pct1(wxWeekend)}</b> below the weekend norm while temperatures stayed ~27–29°C, reinforcing the signal. Correlation of approx temperature with the day-of-week-adjusted FTD index is <b>${f2(wxCorrIdx)}</b> (negative); with PLTV/FTD only <b>${f2(wxCorrPpf)}</b>, so players who do sign up in the heat are of broadly normal value — it is a <b>volume</b> effect. A <b>second hot spell</b> rebuilt through early July: temperatures dipped to ~19–20°C on 1–2 Jul then climbed back to ~29°C by 8 Jul, so the pressure on FTD volume has returned. <b>Caveats:</b> temperature is an <i>approximation reconstructed from Met Office reporting</i> (peaked ~29°C 24–27 Jun, eased to ~20°C 1–2 Jul, rebuilt to ~29°C by 8 Jul), not a measured daily feed — swap in an exact series for precision. FTD counts are reliable but the most recent PLTV/FTD points are the least-matured cohort and revise up; the latest day's spend is understated by the affiliate-feed lag. Correlation ≠ causation — school terms, holidays and major sport can co-move with hot spells.</div>
+${wxFc?`<h2 class="sec">Heatwave — forward forecast (${fcLbl})</h2>
 <div class="kpis">
 ${kpi('Forecast FTD impact', pct1(wxFc.pct), 'vs a normal week')}
 ${kpi('Est. FTD shortfall', '≈'+num(wxFc.short), `${num(r0(wxFc.totExp))} vs ${num(r0(wxFc.totNorm))} normal`)}
@@ -893,7 +895,7 @@ ${kpi('Peak temp (forecast)', r0(wxFc.peakT)+'°C', 'expected daily mean')}
 ${kpi('Sensitivity', f2(wxFc.slope)+' idx/°C', `temp↔FTD corr ${f2(wxCorrIdx)}`)}
 </div>
 <div class="chartbox" style="margin-top:14px"><canvas id="wxFcChart"></canvas></div>
-<div class="callout"><b>Forecast:</b> applying the fitted temperature→FTD-index relationship (least-squares over ${wxDays.length} days since 1 May) to this week's expected mean temperatures (peak ~${r0(wxFc.peakT)}°C, hot Mon–Sat, easing Sun) implies FTDs run <b>${pct1(wxFc.pct)}</b> below a normal week — roughly <b>${num(wxFc.short)} fewer FTDs</b> if the heat lands as forecast. Value per FTD should hold (temp↔PLTV/FTD corr only ${f2(wxCorrPpf)}), so this is a <b>volume</b> effect, not a value one. With spend planned flat, CPA will rise on the hottest days. <b>Mitigations:</b> shift budget toward evening/in-play windows, lean on app/retargeting audiences that are less heat-sensitive, and avoid front-loading peak-day spend; expect a rebound as the spell breaks. <b>Caveat:</b> forecast temperatures are an assumption (peak ~27–29°C, Mon–Sat) — swap in the exact Met Office series to refine.</div>`:''}`;
+<div class="callout"><b>Forecast:</b> applying the fitted temperature→FTD-index relationship (least-squares over ${wxDays.length} days since 1 May) to the forecast window (${fcLbl}) — peak ~${r0(wxFc.peakT)}°C early, easing from mid-window — implies FTDs run <b>${pct1(wxFc.pct)}</b> below a normal week, roughly <b>${num(wxFc.short)} fewer FTDs</b> if the heat lands as forecast. Value per FTD should hold (temp↔PLTV/FTD corr only ${f2(wxCorrPpf)}), so this is a <b>volume</b> effect, not a value one. With spend planned flat, CPA will rise on the hottest days. <b>Mitigations:</b> shift budget toward evening/in-play windows, lean on app/retargeting audiences that are less heat-sensitive, and avoid front-loading peak-day spend; expect a rebound as the spell breaks. <b>Caveat:</b> forecast temperatures are an assumption (peak ~${r0(wxFc.peakT)}°C) — swap in the exact Met Office series to refine.</div>`:''}`;
 
 // ---- S4d WORLD CUP ----
 {
@@ -1469,7 +1471,7 @@ function buildPane(id){
         {type:'bar',label:'Normal FTDs (weekday norm)',data:fc.norm,backgroundColor:'rgba(10,46,203,.22)',yAxisID:'y',order:3},
         {type:'bar',label:'Forecast FTDs (heatwave)',data:fc.exp,backgroundColor:COL.pink,yAxisID:'y',order:2},
         {type:'line',label:'Forecast mean temp (°C)',data:fc.temps,borderColor:COL.navy,yAxisID:'y1',tension:.3,pointRadius:3,order:1}
-      ]},options:baseOpts({plugins:{title:{display:true,text:'This-week forecast — expected vs normal daily FTDs (w/c 6 Jul)'}},scales:{y:{position:'left',beginAtZero:true},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v+'°'}}}})});
+      ]},options:baseOpts({plugins:{title:{display:true,text:'Forward forecast — expected vs normal daily FTDs'}},scales:{y:{position:'left',beginAtZero:true},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v+'°'}}}})});
     }
   }
   if(id==='s4d'){
