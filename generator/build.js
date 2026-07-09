@@ -1102,6 +1102,17 @@ ${tbl(head, adgWorst.map(mk))}
 <div style="margin-top:14px">${tbl([{t:'Affiliate (username)'},{t:'Spend',r:1},{t:'FTDs',r:1},{t:'CPA',r:1},{t:'Net PLTV',r:1},{t:'PLTV/FTD',r:1},{t:'LTV:CAC',r:1},{t:'APD2+',r:1},{t:'Cost/APD2+',r:1},{t:'APD2+ %',r:1},{t:'Action'}], rows)}</div>
 <p class="note"><b>Action</b> = net LTV:CAC verdict: <span class="pill green">Scale</span> ≥ 1.2 · <span class="pill amber">Hold</span> 0.9–1.2 · <span class="pill red">Cut</span> &lt; 0.9 (renegotiate/cap). Judgement, not automated — weigh contract terms, volume and introducer value before acting.</p>
 <p class="note">${affAlerts.length? `Below 0.8 net LTV:CAC at ≥£20k spend: ${affAlerts.map(a=>affName(a.aid)+' ('+f2(a.ltv)+')').join(', ')}.` : 'No affiliate above £20k spend is below 0.8 net LTV:CAC this window.'} The three largest by spend (${affName('2164')}, ${affName('2630')}, ${affName('2014')}) drive the channel — ${affName('2014')} is the weakest of them.</p>`;
+  // ---- last-7-days table (same view, fresher window) ----
+  const aff7 = (D.aff7||[]).map(a=>({...a, ltv:div(a.p,a.s), cpa:div(a.s,a.f)}));
+  if(aff7.length){
+    const rows7 = aff7.map(a=>({cells:[ affLabel(a.aid), gbpK(a.s), num(a.f), gbp(a.cpa), gbpK(a.p), gbp(div(a.p,a.f)), `<span class="pill ${ragLtv(a.ltv)}">${f2(a.ltv)}</span>`, num(a.apd), a.apd?gbp(div(a.s,a.apd)):'—', pct1(div(a.apd,a.f)), vpill(a.ltv) ]}));
+    const a7t = aff7.reduce((x,a)=>({s:x.s+a.s,f:x.f+a.f,p:x.p+a.p,apd:x.apd+a.apd}),{s:0,f:0,p:0,apd:0});
+    rows7.push({cls:'tot',cells:['Top-20 total', gbpK(a7t.s), num(a7t.f), gbp(div(a7t.s,a7t.f)), gbpK(a7t.p), gbp(div(a7t.p,a7t.f)), `<span class="pill ${ragLtv(div(a7t.p,a7t.s))}">${f2(div(a7t.p,a7t.s))}</span>`, num(a7t.apd), gbp(div(a7t.s,a7t.apd)), pct1(div(a7t.apd,a7t.f)), vpill(div(a7t.p,a7t.s))]});
+    panes.s10b += `<h2 class="sec">Within Affiliate — top 20 by spend (last 7 days to ${ASOF}, actual net of revshare)</h2>
+<div class="callout">Same view as above but the trailing <b>7 days</b> only — a fresher read that reacts faster to recent spend/quality shifts (and is noisier than the 4-week window). The latest day or two may firm up as the affiliate feed lands (Raventrack lag); recent PLTV/FTD is the least-matured and revises up.</div>
+<div style="margin-top:14px">${tbl([{t:'Affiliate (username)'},{t:'Spend',r:1},{t:'FTDs',r:1},{t:'CPA',r:1},{t:'Net PLTV',r:1},{t:'PLTV/FTD',r:1},{t:'LTV:CAC',r:1},{t:'APD2+',r:1},{t:'Cost/APD2+',r:1},{t:'APD2+ %',r:1},{t:'Action'}], rows7)}</div>
+<p class="note"><b>Action</b> = net LTV:CAC verdict: <span class="pill green">Scale</span> ≥ 1.2 · <span class="pill amber">Hold</span> 0.9–1.2 · <span class="pill red">Cut</span> &lt; 0.9. Treat 7-day verdicts as directional — small samples swing week to week; confirm against the 4-week view before acting.</p>`;
+  }
   // ---- MoM section ----
   const momR = AFF_MOM.map(m=>({cells:[
     affLabel(m.aid),
