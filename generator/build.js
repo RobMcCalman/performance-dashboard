@@ -1062,9 +1062,9 @@ ${tbl(head, adgWorst.map(mk))}
 
 // ---- S10b AFFILIATES ----
 {
-  const rows = affRows.map(a=>({cells:[ affLabel(a.aid), gbpK(a.s), num(a.f), gbp(a.cpa), gbpK(a.p), `<span class="pill ${ragLtv(a.ltv)}">${f2(a.ltv)}</span>`, num(a.apd) ]}));
+  const rows = affRows.map(a=>({cells:[ affLabel(a.aid), gbpK(a.s), num(a.f), gbp(a.cpa), gbpK(a.p), gbp(div(a.p,a.f)), `<span class="pill ${ragLtv(a.ltv)}">${f2(a.ltv)}</span>`, num(a.apd) ]}));
   const affTot = affRows.reduce((x,a)=>({s:x.s+a.s,f:x.f+a.f,p:x.p+a.p,apd:x.apd+a.apd}),{s:0,f:0,p:0,apd:0});
-  rows.push({cls:'tot',cells:['Top-20 total', gbpM(affTot.s), num(affTot.f), gbp(div(affTot.s,affTot.f)), gbpM(affTot.p), `<span class="pill ${ragLtv(div(affTot.p,affTot.s))}">${f2(div(affTot.p,affTot.s))}</span>`, num(affTot.apd)]});
+  rows.push({cls:'tot',cells:['Top-20 total', gbpM(affTot.s), num(affTot.f), gbp(div(affTot.s,affTot.f)), gbpM(affTot.p), gbp(div(affTot.p,affTot.f)), `<span class="pill ${ragLtv(div(affTot.p,affTot.s))}">${f2(div(affTot.p,affTot.s))}</span>`, num(affTot.apd)]});
   // ---- top-10 daily FTD heatmap (trailing 30 days, by FTDs) ----
   let affHeat='';
   const AFT=(D.affTop30||[]).filter(r=>r.date<=ASOF);
@@ -1097,7 +1097,7 @@ ${tbl(head, adgWorst.map(mk))}
   }
   panes.s10b = affHeat + `<h2 class="sec">Within Affiliate — top 20 by spend (last 4 weeks, actual net of revshare)</h2>
 <div class="callout">Per-affiliate KPIs are <b>actual</b> from attribution_spend_metrics with PLTV haircut ×0.85. Profile usernames applied from the affiliate_groups export (matched on Affiliate Profile ID); affiliate_id shown in brackets.${(()=>{const u=affRows.filter(a=>!AFF_NAMES[a.aid]).map(a=>a.aid);return u.length?` Unmapped (not in export): ${u.join(', ')}.`:' All shown affiliates mapped.';})()}</div>
-<div style="margin-top:14px">${tbl([{t:'Affiliate (username)'},{t:'Spend',r:1},{t:'FTDs',r:1},{t:'CPA',r:1},{t:'Net PLTV',r:1},{t:'LTV:CAC',r:1},{t:'APD2+',r:1}], rows)}</div>
+<div style="margin-top:14px">${tbl([{t:'Affiliate (username)'},{t:'Spend',r:1},{t:'FTDs',r:1},{t:'CPA',r:1},{t:'Net PLTV',r:1},{t:'PLTV/FTD',r:1},{t:'LTV:CAC',r:1},{t:'APD2+',r:1}], rows)}</div>
 <p class="note">${affAlerts.length? `Below 0.8 net LTV:CAC at ≥£20k spend: ${affAlerts.map(a=>affName(a.aid)+' ('+f2(a.ltv)+')').join(', ')}.` : 'No affiliate above £20k spend is below 0.8 net LTV:CAC this window.'} The three largest by spend (${affName('2164')}, ${affName('2630')}, ${affName('2014')}) drive the channel — ${affName('2014')} is the weakest of them.</p>`;
   // ---- MoM section ----
   const momR = AFF_MOM.map(m=>({cells:[
