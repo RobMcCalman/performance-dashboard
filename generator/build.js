@@ -169,18 +169,26 @@ const mayCh = {}; D.mayMTD.forEach(r=>mayCh[r.channel]=r);
 const junCh = monByMo[RM];
 const mayTot = D.mayMTD.reduce((a,r)=>({s:a.s+r.s,f:a.f+r.f,p:a.p+r.p}),{s:0,f:0,p:0});
 const junMTDraw = {s:moTot[RM].s,f:moTot[RM].f,p:moTot[RM].p};
+// PLTV drivers compare the two most recent COMPLETE months (never a partial live month)
+const DRV_CUR = (DAYS_ELAPSED>=DIM) ? CUR_MO : CUR_MO-1;   // last fully-landed month
+const DRV_PREV = DRV_CUR-1;
+const drvPrevCh = monByMo[DRV_PREV]||{}, drvCurCh = monByMo[DRV_CUR]||{};
+const MO_DRVCUR = MONTHS[DRV_CUR-1], MO_DRVPREV = MONTHS[DRV_PREV-1];
 const momMovers = [];
-const allCh = new Set([...Object.keys(mayCh), ...Object.keys(junCh)]);
-allCh.forEach(ch=>{ const m=mayCh[ch]||{p:0,f:0}; const j=junCh[ch]||{pn:0,f:0}; momMovers.push({ch, dP:(j.pn||0)-(m.p||0), mp:m.p||0, jp:j.pn||0}); });
+const allChD = new Set([...Object.keys(drvPrevCh), ...Object.keys(drvCurCh)]);
+allChD.forEach(ch=>{ const m=drvPrevCh[ch]||{pn:0,f:0}; const j=drvCurCh[ch]||{pn:0,f:0}; momMovers.push({ch, dP:(j.pn||0)-(m.pn||0), mp:m.pn||0, jp:j.pn||0}); });
 momMovers.sort((a,b)=>b.dP-a.dP);
+const _pT=moTot[DRV_PREV], _cT=moTot[DRV_CUR];
 const mom = {
-  mayPPF: div(mayTot.p,mayTot.f), junPPF: div(junMTDraw.p,junMTDraw.f),
-  dPLTV: junMTDraw.p-mayTot.p, dF: junMTDraw.f-mayTot.f,
-  mayP: mayTot.p, junP: junMTDraw.p, mayF: mayTot.f, junF: junMTDraw.f
+  mayPPF: div(_pT.p,_pT.f), junPPF: div(_cT.p,_cT.f),
+  dPLTV: _cT.p-_pT.p, dF: _cT.f-_pT.f,
+  mayP: _pT.p, junP: _cT.p, mayF: _pT.f, junF: _cT.f
 };
-// volume vs rate split: ΔP = ΔF*ppf_may + F_jun*Δppf
 mom.volEffect = mom.dF * mom.mayPPF;
-mom.rateEffect = junMTDraw.f * (mom.junPPF - mom.mayPPF);
+mom.rateEffect = _cT.f * (mom.junPPF - mom.mayPPF);
+// standout low-value channel in the reference complete month
+let standoutDrv=null;
+Object.values(drvCurCh).forEach(r=>{ const share=r.f/_cT.f, ppf=div(r.pn,r.f); if(share>=0.03 && r.f>=100){ if(!standoutDrv||ppf<standoutDrv.ppf) standoutDrv={ch:r.channel,ppf,share,f:r.f}; } });
 
 // ---------- monthly blended ppf + look-alike ----------
 const moBlend = []; for(let m=1;m<=NM;m++){ moBlend.push({mo:m, ppf: div(moTot[m].p, moTot[m].f), f: moTot[m].f}); }
@@ -800,20 +808,20 @@ ${tbl([{t:'Segment'},{t:'25 spend',r:1},{t:'26 spend',r:1},{t:'25 FTDs',r:1},{t:
 {
   const top = momMovers.slice(0,6), bot = momMovers.slice(-6).reverse();
   const mvRow = a=>({cells:[a.ch, gbpK(a.mp), gbpK(a.jp), (a.dP>=0?'+':'')+gbpK(a.dP)]});
-  panes.s3b = `<h2 class="sec">Month-on-month PLTV drivers — May vs June (matched 1–${MD})</h2>
+  panes.s3b = `<h2 class="sec">Month-on-month PLTV drivers — ${MO_DRVPREV} vs ${MO_DRVCUR} (complete months)</h2>
 <div class="kpis">
-${kpi('Net PLTV ΔMoM', (mom.dPLTV>=0?'+':'')+gbpK(mom.dPLTV), `May ${gbpM(mom.mayP)} → Jun ${gbpM(mom.junP)}`)}
-${kpi('FTDs ΔMoM', (mom.dF>=0?'+':'')+num(mom.dF), `May ${num(mom.mayF)} → Jun ${num(mom.junF)}`)}
-${kpi('Blended PLTV/FTD', gbp(mom.junPPF), `May ${gbp(mom.mayPPF)}`)}
-${kpi('Like-for-like ΔPLTV', (div(mom.junP,mom.mayP)-1>=0?'+':'')+pct1(div(mom.junP,mom.mayP)-1), `matched ${MD}-day window`)}
+${kpi('Net PLTV ΔMoM', (mom.dPLTV>=0?'+':'')+gbpK(mom.dPLTV), `${MO_DRVPREV} ${gbpM(mom.mayP)} → ${MO_DRVCUR} ${gbpM(mom.junP)}`)}
+${kpi('FTDs ΔMoM', (mom.dF>=0?'+':'')+num(mom.dF), `${MO_DRVPREV} ${num(mom.mayF)} → ${MO_DRVCUR} ${num(mom.junF)}`)}
+${kpi('Blended PLTV/FTD', gbp(mom.junPPF), `${MO_DRVPREV} ${gbp(mom.mayPPF)}`)}
+${kpi(MO_DRVCUR+' vs '+MO_DRVPREV+' PLTV', (div(mom.junP,mom.mayP)-1>=0?'+':'')+pct1(div(mom.junP,mom.mayP)-1), `full month, net`)}
 </div>
-<div class="callout" style="margin-top:14px"><b>Volume vs rate.</b> Of the ${(mom.dPLTV>=0?'+':'')}${gbpK(mom.dPLTV)} MoM PLTV move, volume (more/fewer FTDs at May's rate) contributes ${(mom.volEffect>=0?'+':'')}${gbpK(mom.volEffect)} and value-per-FTD (mix/maturity) contributes ${(mom.rateEffect>=0?'+':'')}${gbpK(mom.rateEffect)}. Blended PLTV/FTD slipped to ${gbp(mom.junPPF)} — a <b>mix</b> shift, not within-channel decay.</div>
+<div class="callout" style="margin-top:14px"><b>Volume vs rate.</b> Of the ${(mom.dPLTV>=0?'+':'')}${gbpK(mom.dPLTV)} MoM PLTV move, volume (${mom.dF>=0?'more':'fewer'} FTDs at ${MO_DRVPREV}'s rate) contributes ${(mom.volEffect>=0?'+':'')}${gbpK(mom.volEffect)} and value-per-FTD (mix/maturity) contributes ${(mom.rateEffect>=0?'+':'')}${gbpK(mom.rateEffect)}. Blended PLTV/FTD ${mom.junPPF>=mom.mayPPF?'rose to':'slipped to'} ${gbp(mom.junPPF)} (${MO_DRVPREV} ${gbp(mom.mayPPF)}).</div>
 <div class="chartbox" style="margin-top:14px"><canvas id="c_mom"></canvas></div>
 <div class="grid2" style="margin-top:14px">
-<div>${tbl([{t:'Top + movers'},{t:'May',r:1},{t:'Jun',r:1},{t:'ΔPLTV',r:1}], top.map(mvRow))}</div>
-<div>${tbl([{t:'Top − movers'},{t:'May',r:1},{t:'Jun',r:1},{t:'ΔPLTV',r:1}], bot.map(mvRow))}</div>
+<div>${tbl([{t:'Top + movers'},{t:MO_DRVPREV,r:1},{t:MO_DRVCUR,r:1},{t:'ΔPLTV',r:1}], top.map(mvRow))}</div>
+<div>${tbl([{t:'Top − movers'},{t:MO_DRVPREV,r:1},{t:MO_DRVCUR,r:1},{t:'ΔPLTV',r:1}], bot.map(mvRow))}</div>
 </div>
-<div class="callout"><b>Why April &amp; June look alike — the mix story.</b> Both months show a low blended PLTV/FTD (Apr ${gbp(moBlend[3].ppf)}, Jun ${gbp(moBlend[5].ppf)}) vs neighbours (Mar ${gbp(moBlend[2].ppf)}, May ${gbp(moBlend[4].ppf)}). April was driven by a Meta Paid Social surge (~2,542 FTDs, ~${pct1(div(2542,moTot[4].f))} share at ~£80/FTD vs £120–127 normally). June is driven by a ${standout.ch} shift (${pct1(standout.share)} share at ${gbp(standout.ppf)}/FTD) plus a high iOS Organic share (${pct1(div(junCh["iOS Organic"].f,moTot[RM].f))}) and Affiliate at ~${pct1(div(junCh["Affiliate"].f,moTot[RM].f))}. Common thread: premium channels (Organic Search, PPC Generic, Google UAC, Unattributed) lost FTD <b>share</b>, so the blend is diluted by mix — not within-channel value. <b>Caveat:</b> roughly half of June's extra dip is cohort maturity and should revise up toward April's matured ~£144.</div>`;
+<div class="callout"><b>The mix story.</b> ${MO_DRVCUR}'s blended PLTV/FTD is ${gbp(moBlend[DRV_CUR-1].ppf)} vs ${gbp(moBlend[DRV_PREV-1].ppf)} in ${MO_DRVPREV}.${standoutDrv?` It is diluted by a <b>${standoutDrv.ch}</b> shift (${pct1(standoutDrv.share)} of FTDs at ${gbp(standoutDrv.ppf)}/FTD)`:''} plus high iOS Organic (${pct1(div((drvCurCh["iOS Organic"]||{f:0}).f,_cT.f))}) and Affiliate (${pct1(div((drvCurCh["Affiliate"]||{f:0}).f,_cT.f))}) FTD shares. Premium channels (Organic Search, PPC Generic, Google UAC) lost FTD <b>share</b>, so the blend is diluted by <b>mix</b> — not within-channel value decay. <b>Caveat:</b> recent-cohort maturation understates the latest month's modelled PLTV, which revises up over the following weeks.</div>`;
 }
 
 // ---- S4 DAILY ----
