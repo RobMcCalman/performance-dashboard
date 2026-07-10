@@ -633,7 +633,8 @@ ${(()=>{
 ${kpi('MTD spend', gbpM(mtd.s), `fcst ${gbpM(moFcst.s)}`)}
 ${kpi('MTD FTDs', num(mtd.f), `fcst ${num(moFcst.f)}`)}
 ${kpi('MTD net PLTV', gbpM(mtd.p), `fcst ${gbpM(moFcst.p)}`)}
-${kpi('MTD LTV:CAC', f2(mtd.ltv), `CPA ${gbp(mtd.cpa)} · PLTV/FTD ${gbp(mtd.ppf)}`)}
+${kpi('MTD PLTV/FTD', gbp(mtd.ppf), `fcst ${gbp(div(moFcst.p,moFcst.f))} · net`)}
+${kpi('MTD LTV:CAC', f2(mtd.ltv), `CPA ${gbp(mtd.cpa)}`)}
 </div>
 <div class="grid2" style="margin-top:14px">${chartbox('c_mtd_spend')}${chartbox('c_mtd_ftd')}</div>
 <h2 class="sec">CPA — daily (MTD, net)</h2>
