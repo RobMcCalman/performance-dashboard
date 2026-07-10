@@ -1256,7 +1256,69 @@ ${recCard(7,'enable','grey','Fix measurement &amp; invest in CRO over higher CPA
 <p class="note">Recommendations are heuristic prompts from the data, not automated decisions — validate against contract terms, seasonality and RG/compliance before acting. LTV:CAC uses the 12-month net PLTV model; recent cohorts revise up as they mature.</p>`;
 }
 
-const TABS = [['summary','Summary'],['rec','Recommendations'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],['s9','Channel opt'],...(panes.sinc?[['sinc','Incremental CPA']]:[]),['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
+// ---------- FTD QUALITY FUNNEL (FTDs -> PBA / APD2+ / PP 8-10 / Qore) ----------
+if(D.funnel){
+  const FN=D.funnel; const pcf=(a,b)=>b?a/b*100:0;
+  const moR=FN.mo.map(r=>({...r,pbaP:pcf(r.pba,r.ftds),apdP:pcf(r.apd2,r.ftds),ppP:pcf(r.pp8,r.ftds),qP:r.qore!=null?pcf(r.qore,r.ftds):null}));
+  const wkR=FN.wk.map(r=>({...r,pbaP:pcf(r.pba,r.ftds),apdP:pcf(r.apd2,r.ftds),ppP:pcf(r.pp8,r.ftds)}));
+  const chR=FN.ch.map(r=>({...r,pbaP:pcf(r.pba,r.f),ppP:pcf(r.pp8,r.f),apdP:pcf(r.apd2,r.fm)})).sort((a,b)=>b.f-a.f);
+  const fyt=FN.mo.reduce((a,r)=>({ftds:a.ftds+r.ftds,pba:a.pba+r.pba,apd2:a.apd2+r.apd2,pp8:a.pp8+r.pp8}),{ftds:0,pba:0,apd2:0,pp8:0});
+  const qMo=moR.filter(r=>r.qore!=null); const qFtds=qMo.reduce((a,r)=>a+r.ftds,0); const qTot=qMo.reduce((a,r)=>a+r.qore,0);
+  const pbaB=pcf(fyt.pba,fyt.ftds), ppB=pcf(fyt.pp8,fyt.ftds), apdB=pcf(fyt.apd2,fyt.ftds), qB=pcf(qTot,qFtds);
+  const wkC=wkR.slice(0,-1), lastW=wkC[wkC.length-1];
+  const medi=a=>{const s=[...a].sort((x,y)=>x-y);return s.length%2?s[(s.length-1)/2]:(s[s.length/2-1]+s[s.length/2])/2;};
+  const pbaMedW=medi(wkC.map(r=>r.pbaP));
+  const flags=[];
+  moR.forEach(r=>{ if(r.pbaP>=2) flags.push({s:'red',t:`<b>${r.m} PBA wave:</b> ${num(r.pba)} flagged FTDs (${r.pbaP.toFixed(1)}% vs 0.2–0.4% baseline) — confirm with the fraud team whether this was a genuine abuse wave or bulk retro-flagging.`}); });
+  wkC.slice(-6).forEach(r=>{ if(r.pbaP>Math.max(1,3*pbaMedW)) flags.push({s:'red',t:`<b>PBA spike w/c ${r.w}:</b> ${r.pbaP.toFixed(2)}% of FTDs flagged (weekly baseline ${pbaMedW.toFixed(2)}%).`}); });
+  chR.filter(r=>r.f>=1000).forEach(r=>{
+    if(r.pbaP>Math.max(1.5,3*pbaB)) flags.push({s:'red',t:`<b>${r.ch}:</b> PBA rate ${r.pbaP.toFixed(1)}% — ${(r.pbaP/pbaB).toFixed(1)}× the blended ${pbaB.toFixed(1)}% (${num(r.pba)} of ${num(r.f)} FTDs).`});
+    if(r.ppP<ppB*0.75) flags.push({s:'amber',t:`<b>${r.ch}:</b> PP 8–10 share ${r.ppP.toFixed(1)}% vs blended ${ppB.toFixed(1)}% on ${num(r.f)} FTDs — high volume, low predicted quality.`});
+    if(r.apdP && r.apdP<apdB*0.75) flags.push({s:'amber',t:`<b>${r.ch}:</b> APD2+ conversion ${r.apdP.toFixed(1)}% vs blended ${apdB.toFixed(1)}% — weak day-2 activation.`});
+  });
+  if(lastW.ppP<ppB*0.85) flags.push({s:'amber',t:`<b>PP softening:</b> w/c ${lastW.w} PP 8–10 share ${lastW.ppP.toFixed(1)}% vs YTD ${ppB.toFixed(1)}% (young cohorts still re-score — recheck next week).`});
+  if(lastW.apdP<apdB*0.9) flags.push({s:'amber',t:`<b>APD2+ dip:</b> w/c ${lastW.w} at ${lastW.apdP.toFixed(1)}% vs YTD ${apdB.toFixed(1)}% (~2-day APD lag applies).`});
+  if(qMo.length>=2){ const a=qMo[qMo.length-1], b2=qMo[qMo.length-2]; if(a.qP<b2.qP-1.5) flags.push({s:'amber',t:`<b>Qore conversion dip:</b> ${a.m} ${a.qP.toFixed(1)}% of FTDs vs ${b2.m} ${b2.qP.toFixed(1)}%.`}); }
+  if(!flags.length) flags.push({s:'green',t:'No FTD-quality flags in the current window.'});
+  flags.sort((a,b)=>(a.s==='red'?0:a.s==='amber'?1:2)-(b.s==='red'?0:b.s==='amber'?1:2));
+  const moRows=moR.map(r=>({cells:[r.m, num(r.ftds), num(r.pba), `<span class="pill ${r.pbaP>=2?'red':r.pbaP>=1?'amber':'green'}">${r.pbaP.toFixed(2)}%</span>`, num(r.apd2), pct1(r.apdP/100), num(r.pp8), pct1(r.ppP/100), r.qore!=null?num(r.qore):'—', r.qP!=null?pct1(r.qP/100):'—']}));
+  moRows.push({cls:'tot',cells:['YTD', num(fyt.ftds), num(fyt.pba), pct1(pbaB/100)+'', num(fyt.apd2), pct1(apdB/100), num(fyt.pp8), pct1(ppB/100), num(qTot)+' (Jan–Jun)', pct1(qB/100)]});
+  const wkRows=wkR.map((r,i)=>({cls:i===wkR.length-1?'':'',cells:[r.w+(i===wkR.length-1?' (WTD)':''), num(r.ftds), num(r.pba), r.pbaP.toFixed(2)+'%', num(r.apd2), pct1(r.apdP/100), num(r.pp8), pct1(r.ppP/100)]}));
+  const chRows=chR.map(r=>({cells:[r.ch, num(r.f), num(r.pba), `<span class="pill ${r.pbaP>Math.max(1.5,3*pbaB)?'red':r.pbaP>2*pbaB?'amber':'green'}">${r.pbaP.toFixed(2)}%</span>`, pct1(r.apdP/100), num(r.pp8), `<span class="pill ${r.ppP>=ppB?'green':r.ppP>=ppB*0.75?'amber':'red'}">${r.ppP.toFixed(1)}%</span>`, r.avgpp.toFixed(2), div(r.pn,r.fm)?gbp(div(r.pn,r.fm)):'—']}));
+  panes.sfun = `<h2 class="sec">FTD quality funnel — 2026 YTD (to ${ASOF})</h2>
+<div class="kpis">
+${kpi('FTDs', num(fyt.ftds), 'YTD')}
+${kpi('PBA-flagged', num(fyt.pba), pct1(pbaB/100)+' of FTDs')}
+${kpi('APD2+', num(fyt.apd2), pct1(apdB/100)+' of FTDs')}
+${kpi('PP 8–10', num(fyt.pp8), pct1(ppB/100)+' of FTDs')}
+${kpi('Qore FTDs', num(qTot), pct1(qB/100)+' of Jan–Jun FTDs')}
+</div>
+<h2 class="sec">Quality flags</h2>
+<div class="callout"><ul style="margin:6px 0 2px;padding-left:0;list-style:none">${flags.map(f=>`<li style="margin:6px 0">${pill(f.s,f.s.toUpperCase())} ${f.t}</li>`).join('')}</ul></div>
+<p class="note">Rules: red = PBA share ≥2% in a month, weekly PBA >3× baseline, or a channel >3× blended PBA; amber = channel PP or APD2+ >25% below blended, weekly PP >15% below YTD, weekly APD2+ >10% below YTD, or Qore conversion down >1.5pts MoM. Thresholds live in build.js.</p>
+<h2 class="sec">Monthly funnel</h2>
+${chartbox('c_fun_mo')}
+<div style="margin-top:14px">${tbl([{t:'Month'},{t:'FTDs',r:1},{t:'PBA',r:1},{t:'PBA %',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Qore FTDs',r:1},{t:'Qore %',r:1}], moRows)}</div>
+<p class="note">${MONTHS[CUR_MO-1]} is partial (1–${DD}); APD2+ and PP still mature (~2-day APD lag; potential scores re-score over the first weeks). Qore FTDs are published monthly in the MBR — no weekly or channel split available.</p>
+<h2 class="sec">Weekly funnel rates</h2>
+${chartbox('c_fun_wk')}
+<div style="margin-top:14px">${tbl([{t:'Week (w/c)'},{t:'FTDs',r:1},{t:'PBA',r:1},{t:'PBA %',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1}], wkRows)}</div>
+<h2 class="sec">Channel quality — YTD</h2>
+${chartbox('c_fun_ch',540)}
+<div style="margin-top:14px">${tbl([{t:'Channel'},{t:'FTDs',r:1},{t:'PBA',r:1},{t:'PBA %',r:1},{t:'APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Avg PP score',r:1},{t:'Net PLTV/FTD',r:1}], chRows)}</div>
+<p class="note"><b>Definitions:</b> PBA = platform potential-bonus-abuser status on the player record (applied after detection — recent cohorts revise up). PP = player-potential score 1–10; PP 8–10 is the MBR "PPQore" definition. APD2+ = players reaching 2+ active playing days. Qore = paid wagering >£1,000 (FTDs converting to Qore, from the MBR). <b>Anchors:</b> PBA/PP/avg-PP use last-click-at-FTD attribution (attributed_ftds × dim_player); APD2+ %, FTD volume for it, and PLTV/FTD use the registration-anchored spend mart — totals match, channel rows can differ. Email’s high avg PP predates its tracking collapse; its PBA concentration is mostly the January wave.</p>`;
+}
+
+if(D.funnel && panes.sfun){
+  const pcf2=(a,b)=>b?a/b*100:0;
+  EMBED.funnel={
+    mo:D.funnel.mo.map(r=>({m:r.m,ftds:r.ftds,apd2:r.apd2,pp8:r.pp8,qore:r.qore,pba:r.pba})),
+    wk:D.funnel.wk.map(r=>({w:r.w,apdP:+pcf2(r.apd2,r.ftds).toFixed(1),ppP:+pcf2(r.pp8,r.ftds).toFixed(1),pbaP:+pcf2(r.pba,r.ftds).toFixed(2)})),
+    ch:D.funnel.ch.map(r=>({ch:r.ch,ppP:+pcf2(r.pp8,r.f).toFixed(1),apdP:+pcf2(r.apd2,r.fm).toFixed(1),pbaP:+pcf2(r.pba,r.f).toFixed(2)}))
+  };
+}
+
+const TABS = [['summary','Summary'],['rec','Recommendations'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),...(panes.sfun?[['sfun','Quality funnel']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],['s9','Channel opt'],...(panes.sinc?[['sinc','Incremental CPA']]:[]),['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
 const tabbar = TABS.map((t,i)=>`<button class="tab${i===0?' active':''}" data-pane="${t[0]}">${t[1]}</button>`).join('');
 const paneHTML = TABS.map((t,i)=>`<section class="pane${i===0?' active':''}" id="pane-${t[0]}">${panes[t[0]]||''}</section>`).join('');
 
@@ -1430,6 +1492,26 @@ function buildPane(id){
         {label:'Total FTDs (indexed to 100)',data:a.fIdx,borderColor:COL.blue,backgroundColor:'rgba(10,46,203,.06)',tension:.2,pointRadius:2,borderWidth:2}
       ]},options:baseOpts({plugins:{title:{display:true,text:'ATL spend vs total FTDs — indexed to week 1 (ATL is flat; FTDs move independently)'},legend:{labels:{font:{size:11},boxWidth:12}}},scales:{y:{title:{display:true,text:'index (week 1 = 100)'}}}})});
     }
+  }
+  if(id==='sfun' && EMBED.funnel){
+    const F=EMBED.funnel;
+    mkChart('c_fun_mo',{type:'bar',data:{labels:F.mo.map(x=>x.m),datasets:[
+      {label:'FTDs',data:F.mo.map(x=>x.ftds),backgroundColor:'rgba(10,46,203,.25)'},
+      {label:'APD2+',data:F.mo.map(x=>x.apd2),backgroundColor:COL.green},
+      {label:'PP 8-10',data:F.mo.map(x=>x.pp8),backgroundColor:COL.navy},
+      {label:'Qore FTDs',data:F.mo.map(x=>x.qore),backgroundColor:COL.yellow},
+      {label:'PBA',data:F.mo.map(x=>x.pba),backgroundColor:COL.pink}
+    ]},options:baseOpts({plugins:{title:{display:true,text:'Monthly funnel - FTDs vs APD2+, PP 8-10, Qore, PBA'}}})});
+    mkChart('c_fun_wk',{type:'line',data:{labels:F.wk.map(x=>x.w),datasets:[
+      {label:'APD2+ %',data:F.wk.map(x=>x.apdP),borderColor:COL.green,tension:.3,pointRadius:0,yAxisID:'y'},
+      {label:'PP 8-10 %',data:F.wk.map(x=>x.ppP),borderColor:COL.navy,tension:.3,pointRadius:0,yAxisID:'y'},
+      {label:'PBA % (right)',data:F.wk.map(x=>x.pbaP),borderColor:COL.pink,tension:.3,pointRadius:0,yAxisID:'y1'}
+    ]},options:baseOpts({plugins:{title:{display:true,text:'Weekly quality rates (% of FTDs) - final point is WTD partial'}},scales:{y:{position:'left',ticks:{callback:v=>v+'%'}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}}}})});
+    mkChart('c_fun_ch',{type:'bar',data:{labels:F.ch.map(x=>x.ch),datasets:[
+      {label:'APD2+ %',data:F.ch.map(x=>x.apdP),backgroundColor:COL.green},
+      {label:'PP 8-10 %',data:F.ch.map(x=>x.ppP),backgroundColor:COL.navy},
+      {label:'PBA %',data:F.ch.map(x=>x.pbaP),backgroundColor:COL.pink}
+    ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Channel quality - % of FTDs (YTD)'}},scales:{x:{ticks:{callback:v=>v+'%'}}}})});
   }
   if(id==='sq' && EMBED.ftdq){
     const q=EMBED.ftdq;
