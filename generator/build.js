@@ -1348,9 +1348,10 @@ ${chartbox('c_fun_ch',540)}
 
 if(D.funnel && panes.sfun){
   const pcf2=(a,b)=>b?a/b*100:0;
+  const wkP3={}; D.daily.forEach(dd=>{ if(dd.date<'2026-01-01') return; const dt=new Date(dd.date+'T00:00:00Z'); const mon=new Date(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth(),dt.getUTCDate()-((dt.getUTCDay()+6)%7))); const k=String(mon.getUTCMonth()+1).padStart(2,'0')+'-'+String(mon.getUTCDate()).padStart(2,'0'); wkP3[k]=(wkP3[k]||0)+dd.p; });
   EMBED.funnel={
-    mo:D.funnel.mo.map(r=>({m:r.m,ftds:r.ftds,apd2:r.apd2,pp8:r.pp8,qore:r.qore,pba:r.pba})),
-    wk:D.funnel.wk.map(r=>({w:r.w,apdP:+pcf2(r.apd2,r.ftds).toFixed(1),ppP:+pcf2(r.pp8,r.ftds).toFixed(1),pbaP:+pcf2(r.pba,r.ftds).toFixed(2),seonP:+pcf2(r.seon,r.regs).toFixed(1),dupaP:+pcf2(r.dupa,r.regs).toFixed(1),ufiP:+pcf2(r.ufi,r.ftds).toFixed(2)})),
+    mo:D.funnel.mo.map((r,i)=>({m:r.m,ftds:r.ftds,apd2:r.apd2,pp8:r.pp8,qore:r.qore,pba:r.pba,ppf:Math.round(div(moTot[i+1]?moTot[i+1].p:0,r.ftds))})),
+    wk:D.funnel.wk.map(r=>({w:r.w,apdP:+pcf2(r.apd2,r.ftds).toFixed(1),ppP:+pcf2(r.pp8,r.ftds).toFixed(1),pbaP:+pcf2(r.pba,r.ftds).toFixed(2),seonP:+pcf2(r.seon,r.regs).toFixed(1),dupaP:+pcf2(r.dupa,r.regs).toFixed(1),ufiP:+pcf2(r.ufi,r.ftds).toFixed(2),ppf:Math.round(div(wkP3[r.w]||0,r.ftds))})),
     ch:D.funnel.ch.map(r=>({ch:r.ch,ppP:+pcf2(r.pp8,r.f).toFixed(1),apdP:+pcf2(r.apd2,r.fm).toFixed(1),pbaP:+pcf2(r.pba,r.f).toFixed(2),ufiP:+pcf2(r.ufi,r.f).toFixed(2)}))
   };
 }
@@ -1541,12 +1542,14 @@ function buildPane(id){
       {label:'APD2+',data:F.mo.map(x=>x.apd2),backgroundColor:COL.green},
       {label:'PP 8-10',data:F.mo.map(x=>x.pp8),backgroundColor:COL.navy},
       {label:'Qore FTDs',data:F.mo.map(x=>x.qore),backgroundColor:COL.yellow},
-      {label:'Current PBA (official)',data:F.mo.map(x=>x.pba),backgroundColor:COL.pink}
-    ]},options:baseOpts({plugins:{title:{display:true,text:'Monthly funnel - FTDs vs APD2+, PP 8-10, Qore, PBA'}}})});
+      {label:'Current PBA (official)',data:F.mo.map(x=>x.pba),backgroundColor:COL.pink},
+      {type:'line',label:'Net PLTV/FTD (£, right)',data:F.mo.map(x=>x.ppf),borderColor:COL.sky,borderWidth:2,tension:.3,yAxisID:'y1'}
+    ]},options:baseOpts({plugins:{title:{display:true,text:'Monthly funnel - FTDs vs APD2+, PP 8-10, Qore, PBA + net PLTV/FTD'}},scales:{y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>'£'+v}}}})});
     mkChart('c_fun_wk',{type:'line',data:{labels:F.wk.map(x=>x.w),datasets:[
       {label:'APD2+ %',data:F.wk.map(x=>x.apdP),borderColor:COL.green,tension:.3,pointRadius:0,yAxisID:'y'},
-      {label:'PP 8-10 %',data:F.wk.map(x=>x.ppP),borderColor:COL.navy,tension:.3,pointRadius:0,yAxisID:'y'}
-    ]},options:baseOpts({plugins:{title:{display:true,text:'Weekly FTD quality rates (% of FTDs) - final point is WTD partial'}},scales:{y:{position:'left',ticks:{callback:v=>v+'%'}}}})});
+      {label:'PP 8-10 %',data:F.wk.map(x=>x.ppP),borderColor:COL.navy,tension:.3,pointRadius:0,yAxisID:'y'},
+      {label:'Net PLTV/FTD (£, right)',data:F.wk.map(x=>x.ppf),borderColor:COL.sky,borderDash:[6,4],tension:.3,pointRadius:0,yAxisID:'y1'}
+    ]},options:baseOpts({plugins:{title:{display:true,text:'Weekly FTD quality rates + net PLTV/FTD (right, £) - final point is WTD partial'}},scales:{y:{position:'left',ticks:{callback:v=>v+'%'}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>'£'+v}}}})});
     mkChart('c_fun_ch',{type:'bar',data:{labels:F.ch.map(x=>x.ch),datasets:[
       {label:'APD2+ %',data:F.ch.map(x=>x.apdP),backgroundColor:COL.green},
       {label:'PP 8-10 %',data:F.ch.map(x=>x.ppP),backgroundColor:COL.navy}
