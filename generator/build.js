@@ -1300,9 +1300,10 @@ if(D.funnel){
   flags.sort((a,b)=>(a.s==='red'?0:a.s==='amber'?1:2)-(b.s==='red'?0:b.s==='amber'?1:2));
   const regRows=moR.map(r=>({cells:[r.m, num(r.regs), num(r.seon), `<span class="pill ${r.seonP>1.5*seonB?'red':r.seonP>1.2*seonB?'amber':'green'}">${r.seonP.toFixed(1)}%</span>`, num(r.dupa), r.dupaP.toFixed(1)+'%']}));
   regRows.push({cls:'tot',cells:['YTD', num(fyt.regs), num(fyt.seon), pct1(seonB/100), num(fyt.dupa), pct1(dupaB/100)]});
-  const moRows=moR.map(r=>({cells:[r.m, num(r.ftds), num(r.pba), `<span class="pill ${r.pbaP>=14?'red':r.pbaP>=12.5?'amber':'green'}">${r.pbaP.toFixed(1)}%</span>`, num(r.apd2), pct1(r.apdP/100), num(r.pp8), pct1(r.ppP/100), r.qore!=null?num(r.qore):'—', r.qP!=null?pct1(r.qP/100):'—']}));
-  moRows.push({cls:'tot',cells:['YTD', num(fyt.ftds), num(fyt.pba), pct1(pbaB/100), num(fyt.apd2), pct1(apdB/100), num(fyt.pp8), pct1(ppB/100), num(qTot)+' (Jan–Jun)', pct1(qB/100)]});
-  const wkRows=wkR.map((r,i)=>({cells:[r.w+(i===wkR.length-1?' (WTD)':''), num(r.ftds), num(r.apd2), pct1(r.apdP/100), num(r.pp8), pct1(r.ppP/100)]}));
+  const moRows=moR.map((r,i)=>({cells:[r.m, num(r.ftds), num(r.pba), `<span class="pill ${r.pbaP>=14?'red':r.pbaP>=12.5?'amber':'green'}">${r.pbaP.toFixed(1)}%</span>`, num(r.apd2), pct1(r.apdP/100), num(r.pp8), pct1(r.ppP/100), r.qore!=null?num(r.qore):'—', r.qP!=null?pct1(r.qP/100):'—', gbp(div(moTot[i+1].p, r.ftds))]}));
+  moRows.push({cls:'tot',cells:['YTD', num(fyt.ftds), num(fyt.pba), pct1(pbaB/100), num(fyt.apd2), pct1(apdB/100), num(fyt.pp8), pct1(ppB/100), num(qTot)+' (Jan–Jun)', pct1(qB/100), gbp(div(ytd.p,ytd.f))]});
+  const wkP={}; D.daily.forEach(dd=>{ if(dd.date<'2026-01-01') return; const dt=new Date(dd.date+'T00:00:00Z'); const mon=new Date(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth(),dt.getUTCDate()-((dt.getUTCDay()+6)%7))); const k=String(mon.getUTCMonth()+1).padStart(2,'0')+'-'+String(mon.getUTCDate()).padStart(2,'0'); wkP[k]=(wkP[k]||0)+dd.p; });
+  const wkRows=wkR.map((r,i)=>({cells:[r.w+(i===wkR.length-1?' (WTD)':''), num(r.ftds), num(r.apd2), pct1(r.apdP/100), num(r.pp8), pct1(r.ppP/100), wkP[r.w]?gbp(div(wkP[r.w],r.ftds)):'—']}));
   const chRows=chR.map(r=>({cells:[r.ch, num(r.f), num(r.apd2), pct1(r.apdP/100), num(r.pp8), `<span class="pill ${r.ppP>=ppB?'green':r.ppP>=ppB*0.75?'amber':'red'}">${r.ppP.toFixed(1)}%</span>`, r.avgpp.toFixed(2), div(r.pn,r.fm)?gbp(div(r.pn,r.fm)):'—']}));
   panes.sfun = `<h2 class="sec">FTD quality funnel — 2026 YTD (to ${ASOF})</h2>
 <div class="kpis">
@@ -1325,11 +1326,11 @@ ${chartbox('c_fun_seon')}
 <p class="note">SEON closes fraudulent accounts at registration (normally ~8–10% of regs). Duplicate auto-blocks = DUPLICATE_AUTO + DUPLICATE_AUTO_ORIGINAL, also applied at registration. These populations largely never reach FTD, which is why they are shown against registrations, not FTDs.</p>
 <h2 class="sec">Monthly FTD funnel</h2>
 ${chartbox('c_fun_mo')}
-<div style="margin-top:14px">${tbl([{t:'Month'},{t:'FTDs',r:1},{t:'Current PBA',r:1},{t:'% FTDs — Current PBA',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Qore FTDs',r:1},{t:'Qore %',r:1}], moRows)}</div>
-<p class="note">${MONTHS[CUR_MO-1]} is partial (1–${DD}); APD2+ and PP still mature (~2-day APD lag; potential scores re-score over the first weeks). Closed-as-fraud after FTD is small (${num(fyt.cfr)} YTD) and not shown as a column. Monthly UFI, manual-duplicate and APD0 detail (YTD: UFI ${num(fyt.ufi)} · dup manual ${num(fyt.dupm)} · APD0 ${num(fyt.apd0)} Jan–May) lives in the weekly and channel tables, KPI cards and flags. Qore FTDs are published monthly in the MBR — no weekly or channel split available.</p>
+<div style="margin-top:14px">${tbl([{t:'Month'},{t:'FTDs',r:1},{t:'Current PBA',r:1},{t:'% FTDs — Current PBA',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Qore FTDs',r:1},{t:'Qore %',r:1},{t:'Net PLTV/FTD',r:1}], moRows)}</div>
+<p class="note">${MONTHS[CUR_MO-1]} is partial (1–${DD}); APD2+, PP and PLTV/FTD still mature (~2-day APD lag; potential scores and PLTV re-score over the first weeks). PLTV/FTD is net of the 15% affiliate revshare. Closed-as-fraud after FTD is small (${num(fyt.cfr)} YTD) and not shown as a column. Monthly UFI, manual-duplicate and APD0 detail (YTD: UFI ${num(fyt.ufi)} · dup manual ${num(fyt.dupm)} · APD0 ${num(fyt.apd0)} Jan–May) lives in the weekly and channel tables, KPI cards and flags. Qore FTDs are published monthly in the MBR — no weekly or channel split available.</p>
 <h2 class="sec">Weekly funnel</h2>
 ${chartbox('c_fun_wk')}
-<div style="margin-top:14px">${tbl([{t:'Week (w/c)'},{t:'FTDs',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1}], wkRows)}</div>
+<div style="margin-top:14px">${tbl([{t:'Week (w/c)'},{t:'FTDs',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Net PLTV/FTD',r:1}], wkRows)}</div>
 <p class="note">PBA and Qore are published monthly only (ThoughtSpot / MBR) — no weekly or channel split. UFI, APD0, duplicate and SEON detail live in the KPI cards, the flags above and the Registration risk section.</p>
 <h2 class="sec">Channel quality — YTD</h2>
 ${chartbox('c_fun_ch',540)}
