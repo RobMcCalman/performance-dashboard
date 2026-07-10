@@ -553,8 +553,8 @@ ${(()=>{
     const s=(ch==='Affiliate'? w.s+AFF_GAP_28 : w.s);
     return {ch, s, f:w.f, p:w.p, ltv:div(w.p,s), cpa:div(s,w.f)};
   }).filter(r=>r.s>0||r.f>0).sort((a,b)=>b.f-a.f)
-    .map(r=>({cells:[ r.ch + (r.ch==='Affiliate'?' *':''), gbpK(r.s), num(r.f), r.f?gbp(r.cpa):'—', gbpK(r.p), r.f?`<span class="pill ${ragLtv(r.ltv)}">${f2(r.ltv)}</span>`:pill('grey','n/a') ]}));
-  return tbl([{t:'Channel'},{t:'WTD spend',r:1},{t:'WTD FTDs',r:1},{t:'CPA',r:1},{t:'WTD net PLTV',r:1},{t:'LTV:CAC',r:1}], rows);
+    .map(r=>({cells:[ r.ch + (r.ch==='Affiliate'?' *':''), gbpK(r.s), num(r.f), r.f?gbp(r.cpa):'—', gbpK(r.p), r.f?gbp(div(r.p,r.f)):'—', r.f?`<span class="pill ${ragLtv(r.ltv)}">${f2(r.ltv)}</span>`:pill('grey','n/a') ]}));
+  return tbl([{t:'Channel'},{t:'WTD spend',r:1},{t:'WTD FTDs',r:1},{t:'CPA',r:1},{t:'WTD net PLTV',r:1},{t:'PLTV/FTD',r:1},{t:'LTV:CAC',r:1}], rows);
 })()}
 <p class="note">Actual landed FTDs, spend and net PLTV so far this ISO week (${DAYS_LANDED_WK} of 7 days), by last-click channel. * Affiliate spend gap-filled for the lagging feed day at the trailing CPA; PLTV net of the 15% revshare. CPA/LTV:CAC on partial-week actuals are noisy — read the full-week forecast below and the pace table for a fuller picture.</p>
 <h3 class="subsec">Full-week forecast</h3>
@@ -626,7 +626,7 @@ ${(()=>{
 // ---- S2 MONTH-TO-DATE ----
 {
   const mtdRows = mixRows.map(r=>{ const s=(r.ch==='Affiliate'? r.s+AFF_GAP_28 : r.s); return {ch:r.ch,s,f:r.f,p:r.p,apd:r.apd,ltv:div(r.p,s),cpa:div(s,r.f)}; }).filter(r=>r.s>0||r.f>0).sort((a,b)=>b.s-a.s);
-  const rows = mtdRows.map(r=>({cells:[ r.ch+(r.ch==='Affiliate'?' *':''), gbpK(r.s), num(r.f), r.f?gbp(r.cpa):'—', gbpK(r.p), r.f?`<span class="pill ${ragLtv(r.ltv)}">${f2(r.ltv)}</span>`:pill('grey','n/a') ]}));
+  const rows = mtdRows.map(r=>({cells:[ r.ch+(r.ch==='Affiliate'?' *':''), gbpK(r.s), num(r.f), r.f?gbp(r.cpa):'—', gbpK(r.p), r.f?gbp(div(r.p,r.f)):'—', r.f?`<span class="pill ${ragLtv(r.ltv)}">${f2(r.ltv)}</span>`:pill('grey','n/a') ]}));
   rows.push({cls:'tot',cells:['TOTAL', gbpM(mtd.s), num(mtd.f), gbp(mtd.cpa), gbpM(mtd.p), `<span class="pill ${ragLtv(mtd.ltv)}">${f2(mtd.ltv)}</span>`]});
   panes.s2 = `<h2 class="sec">Reference month — ${MO_CUR} 1–${MD}${RMcomplete?' (complete)':', gap-filled'} + forecast</h2>
 <div class="kpis">
@@ -644,7 +644,7 @@ ${chartbox('c_mtd_cpa')}
 ${chartbox('c_mtd_ppf')}
 <p class="note">Recent-day cohorts are least matured and typically revise <b>up</b>. MTD blended PLTV/FTD ${gbp(mtd.ppf)}.</p>
 <h2 class="sec">MTD by channel</h2>
-${tbl([{t:'Channel'},{t:'Spend',r:1},{t:'FTDs',r:1},{t:'CPA',r:1},{t:'12m PLTV',r:1},{t:'LTV:CAC',r:1}], rows)}
+${tbl([{t:'Channel'},{t:'Spend',r:1},{t:'FTDs',r:1},{t:'CPA',r:1},{t:'12m PLTV',r:1},{t:'PLTV/FTD',r:1},{t:'LTV:CAC',r:1}], rows)}
 <p class="note">* ${RMcomplete?`${MO_CUR} is a complete month — forecast equals actuals`:`Affiliate spend gap-filled for ${GAPLBL}; forecast = MTD + remaining days × trailing daily average`}.</p>`;
 }
 
