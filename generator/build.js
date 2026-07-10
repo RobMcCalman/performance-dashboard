@@ -1302,8 +1302,8 @@ if(D.funnel){
   regRows.push({cls:'tot',cells:['YTD', num(fyt.regs), num(fyt.seon), pct1(seonB/100), num(fyt.dupa), pct1(dupaB/100)]});
   const moRows=moR.map(r=>({cells:[r.m, num(r.ftds), num(r.pba), `<span class="pill ${r.pbaP>=14?'red':r.pbaP>=12.5?'amber':'green'}">${r.pbaP.toFixed(1)}%</span>`, num(r.apd2), pct1(r.apdP/100), num(r.pp8), pct1(r.ppP/100), r.qore!=null?num(r.qore):'—', r.qP!=null?pct1(r.qP/100):'—']}));
   moRows.push({cls:'tot',cells:['YTD', num(fyt.ftds), num(fyt.pba), pct1(pbaB/100), num(fyt.apd2), pct1(apdB/100), num(fyt.pp8), pct1(ppB/100), num(qTot)+' (Jan–Jun)', pct1(qB/100)]});
-  const wkRows=wkR.map((r,i)=>({cells:[r.w+(i===wkR.length-1?' (WTD)':''), num(r.regs), r.seonP.toFixed(1)+'%', r.dupaP.toFixed(1)+'%', num(r.ftds), num(r.ufi), r.ufiP.toFixed(1)+'%', num(r.apd2), pct1(r.apdP/100), num(r.pp8), pct1(r.ppP/100)]}));
-  const chRows=chR.map(r=>({cells:[r.ch, r.regs?num(r.regs):'—', r.seonP!=null?`<span class="pill ${r.seonP>2*seonB?'red':r.seonP>1.2*seonB?'amber':'green'}">${r.seonP.toFixed(1)}%</span>`:'—', r.dupaP!=null?`<span class="pill ${r.dupaP>dupaB+5?'red':r.dupaP>dupaB+2?'amber':'green'}">${r.dupaP.toFixed(1)}%</span>`:'—', num(r.f), r.a0P!=null?`<span class="pill ${r.a0P>1.5*a0B?'red':r.a0P>1.2*a0B?'amber':'green'}">${r.a0P.toFixed(1)}%</span>`:'—', `<span class="pill ${r.ufiP>2*ufiB?'red':r.ufiP>1.25*ufiB?'amber':'green'}">${r.ufiP.toFixed(1)}%</span>`, r.dupmP.toFixed(2)+'%', pct1(r.apdP/100), `<span class="pill ${r.ppP>=ppB?'green':r.ppP>=ppB*0.75?'amber':'red'}">${r.ppP.toFixed(1)}%</span>`, r.avgpp.toFixed(2), div(r.pn,r.fm)?gbp(div(r.pn,r.fm)):'—']}));
+  const wkRows=wkR.map((r,i)=>({cells:[r.w+(i===wkR.length-1?' (WTD)':''), num(r.ftds), num(r.apd2), pct1(r.apdP/100), num(r.pp8), pct1(r.ppP/100)]}));
+  const chRows=chR.map(r=>({cells:[r.ch, num(r.f), num(r.apd2), pct1(r.apdP/100), num(r.pp8), `<span class="pill ${r.ppP>=ppB?'green':r.ppP>=ppB*0.75?'amber':'red'}">${r.ppP.toFixed(1)}%</span>`, r.avgpp.toFixed(2), div(r.pn,r.fm)?gbp(div(r.pn,r.fm)):'—']}));
   panes.sfun = `<h2 class="sec">FTD quality funnel — 2026 YTD (to ${ASOF})</h2>
 <div class="kpis">
 ${kpi('Registrations', num(fyt.regs), 'YTD')}
@@ -1329,10 +1329,11 @@ ${chartbox('c_fun_mo')}
 <p class="note">${MONTHS[CUR_MO-1]} is partial (1–${DD}); APD2+ and PP still mature (~2-day APD lag; potential scores re-score over the first weeks). Closed-as-fraud after FTD is small (${num(fyt.cfr)} YTD) and not shown as a column. Monthly UFI, manual-duplicate and APD0 detail (YTD: UFI ${num(fyt.ufi)} · dup manual ${num(fyt.dupm)} · APD0 ${num(fyt.apd0)} Jan–May) lives in the weekly and channel tables, KPI cards and flags. Qore FTDs are published monthly in the MBR — no weekly or channel split available.</p>
 <h2 class="sec">Weekly funnel</h2>
 ${chartbox('c_fun_wk')}
-<div style="margin-top:14px">${tbl([{t:'Week (w/c)'},{t:'Regs',r:1},{t:'SEON %',r:1},{t:'Dup auto %',r:1},{t:'FTDs',r:1},{t:'UFI',r:1},{t:'UFI %',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1}], wkRows)}</div>
+<div style="margin-top:14px">${tbl([{t:'Week (w/c)'},{t:'FTDs',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1}], wkRows)}</div>
+<p class="note">PBA and Qore are published monthly only (ThoughtSpot / MBR) — no weekly or channel split. UFI, APD0, duplicate and SEON detail live in the KPI cards, the flags above and the Registration risk section.</p>
 <h2 class="sec">Channel quality — YTD</h2>
 ${chartbox('c_fun_ch',540)}
-<div style="margin-top:14px">${tbl([{t:'Channel'},{t:'Regs',r:1},{t:'SEON %',r:1},{t:'Dup auto %',r:1},{t:'FTDs',r:1},{t:'APD0 %',r:1},{t:'UFI %',r:1},{t:'Dup man %',r:1},{t:'APD2+ %',r:1},{t:'PP %',r:1},{t:'Avg PP score',r:1},{t:'Net PLTV/FTD',r:1}], chRows)}</div>
+<div style="margin-top:14px">${tbl([{t:'Channel'},{t:'FTDs',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Avg PP score',r:1},{t:'Net PLTV/FTD',r:1}], chRows)}</div>
 <p class="note"><b>Definitions (per Fraud &amp; Payments):</b> SEON = accounts closed as fraud at registration (status CLOSED/FRAUD). UFI = RESTRICTED/UNDER_FRAUD_INVESTIGATION — high-risk accounts identified after first deposit, docs requested before withdrawal release. Duplicates: auto-blocks at registration (DUPLICATE_AUTO + AUTO_ORIGINAL) vs manual blocks after registration (DUPLICATE_OTHER + GAMSTOP_BREACH + SE_BREACH); legacy DUPLICATE_EXACT has no 2026 volume. PBA (freeloaders — deposit only for an offer): the monthly <b>% FTDs — Current PBA</b> values are the OFFICIAL numbers from the "Bonus Abuse Metrics for FTDs" ThoughtSpot liveboard (snapshotted 10 Jul 2026 — update on each refresh, via ThoughtSpot or Kostas, until the PV dataset is allow-listed in BigQuery). The platform PBA status on dim_player does NOT reconcile with this metric (1.7k vs 27k flagged 2026 FTDs) — the worksheet flag comes from a different source, so no weekly or channel PBA split is shown. First-Day and First-Week PBA variants are also ThoughtSpot-only for now. <b>Official PBA% (from the "Bonus Abuse Metrics for FTDs" ThoughtSpot liveboard):</b> distinct PBA-flagged FTDs ÷ distinct FTDs, in three variants — Current PBA, First-Week PBA and First-Day PBA — tracked against a baseline week (20–26 Oct 2025), built on the "PV &amp; Operations" worksheet flags (Is Current/First Week/First Day PBA + SEON PBA risk category High/Medium/Low). The "PBA %" column here uses the current platform flag and should track the <i>Current PBA</i> variant; the First-Day/First-Week flags and SEON risk categories sit in the PV dataset, which is not on the BigQuery allow-list — a data-team request (Kostas) is needed to reproduce them exactly. <b>APD0</b> = FTDs with zero paid playing days (any window, from daily_player_gameplay, paid wagers only) — the strict freeloader read; shown for Jan–May cohorts only because the gameplay mart is currently loaded to 22 Jun (June/July would be overstated). The MBR's softer "no play in week 1" APD0 runs 1.3–2.0%/mo. PP = player-potential 1–10 (PP 8–10 = MBR "PPQore"); APD2+ = 2+ active playing days; Qore = paid wagering >£1,000. Statuses are current, not point-in-time, so recent cohorts revise up as reviews land. Reg-stage channel rows use last-click at registration; PBA/UFI/dup-manual/PP use last-click at FTD; APD2+ % and PLTV/FTD use the registration-anchored spend mart. Channels under 2,000 regs show "—".</p>`;
 }
 
@@ -1535,13 +1536,11 @@ function buildPane(id){
     ]},options:baseOpts({plugins:{title:{display:true,text:'Monthly funnel - FTDs vs APD2+, PP 8-10, Qore, PBA'}}})});
     mkChart('c_fun_wk',{type:'line',data:{labels:F.wk.map(x=>x.w),datasets:[
       {label:'APD2+ %',data:F.wk.map(x=>x.apdP),borderColor:COL.green,tension:.3,pointRadius:0,yAxisID:'y'},
-      {label:'PP 8-10 %',data:F.wk.map(x=>x.ppP),borderColor:COL.navy,tension:.3,pointRadius:0,yAxisID:'y'},
-      {label:'UFI % (right)',data:F.wk.map(x=>x.ufiP),borderColor:'#C01262',borderDash:[6,4],tension:.3,pointRadius:0,yAxisID:'y1'}
-    ]},options:baseOpts({plugins:{title:{display:true,text:'Weekly FTD quality rates (% of FTDs) - final point is WTD partial'}},scales:{y:{position:'left',ticks:{callback:v=>v+'%'}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}}}})});
+      {label:'PP 8-10 %',data:F.wk.map(x=>x.ppP),borderColor:COL.navy,tension:.3,pointRadius:0,yAxisID:'y'}
+    ]},options:baseOpts({plugins:{title:{display:true,text:'Weekly FTD quality rates (% of FTDs) - final point is WTD partial'}},scales:{y:{position:'left',ticks:{callback:v=>v+'%'}}}})});
     mkChart('c_fun_ch',{type:'bar',data:{labels:F.ch.map(x=>x.ch),datasets:[
       {label:'APD2+ %',data:F.ch.map(x=>x.apdP),backgroundColor:COL.green},
-      {label:'PP 8-10 %',data:F.ch.map(x=>x.ppP),backgroundColor:COL.navy},
-      {label:'UFI %',data:F.ch.map(x=>x.ufiP),backgroundColor:'#C01262'}
+      {label:'PP 8-10 %',data:F.ch.map(x=>x.ppP),backgroundColor:COL.navy}
     ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Channel quality - % of FTDs (YTD)'}},scales:{x:{ticks:{callback:v=>v+'%'}}}})});
   }
   if(id==='sq' && EMBED.ftdq){
