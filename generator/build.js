@@ -1256,32 +1256,40 @@ ${recCard(7,'enable','grey','Fix measurement &amp; invest in CRO over higher CPA
 <p class="note">Recommendations are heuristic prompts from the data, not automated decisions — validate against contract terms, seasonality and RG/compliance before acting. LTV:CAC uses the 12-month net PLTV model; recent cohorts revise up as they mature.</p>`;
 }
 
-// ---------- FTD QUALITY FUNNEL (FTDs -> PBA / fraud / dup / APD2+ / PP 8-10 / Qore) ----------
+// ---------- FTD QUALITY FUNNEL (regs -> SEON/dup-auto; FTDs -> PBA/UFI/dup-manual/APD2+/PP/Qore) ----------
 if(D.funnel){
   const FN=D.funnel; const pcf=(a,b)=>b?a/b*100:0;
-  const moR=FN.mo.map(r=>({...r,pbaP:pcf(r.pba,r.ftds),apdP:pcf(r.apd2,r.ftds),ppP:pcf(r.pp8,r.ftds),frP:pcf(r.fr,r.ftds),dupP:pcf(r.dup,r.ftds),qP:r.qore!=null?pcf(r.qore,r.ftds):null}));
-  const wkR=FN.wk.map(r=>({...r,pbaP:pcf(r.pba,r.ftds),apdP:pcf(r.apd2,r.ftds),ppP:pcf(r.pp8,r.ftds),frP:pcf(r.fr,r.ftds),dupP:pcf(r.dup,r.ftds)}));
-  const chR=FN.ch.map(r=>({...r,pbaP:pcf(r.pba,r.f),ppP:pcf(r.pp8,r.f),apdP:pcf(r.apd2,r.fm),frP:pcf(r.fr,r.f),dupP:pcf(r.dup,r.f)})).sort((a,b)=>b.f-a.f);
-  const fyt=FN.mo.reduce((a,r)=>({ftds:a.ftds+r.ftds,pba:a.pba+r.pba,apd2:a.apd2+r.apd2,pp8:a.pp8+r.pp8,fr:a.fr+r.fr,dup:a.dup+r.dup}),{ftds:0,pba:0,apd2:0,pp8:0,fr:0,dup:0});
+  const moR=FN.mo.map(r=>({...r,pbaP:pcf(r.pba,r.ftds),apdP:pcf(r.apd2,r.ftds),ppP:pcf(r.pp8,r.ftds),seonP:pcf(r.seon,r.regs),dupaP:pcf(r.dupa,r.regs),ufiP:pcf(r.ufi,r.ftds),dupmP:pcf(r.dupm,r.ftds),qP:r.qore!=null?pcf(r.qore,r.ftds):null}));
+  const wkR=FN.wk.map(r=>({...r,pbaP:pcf(r.pba,r.ftds),apdP:pcf(r.apd2,r.ftds),ppP:pcf(r.pp8,r.ftds),seonP:pcf(r.seon,r.regs),dupaP:pcf(r.dupa,r.regs),ufiP:pcf(r.ufi,r.ftds)}));
+  const chR=FN.ch.map(r=>({...r,pbaP:pcf(r.pba,r.f),ppP:pcf(r.pp8,r.f),apdP:pcf(r.apd2,r.fm),seonP:r.regs?pcf(r.seon,r.regs):null,dupaP:r.regs?pcf(r.dupa,r.regs):null,ufiP:pcf(r.ufi,r.f),dupmP:pcf(r.dupm,r.f)})).sort((a,b)=>b.f-a.f);
+  const fyt=FN.mo.reduce((a,r)=>({ftds:a.ftds+r.ftds,pba:a.pba+r.pba,apd2:a.apd2+r.apd2,pp8:a.pp8+r.pp8,regs:a.regs+r.regs,seon:a.seon+r.seon,dupa:a.dupa+r.dupa,ufi:a.ufi+r.ufi,cfr:a.cfr+r.cfr,dupm:a.dupm+r.dupm}),{ftds:0,pba:0,apd2:0,pp8:0,regs:0,seon:0,dupa:0,ufi:0,cfr:0,dupm:0});
   const qMo=moR.filter(r=>r.qore!=null); const qFtds=qMo.reduce((a,r)=>a+r.ftds,0); const qTot=qMo.reduce((a,r)=>a+r.qore,0);
-  const pbaB=pcf(fyt.pba,fyt.ftds), ppB=pcf(fyt.pp8,fyt.ftds), apdB=pcf(fyt.apd2,fyt.ftds), qB=pcf(qTot,qFtds), frB=pcf(fyt.fr,fyt.ftds), dupB=pcf(fyt.dup,fyt.ftds);
+  const pbaB=pcf(fyt.pba,fyt.ftds), ppB=pcf(fyt.pp8,fyt.ftds), apdB=pcf(fyt.apd2,fyt.ftds), qB=pcf(qTot,qFtds);
+  const seonB=pcf(fyt.seon,fyt.regs), dupaB=pcf(fyt.dupa,fyt.regs), ufiB=pcf(fyt.ufi,fyt.ftds), dupmB=pcf(fyt.dupm,fyt.ftds);
   const wkC=wkR.slice(0,-1), lastW=wkC[wkC.length-1];
   const medi=a=>{const s=[...a].sort((x,y)=>x-y);return s.length%2?s[(s.length-1)/2]:(s[s.length/2-1]+s[s.length/2])/2;};
   const pbaMedW=medi(wkC.map(r=>r.pbaP));
   const flags=[];
-  moR.forEach(r=>{ if(r.pbaP>=2) flags.push({s:'red',t:`<b>${r.m} PBA wave:</b> ${num(r.pba)} flagged FTDs (${r.pbaP.toFixed(1)}% vs 0.2–0.4% baseline) — confirm with the fraud team whether this was a genuine abuse wave or bulk retro-flagging.`}); });
-  wkC.slice(-6).forEach(r=>{ if(r.pbaP>Math.max(1,3*pbaMedW)) flags.push({s:'red',t:`<b>PBA spike w/c ${r.w}:</b> ${r.pbaP.toFixed(2)}% of FTDs flagged (weekly baseline ${pbaMedW.toFixed(2)}%).`}); });
-  const fr4=wkC.slice(-4), fr8=wkC.slice(-12,-4);
-  const fr4P=pcf(fr4.reduce((a,r)=>a+r.fr,0),fr4.reduce((a,r)=>a+r.ftds,0));
-  const fr8P=pcf(fr8.reduce((a,r)=>a+r.fr,0),fr8.reduce((a,r)=>a+r.ftds,0));
-  if(fr8P>0 && fr4P>=2*fr8P) flags.push({s:'red',t:`<b>Fraud-flag surge:</b> last 4 complete weeks ${fr4P.toFixed(1)}% of FTDs fraud-flagged vs ${fr8P.toFixed(1)}% in the prior 8 (${(fr4P/fr8P).toFixed(1)}×). Caveat: current-status flag — open investigations skew recent.`});
-  else if(fr8P>0 && fr4P>=1.5*fr8P) flags.push({s:'amber',t:`<b>Fraud flags rising:</b> ${fr4P.toFixed(1)}% of FTDs in the last 4 complete weeks vs ${fr8P.toFixed(1)}% in the prior 8 (${(fr4P/fr8P).toFixed(1)}×). Caveat: current-status flag — open investigations skew recent; still worth a fraud-team check.`});
-  const lastM=moR[moR.length-1].qore!=null?moR[moR.length-1]:moR[moR.length-2];
-  if(lastM && lastM.dupP>dupB+3) flags.push({s:'amber',t:`<b>Duplicate drift:</b> ${lastM.m} duplicate-account rate ${lastM.dupP.toFixed(1)}% vs YTD ${dupB.toFixed(1)}%.`});
+  // SEON registration-fraud wave (monthly vs YTD baseline, with containment check)
+  const seonPeak=wkC.reduce((a,r)=>r.seonP>a.seonP?r:a,wkC[0]);
+  moR.forEach(r=>{ if(r.qore!=null && r.seonP>1.5*seonB) flags.push({s:'red',t:`<b>${r.m} registration-fraud wave:</b> SEON closed ${num(r.seon)} accounts at registration (${r.seonP.toFixed(1)}% of regs vs ${seonB.toFixed(1)}% YTD). Weekly peak ${seonPeak.seonP.toFixed(1)}% w/c ${seonPeak.w}${lastW.seonP<1.2*medi(wkC.slice(0,20).map(x=>x.seonP))?` — wave appears contained (w/c ${lastW.w} back to ${lastW.seonP.toFixed(1)}%)`:''}.`}); });
+  chR.filter(r=>r.regs>=2000).forEach(r=>{ if(r.seonP>2*seonB) flags.push({s:'red',t:`<b>${r.ch}:</b> SEON registration-fraud rate ${r.seonP.toFixed(1)}% — ${(r.seonP/seonB).toFixed(1)}× the blended ${seonB.toFixed(1)}% (${num(r.seon)} of ${num(r.regs)} regs).`}); });
+  // UFI trend (post-deposit withdrawal-hold investigations)
+  const u4=wkC.slice(-4), u8=wkC.slice(-12,-4);
+  const u4P=pcf(u4.reduce((a,r)=>a+r.ufi,0),u4.reduce((a,r)=>a+r.ftds,0));
+  const u8P=pcf(u8.reduce((a,r)=>a+r.ufi,0),u8.reduce((a,r)=>a+r.ftds,0));
+  if(u8P>0 && u4P>=2*u8P) flags.push({s:'red',t:`<b>Under-fraud-investigation surge:</b> ${u4P.toFixed(1)}% of FTDs in the last 4 complete weeks vs ${u8P.toFixed(1)}% in the prior 8 (${(u4P/u8P).toFixed(1)}×) — high-risk accounts with docs requested before withdrawal.`});
+  else if(u8P>0 && u4P>=1.5*u8P) flags.push({s:'amber',t:`<b>Under-fraud-investigation rising:</b> ${u4P.toFixed(1)}% of FTDs (last 4 complete wks) vs ${u8P.toFixed(1)}% (prior 8).`});
+  chR.filter(r=>r.f>=1000).forEach(r=>{ if(r.ufiP>2*ufiB && r.ufi>=20) flags.push({s:'red',t:`<b>${r.ch}:</b> ${r.ufiP.toFixed(1)}% of FTDs under fraud investigation — ${(r.ufiP/ufiB).toFixed(1)}× the blended ${ufiB.toFixed(1)}% (${num(r.ufi)} accounts).`}); });
+  // duplicates
+  moR.forEach(r=>{ if(r.qore!=null && r.dupaP>dupaB+3) flags.push({s:'amber',t:`<b>${r.m} duplicate blocks:</b> auto-blocked duplicates ${r.dupaP.toFixed(1)}% of regs vs ${dupaB.toFixed(1)}% YTD.`}); });
+  chR.filter(r=>r.regs>=2000).forEach(r=>{ if(r.dupaP>dupaB+5) flags.push({s:'amber',t:`<b>${r.ch}:</b> duplicate auto-block rate ${r.dupaP.toFixed(1)}% of regs vs blended ${dupaB.toFixed(1)}% — multi-accounting pressure at registration.`}); });
+  chR.filter(r=>r.f>=1000).forEach(r=>{ if(r.dupmP>2*dupmB && r.dupm>=20) flags.push({s:'amber',t:`<b>${r.ch}:</b> manual duplicate blocks ${r.dupmP.toFixed(2)}% of FTDs vs blended ${dupmB.toFixed(2)}% (incl. Gamstop/SE breaches).`}); });
+  // PBA (freeloaders)
+  moR.forEach(r=>{ if(r.pbaP>=2) flags.push({s:'red',t:`<b>${r.m} freeloader (PBA) wave:</b> ${num(r.pba)} flagged FTDs (${r.pbaP.toFixed(1)}% vs 0.2–0.4% baseline) — deposit-for-offer-only accounts; confirm timing with the fraud team.`}); });
+  wkC.slice(-6).forEach(r=>{ if(r.pbaP>Math.max(1,3*pbaMedW)) flags.push({s:'red',t:`<b>Freeloader (PBA) spike w/c ${r.w}:</b> ${r.pbaP.toFixed(2)}% of FTDs flagged (weekly baseline ${pbaMedW.toFixed(2)}%).`}); });
   chR.filter(r=>r.f>=1000).forEach(r=>{
-    if(r.pbaP>Math.max(1.5,3*pbaB)) flags.push({s:'red',t:`<b>${r.ch}:</b> PBA rate ${r.pbaP.toFixed(1)}% — ${(r.pbaP/pbaB).toFixed(1)}× the blended ${pbaB.toFixed(1)}% (${num(r.pba)} of ${num(r.f)} FTDs).`});
-    if(r.frP>2*frB) flags.push({s:'red',t:`<b>${r.ch}:</b> fraud-flag rate ${r.frP.toFixed(1)}% vs blended ${frB.toFixed(1)}% (${num(r.fr)} FTDs).`});
-    if(r.dupP>dupB+5) flags.push({s:'amber',t:`<b>${r.ch}:</b> duplicate-account rate ${r.dupP.toFixed(1)}% vs blended ${dupB.toFixed(1)}% — multi-accounting risk on ${num(r.dup)} of ${num(r.f)} FTDs.`});
+    if(r.pbaP>Math.max(1.5,3*pbaB)) flags.push({s:'red',t:`<b>${r.ch}:</b> freeloader (PBA) rate ${r.pbaP.toFixed(1)}% — ${(r.pbaP/pbaB).toFixed(1)}× the blended ${pbaB.toFixed(1)}% (${num(r.pba)} of ${num(r.f)} FTDs).`});
     if(r.ppP<ppB*0.75) flags.push({s:'amber',t:`<b>${r.ch}:</b> PP 8–10 share ${r.ppP.toFixed(1)}% vs blended ${ppB.toFixed(1)}% on ${num(r.f)} FTDs — high volume, low predicted quality.`});
     if(r.apdP && r.apdP<apdB*0.75) flags.push({s:'amber',t:`<b>${r.ch}:</b> APD2+ conversion ${r.apdP.toFixed(1)}% vs blended ${apdB.toFixed(1)}% — weak day-2 activation.`});
   });
@@ -1290,42 +1298,49 @@ if(D.funnel){
   if(qMo.length>=2){ const a=qMo[qMo.length-1], b2=qMo[qMo.length-2]; if(a.qP<b2.qP-1.5) flags.push({s:'amber',t:`<b>Qore conversion dip:</b> ${a.m} ${a.qP.toFixed(1)}% of FTDs vs ${b2.m} ${b2.qP.toFixed(1)}%.`}); }
   if(!flags.length) flags.push({s:'green',t:'No FTD-quality flags in the current window.'});
   flags.sort((a,b)=>(a.s==='red'?0:a.s==='amber'?1:2)-(b.s==='red'?0:b.s==='amber'?1:2));
-  const moRows=moR.map(r=>({cells:[r.m, num(r.ftds), num(r.pba), `<span class="pill ${r.pbaP>=2?'red':r.pbaP>=1?'amber':'green'}">${r.pbaP.toFixed(2)}%</span>`, num(r.fr), `<span class="pill ${r.frP>=2*frB?'red':r.frP>=1.25*frB?'amber':'green'}">${r.frP.toFixed(1)}%</span>`, num(r.dup), r.dupP.toFixed(1)+'%', num(r.apd2), pct1(r.apdP/100), num(r.pp8), pct1(r.ppP/100), r.qore!=null?num(r.qore):'—', r.qP!=null?pct1(r.qP/100):'—']}));
-  moRows.push({cls:'tot',cells:['YTD', num(fyt.ftds), num(fyt.pba), pct1(pbaB/100), num(fyt.fr), pct1(frB/100), num(fyt.dup), pct1(dupB/100), num(fyt.apd2), pct1(apdB/100), num(fyt.pp8), pct1(ppB/100), num(qTot)+' (Jan–Jun)', pct1(qB/100)]});
-  const wkRows=wkR.map((r,i)=>({cells:[r.w+(i===wkR.length-1?' (WTD)':''), num(r.ftds), r.pbaP.toFixed(2)+'%', r.frP.toFixed(1)+'%', num(r.dup), r.dupP.toFixed(1)+'%', num(r.apd2), pct1(r.apdP/100), num(r.pp8), pct1(r.ppP/100)]}));
-  const chRows=chR.map(r=>({cells:[r.ch, num(r.f), `<span class="pill ${r.pbaP>Math.max(1.5,3*pbaB)?'red':r.pbaP>2*pbaB?'amber':'green'}">${r.pbaP.toFixed(2)}%</span>`, `<span class="pill ${r.frP>2*frB?'red':r.frP>1.25*frB?'amber':'green'}">${r.frP.toFixed(1)}%</span>`, num(r.dup), `<span class="pill ${r.dupP>dupB+5?'red':r.dupP>dupB+2?'amber':'green'}">${r.dupP.toFixed(1)}%</span>`, pct1(r.apdP/100), `<span class="pill ${r.ppP>=ppB?'green':r.ppP>=ppB*0.75?'amber':'red'}">${r.ppP.toFixed(1)}%</span>`, r.avgpp.toFixed(2), div(r.pn,r.fm)?gbp(div(r.pn,r.fm)):'—']}));
+  const regRows=moR.map(r=>({cells:[r.m, num(r.regs), num(r.seon), `<span class="pill ${r.seonP>1.5*seonB?'red':r.seonP>1.2*seonB?'amber':'green'}">${r.seonP.toFixed(1)}%</span>`, num(r.dupa), r.dupaP.toFixed(1)+'%']}));
+  regRows.push({cls:'tot',cells:['YTD', num(fyt.regs), num(fyt.seon), pct1(seonB/100), num(fyt.dupa), pct1(dupaB/100)]});
+  const moRows=moR.map(r=>({cells:[r.m, num(r.ftds), num(r.pba), `<span class="pill ${r.pbaP>=2?'red':r.pbaP>=1?'amber':'green'}">${r.pbaP.toFixed(2)}%</span>`, num(r.ufi), `<span class="pill ${r.ufiP>=2*ufiB?'red':r.ufiP>=1.25*ufiB?'amber':'green'}">${r.ufiP.toFixed(1)}%</span>`, num(r.dupm), r.dupmP.toFixed(2)+'%', num(r.apd2), pct1(r.apdP/100), num(r.pp8), pct1(r.ppP/100), r.qore!=null?num(r.qore):'—', r.qP!=null?pct1(r.qP/100):'—']}));
+  moRows.push({cls:'tot',cells:['YTD', num(fyt.ftds), num(fyt.pba), pct1(pbaB/100), num(fyt.ufi), pct1(ufiB/100), num(fyt.dupm), pct1(dupmB/100), num(fyt.apd2), pct1(apdB/100), num(fyt.pp8), pct1(ppB/100), num(qTot)+' (Jan–Jun)', pct1(qB/100)]});
+  const wkRows=wkR.map((r,i)=>({cells:[r.w+(i===wkR.length-1?' (WTD)':''), num(r.regs), r.seonP.toFixed(1)+'%', r.dupaP.toFixed(1)+'%', num(r.ftds), r.pbaP.toFixed(2)+'%', num(r.ufi), r.ufiP.toFixed(1)+'%', num(r.apd2), pct1(r.apdP/100), num(r.pp8), pct1(r.ppP/100)]}));
+  const chRows=chR.map(r=>({cells:[r.ch, r.regs?num(r.regs):'—', r.seonP!=null?`<span class="pill ${r.seonP>2*seonB?'red':r.seonP>1.2*seonB?'amber':'green'}">${r.seonP.toFixed(1)}%</span>`:'—', r.dupaP!=null?`<span class="pill ${r.dupaP>dupaB+5?'red':r.dupaP>dupaB+2?'amber':'green'}">${r.dupaP.toFixed(1)}%</span>`:'—', num(r.f), `<span class="pill ${r.pbaP>Math.max(1.5,3*pbaB)?'red':r.pbaP>2*pbaB?'amber':'green'}">${r.pbaP.toFixed(2)}%</span>`, `<span class="pill ${r.ufiP>2*ufiB?'red':r.ufiP>1.25*ufiB?'amber':'green'}">${r.ufiP.toFixed(1)}%</span>`, r.dupmP.toFixed(2)+'%', pct1(r.apdP/100), `<span class="pill ${r.ppP>=ppB?'green':r.ppP>=ppB*0.75?'amber':'red'}">${r.ppP.toFixed(1)}%</span>`, r.avgpp.toFixed(2), div(r.pn,r.fm)?gbp(div(r.pn,r.fm)):'—']}));
   panes.sfun = `<h2 class="sec">FTD quality funnel — 2026 YTD (to ${ASOF})</h2>
 <div class="kpis">
+${kpi('Registrations', num(fyt.regs), 'YTD')}
+${kpi('SEON closed at reg', num(fyt.seon), pct1(seonB/100)+' of regs')}
+${kpi('Duplicate auto-blocks', num(fyt.dupa), pct1(dupaB/100)+' of regs')}
 ${kpi('FTDs', num(fyt.ftds), 'YTD')}
-${kpi('PBA-flagged', num(fyt.pba), pct1(pbaB/100)+' of FTDs')}
-${kpi('Fraud-flagged', num(fyt.fr), pct1(frB/100)+' of FTDs')}
-${kpi('Possible duplicates', num(fyt.dup), pct1(dupB/100)+' of FTDs')}
-${kpi('APD2+', num(fyt.apd2), pct1(apdB/100)+' of FTDs')}
+${kpi('PBA (freeloaders)', num(fyt.pba), pct1(pbaB/100)+' of FTDs')}
+${kpi('Under fraud investigation', num(fyt.ufi), pct1(ufiB/100)+' of FTDs')}
 ${kpi('PP 8–10', num(fyt.pp8), pct1(ppB/100)+' of FTDs')}
 ${kpi('Qore FTDs', num(qTot), pct1(qB/100)+' of Jan–Jun FTDs')}
 </div>
 <h2 class="sec">Quality flags</h2>
 <div class="callout"><ul style="margin:6px 0 2px;padding-left:0;list-style:none">${flags.map(f=>`<li style="margin:6px 0">${pill(f.s,f.s.toUpperCase())} ${f.t}</li>`).join('')}</ul></div>
-<p class="note">Rules — red: PBA ≥2% in a month, weekly PBA >3× baseline, channel PBA >3× blended, fraud-flag rate ≥2× the prior-8-week baseline, channel fraud >2× blended. Amber: fraud ≥1.5× baseline, channel duplicates >5pts above blended, monthly duplicates >3pts above YTD, channel PP or APD2+ >25% below blended, weekly PP >15% / APD2+ >10% below YTD, Qore conversion down >1.5pts MoM. Thresholds live in build.js.</p>
-<h2 class="sec">Monthly funnel</h2>
+<p class="note">Rules — red: monthly SEON reg-fraud >1.5× YTD, channel SEON >2× blended, UFI ≥2× the prior-8-week rate, channel UFI >2× blended, PBA ≥2% in a month / weekly >3× baseline / channel >3× blended. Amber: UFI ≥1.5× baseline, duplicate auto-blocks >3pts above YTD (month) or >5pts (channel), manual duplicates >2× blended, channel PP or APD2+ >25% below blended, weekly PP >15% / APD2+ >10% below YTD, Qore down >1.5pts MoM. Thresholds live in build.js.</p>
+<h2 class="sec">Registration risk — SEON &amp; duplicate auto-blocks</h2>
+${chartbox('c_fun_seon')}
+<div style="margin-top:14px">${tbl([{t:'Month'},{t:'Registrations',r:1},{t:'SEON closed',r:1},{t:'SEON %',r:1},{t:'Dup auto-blocks',r:1},{t:'Dup auto %',r:1}], regRows)}</div>
+<p class="note">SEON closes fraudulent accounts at registration (normally ~8–10% of regs). Duplicate auto-blocks = DUPLICATE_AUTO + DUPLICATE_AUTO_ORIGINAL, also applied at registration. These populations largely never reach FTD, which is why they are shown against registrations, not FTDs.</p>
+<h2 class="sec">Monthly FTD funnel</h2>
 ${chartbox('c_fun_mo')}
-<div style="margin-top:14px">${tbl([{t:'Month'},{t:'FTDs',r:1},{t:'PBA',r:1},{t:'PBA %',r:1},{t:'Fraud',r:1},{t:'Fraud %',r:1},{t:'Dup',r:1},{t:'Dup %',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Qore FTDs',r:1},{t:'Qore %',r:1}], moRows)}</div>
-<p class="note">${MONTHS[CUR_MO-1]} is partial (1–${DD}); APD2+ and PP still mature (~2-day APD lag; potential scores re-score over the first weeks). Qore FTDs are published monthly in the MBR — no weekly or channel split available.</p>
-<h2 class="sec">Weekly funnel rates</h2>
+<div style="margin-top:14px">${tbl([{t:'Month'},{t:'FTDs',r:1},{t:'PBA',r:1},{t:'PBA %',r:1},{t:'UFI',r:1},{t:'UFI %',r:1},{t:'Dup manual',r:1},{t:'Dup man %',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Qore FTDs',r:1},{t:'Qore %',r:1}], moRows)}</div>
+<p class="note">${MONTHS[CUR_MO-1]} is partial (1–${DD}); APD2+ and PP still mature (~2-day APD lag; potential scores re-score over the first weeks). Closed-as-fraud after FTD is small (${num(fyt.cfr)} YTD) and not shown as a column. Qore FTDs are published monthly in the MBR — no weekly or channel split available.</p>
+<h2 class="sec">Weekly funnel</h2>
 ${chartbox('c_fun_wk')}
-<div style="margin-top:14px">${tbl([{t:'Week (w/c)'},{t:'FTDs',r:1},{t:'PBA %',r:1},{t:'Fraud %',r:1},{t:'Dup',r:1},{t:'Dup %',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1}], wkRows)}</div>
+<div style="margin-top:14px">${tbl([{t:'Week (w/c)'},{t:'Regs',r:1},{t:'SEON %',r:1},{t:'Dup auto %',r:1},{t:'FTDs',r:1},{t:'PBA %',r:1},{t:'UFI',r:1},{t:'UFI %',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1}], wkRows)}</div>
 <h2 class="sec">Channel quality — YTD</h2>
 ${chartbox('c_fun_ch',540)}
-<div style="margin-top:14px">${tbl([{t:'Channel'},{t:'FTDs',r:1},{t:'PBA %',r:1},{t:'Fraud %',r:1},{t:'Dup',r:1},{t:'Dup %',r:1},{t:'APD2+ %',r:1},{t:'PP %',r:1},{t:'Avg PP score',r:1},{t:'Net PLTV/FTD',r:1}], chRows)}</div>
-<p class="note"><b>Definitions:</b> PBA = platform potential-bonus-abuser status; Fraud = platform_fraud_status true (current status — open investigations concentrate on recent cohorts); Dup = possible_duplicate_status YES/YES_CONFIRMED (multi-accounting risk); PP = player-potential score 1–10, with PP 8–10 the MBR "PPQore" definition; APD2+ = 2+ active playing days; Qore = paid wagering >£1,000 (from the MBR). <b>Anchors:</b> PBA/fraud/dup/PP use last-click-at-FTD attribution (attributed_ftds × dim_player); APD2+ % and PLTV/FTD use the registration-anchored spend mart — totals match, channel rows can differ. All player flags are current status, not status-at-FTD (history effective-dates are not populated), so recent cohorts revise up as ops reviews land.</p>`;
+<div style="margin-top:14px">${tbl([{t:'Channel'},{t:'Regs',r:1},{t:'SEON %',r:1},{t:'Dup auto %',r:1},{t:'FTDs',r:1},{t:'PBA %',r:1},{t:'UFI %',r:1},{t:'Dup man %',r:1},{t:'APD2+ %',r:1},{t:'PP %',r:1},{t:'Avg PP score',r:1},{t:'Net PLTV/FTD',r:1}], chRows)}</div>
+<p class="note"><b>Definitions (per Fraud &amp; Payments):</b> SEON = accounts closed as fraud at registration (status CLOSED/FRAUD). UFI = RESTRICTED/UNDER_FRAUD_INVESTIGATION — high-risk accounts identified after first deposit, docs requested before withdrawal release. Duplicates: auto-blocks at registration (DUPLICATE_AUTO + AUTO_ORIGINAL) vs manual blocks after registration (DUPLICATE_OTHER + GAMSTOP_BREACH + SE_BREACH); legacy DUPLICATE_EXACT has no 2026 volume. PBA = platform potential-bonus-abuser flag, used mainly for <b>freeloaders</b> (deposit only for an offer). <b>The officially reported weekly PBA% (APD 0) comes from the Fraud ThoughtSpot pinboard and is not reproduced here — align with Kostas before quoting PBA numbers as the reported metric.</b> PP = player-potential 1–10 (PP 8–10 = MBR "PPQore"); APD2+ = 2+ active playing days; Qore = paid wagering >£1,000. Statuses are current, not point-in-time, so recent cohorts revise up as reviews land. Reg-stage channel rows use last-click at registration; PBA/UFI/dup-manual/PP use last-click at FTD; APD2+ % and PLTV/FTD use the registration-anchored spend mart. Channels under 2,000 regs show "—".</p>`;
 }
 
 if(D.funnel && panes.sfun){
   const pcf2=(a,b)=>b?a/b*100:0;
   EMBED.funnel={
     mo:D.funnel.mo.map(r=>({m:r.m,ftds:r.ftds,apd2:r.apd2,pp8:r.pp8,qore:r.qore,pba:r.pba})),
-    wk:D.funnel.wk.map(r=>({w:r.w,apdP:+pcf2(r.apd2,r.ftds).toFixed(1),ppP:+pcf2(r.pp8,r.ftds).toFixed(1),pbaP:+pcf2(r.pba,r.ftds).toFixed(2),frP:+pcf2(r.fr,r.ftds).toFixed(2)})),
-    ch:D.funnel.ch.map(r=>({ch:r.ch,ppP:+pcf2(r.pp8,r.f).toFixed(1),apdP:+pcf2(r.apd2,r.fm).toFixed(1),pbaP:+pcf2(r.pba,r.f).toFixed(2),frP:+pcf2(r.fr,r.f).toFixed(2)}))
+    wk:D.funnel.wk.map(r=>({w:r.w,apdP:+pcf2(r.apd2,r.ftds).toFixed(1),ppP:+pcf2(r.pp8,r.ftds).toFixed(1),pbaP:+pcf2(r.pba,r.ftds).toFixed(2),seonP:+pcf2(r.seon,r.regs).toFixed(1),dupaP:+pcf2(r.dupa,r.regs).toFixed(1),ufiP:+pcf2(r.ufi,r.ftds).toFixed(2)})),
+    ch:D.funnel.ch.map(r=>({ch:r.ch,ppP:+pcf2(r.pp8,r.f).toFixed(1),apdP:+pcf2(r.apd2,r.fm).toFixed(1),pbaP:+pcf2(r.pba,r.f).toFixed(2),ufiP:+pcf2(r.ufi,r.f).toFixed(2)}))
   };
 }
 
@@ -1506,6 +1521,10 @@ function buildPane(id){
   }
   if(id==='sfun' && EMBED.funnel){
     const F=EMBED.funnel;
+    mkChart('c_fun_seon',{type:'line',data:{labels:F.wk.map(x=>x.w),datasets:[
+      {label:'SEON closed % of regs',data:F.wk.map(x=>x.seonP),borderColor:'#C01262',backgroundColor:'rgba(192,18,98,.08)',fill:true,tension:.3,pointRadius:0},
+      {label:'Duplicate auto-block % of regs',data:F.wk.map(x=>x.dupaP),borderColor:COL.navy,borderDash:[6,4],tension:.3,pointRadius:0}
+    ]},options:baseOpts({plugins:{title:{display:true,text:'Registration risk - weekly (% of registrations; final point WTD partial)'}},scales:{y:{ticks:{callback:v=>v+'%'}}}})});
     mkChart('c_fun_mo',{type:'bar',data:{labels:F.mo.map(x=>x.m),datasets:[
       {label:'FTDs',data:F.mo.map(x=>x.ftds),backgroundColor:'rgba(10,46,203,.25)'},
       {label:'APD2+',data:F.mo.map(x=>x.apd2),backgroundColor:COL.green},
@@ -1517,12 +1536,12 @@ function buildPane(id){
       {label:'APD2+ %',data:F.wk.map(x=>x.apdP),borderColor:COL.green,tension:.3,pointRadius:0,yAxisID:'y'},
       {label:'PP 8-10 %',data:F.wk.map(x=>x.ppP),borderColor:COL.navy,tension:.3,pointRadius:0,yAxisID:'y'},
       {label:'PBA % (right)',data:F.wk.map(x=>x.pbaP),borderColor:COL.pink,tension:.3,pointRadius:0,yAxisID:'y1'},
-      {label:'Fraud % (right)',data:F.wk.map(x=>x.frP),borderColor:'#C01262',borderDash:[6,4],tension:.3,pointRadius:0,yAxisID:'y1'}
-    ]},options:baseOpts({plugins:{title:{display:true,text:'Weekly quality rates (% of FTDs) - final point is WTD partial'}},scales:{y:{position:'left',ticks:{callback:v=>v+'%'}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}}}})});
+      {label:'UFI % (right)',data:F.wk.map(x=>x.ufiP),borderColor:'#C01262',borderDash:[6,4],tension:.3,pointRadius:0,yAxisID:'y1'}
+    ]},options:baseOpts({plugins:{title:{display:true,text:'Weekly FTD quality rates (% of FTDs) - final point is WTD partial'}},scales:{y:{position:'left',ticks:{callback:v=>v+'%'}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}}}})});
     mkChart('c_fun_ch',{type:'bar',data:{labels:F.ch.map(x=>x.ch),datasets:[
       {label:'APD2+ %',data:F.ch.map(x=>x.apdP),backgroundColor:COL.green},
       {label:'PP 8-10 %',data:F.ch.map(x=>x.ppP),backgroundColor:COL.navy},
-      {label:'Fraud %',data:F.ch.map(x=>x.frP),backgroundColor:'#C01262'},
+      {label:'UFI %',data:F.ch.map(x=>x.ufiP),backgroundColor:'#C01262'},
       {label:'PBA %',data:F.ch.map(x=>x.pbaP),backgroundColor:COL.pink}
     ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Channel quality - % of FTDs (YTD)'}},scales:{x:{ticks:{callback:v=>v+'%'}}}})});
   }
