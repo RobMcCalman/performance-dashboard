@@ -1333,7 +1333,7 @@ if(D.funnel){
   const clTot=moR.reduce((a,r,i)=>{ const a0=r.apd0!=null?r.apd0:Math.round(r.ftds*a0Rate); a.f+=r.ftds; a.pba+=(r.pba||0); a.a0+=a0; a.clean+=r.ftds-(r.pba||0)-a0; a.p+=moTot[i+1].p; return a; },{f:0,pba:0,a0:0,clean:0,p:0});
   clRows.push({cls:'tot',cells:['YTD', num(clTot.f), num(clTot.pba), num(clTot.a0), num(clTot.clean), pct1(clTot.clean/clTot.f), gbpM(clTot.p), gbp(div(clTot.p,clTot.f)), `<b>${gbp(div(clTot.p,clTot.clean))}</b>`]});
   const wkP={}; D.daily.forEach(dd=>{ if(dd.date<'2026-01-01') return; const dt=new Date(dd.date+'T00:00:00Z'); const mon=new Date(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth(),dt.getUTCDate()-((dt.getUTCDay()+6)%7))); const k=String(mon.getUTCMonth()+1).padStart(2,'0')+'-'+String(mon.getUTCDate()).padStart(2,'0'); wkP[k]=(wkP[k]||0)+dd.p; });
-  const wkRows=wkR.map((r,i)=>({cells:[r.w+(i===wkR.length-1?' (WTD)':''), num(r.ftds), num(r.apd2), pct1(r.apdP/100), num(r.pp8), pct1(r.ppP/100), wkP[r.w]?gbp(div(wkP[r.w],r.ftds)):'—']}));
+  const wkRows=wkR.map((r,i)=>({cells:[r.w+(i===wkR.length-1?' (WTD)':''), num(r.ftds), num(r.apd2), pct1(r.apdP/100), r.apd0!=null?num(r.apd0):'—', r.apd0!=null?pct1(r.apd0/r.ftds):'—', num(r.pp8), pct1(r.ppP/100), wkP[r.w]?gbp(div(wkP[r.w],r.ftds)):'—']}));
   const chRows=chR.map(r=>({cells:[r.ch, num(r.f), num(r.apd2), pct1(r.apdP/100), num(r.pp8), `<span class="pill ${r.ppP>=ppB?'green':r.ppP>=ppB*0.75?'amber':'red'}">${r.ppP.toFixed(1)}%</span>`, r.avgpp.toFixed(2), div(r.pn,r.fm)?gbp(div(r.pn,r.fm)):'—']}));
   panes.sfun = `<h2 class="sec">FTD quality funnel — 2026 YTD (to ${ASOF})</h2>
 <div class="kpis">
@@ -1363,7 +1363,7 @@ ${chartbox('c_fun_mo')}
 <p class="note">Clean FTDs = FTDs − First-week PBA (official ThoughtSpot series) − APD0 (zero paid playing days). The two populations overlap to an unknown degree (player-level PBA isn't accessible yet — DD-596), so Clean FTDs is a conservative floor and true PLTV/FTD a ceiling. APD0 is now measured for every month from core.fct_gameplay_daily (fresh to 12 Jul). Jun (7.8%) &amp; Jul (8.2%) are <b>measured but still maturing</b> — recent FTDs have had little time to log a first paid playing day, so both will revise <b>down</b> as those cohorts play; treat them as an upper bound. Net PLTV keeps the whole cohort's value (PBA/APD0 players contribute ≈£0), so true PLTV/FTD reads as net value per genuine customer.</p>
 <h2 class="sec">Weekly funnel</h2>
 ${chartbox('c_fun_wk')}
-<div style="margin-top:14px">${tbl([{t:'Week (w/c)'},{t:'FTDs',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Net PLTV/FTD',r:1}], wkRows)}</div>
+<div style="margin-top:14px">${tbl([{t:'Week (w/c)'},{t:'FTDs',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'APD0',r:1},{t:'APD0 %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Net PLTV/FTD',r:1}], wkRows)}</div>
 <p class="note">PBA and Qore are published monthly only (ThoughtSpot / MBR) — no weekly or channel split. UFI, APD0, duplicate and SEON detail live in the KPI cards, the flags above and the Registration risk section.</p>
 <h2 class="sec">Channel quality — YTD</h2>
 ${chartbox('c_fun_ch',540)}
@@ -1376,7 +1376,7 @@ if(D.funnel && panes.sfun){
   const wkP3={}; D.daily.forEach(dd=>{ if(dd.date<'2026-01-01') return; const dt=new Date(dd.date+'T00:00:00Z'); const mon=new Date(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth(),dt.getUTCDate()-((dt.getUTCDay()+6)%7))); const k=String(mon.getUTCMonth()+1).padStart(2,'0')+'-'+String(mon.getUTCDate()).padStart(2,'0'); wkP3[k]=(wkP3[k]||0)+dd.p; });
   EMBED.funnel={
     mo:D.funnel.mo.map((r,i)=>({m:r.m,ftds:r.ftds,apd2:r.apd2,pp8:r.pp8,qore:r.qore,pba:r.pba,ppf:Math.round(div(moTot[i+1]?moTot[i+1].p:0,r.ftds))})),
-    wk:D.funnel.wk.map(r=>({w:r.w,apdP:+pcf2(r.apd2,r.ftds).toFixed(1),ppP:+pcf2(r.pp8,r.ftds).toFixed(1),pbaP:+pcf2(r.pba,r.ftds).toFixed(2),seonP:+pcf2(r.seon,r.regs).toFixed(1),dupaP:+pcf2(r.dupa,r.regs).toFixed(1),ufiP:+pcf2(r.ufi,r.ftds).toFixed(2),ppf:Math.round(div(wkP3[r.w]||0,r.ftds))})),
+    wk:D.funnel.wk.map(r=>({w:r.w,apdP:+pcf2(r.apd2,r.ftds).toFixed(1),a0P:r.apd0!=null?+pcf2(r.apd0,r.ftds).toFixed(1):null,ppP:+pcf2(r.pp8,r.ftds).toFixed(1),pbaP:+pcf2(r.pba,r.ftds).toFixed(2),seonP:+pcf2(r.seon,r.regs).toFixed(1),dupaP:+pcf2(r.dupa,r.regs).toFixed(1),ufiP:+pcf2(r.ufi,r.ftds).toFixed(2),ppf:Math.round(div(wkP3[r.w]||0,r.ftds))})),
     ch:D.funnel.ch.map(r=>({ch:r.ch,ppP:+pcf2(r.pp8,r.f).toFixed(1),apdP:+pcf2(r.apd2,r.fm).toFixed(1),pbaP:+pcf2(r.pba,r.f).toFixed(2),ufiP:+pcf2(r.ufi,r.f).toFixed(2)}))
   };
 }
@@ -1653,6 +1653,7 @@ function buildPane(id){
     mkChart('c_fun_wk',{type:'line',data:{labels:F.wk.map(x=>x.w),datasets:[
       {label:'APD2+ %',data:F.wk.map(x=>x.apdP),borderColor:COL.green,tension:.3,pointRadius:0,yAxisID:'y'},
       {label:'PP 8-10 %',data:F.wk.map(x=>x.ppP),borderColor:COL.navy,tension:.3,pointRadius:0,yAxisID:'y'},
+      {label:'APD0 % (freeloaders)',data:F.wk.map(x=>x.a0P),borderColor:COL.pink,borderDash:[5,3],tension:.3,pointRadius:0,yAxisID:'y'},
       {label:'Net PLTV/FTD (£, right)',data:F.wk.map(x=>x.ppf),borderColor:COL.sky,borderDash:[6,4],tension:.3,pointRadius:0,yAxisID:'y1'}
     ]},options:baseOpts({plugins:{title:{display:true,text:'Weekly FTD quality rates + net PLTV/FTD (right, £) - final point is WTD partial'}},scales:{y:{position:'left',ticks:{callback:v=>v+'%'}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>'£'+v}}}})});
     mkChart('c_fun_ch',{type:'bar',data:{labels:F.ch.map(x=>x.ch),datasets:[
