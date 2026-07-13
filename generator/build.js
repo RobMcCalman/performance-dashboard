@@ -1429,6 +1429,15 @@ ${chartbox('c_atl_dem')}
 <h2 class="sec">TV delivery — weekly GRPs (Q1, BARB)</h2>
 ${chartbox('c_atl_grp')}
 <p class="note">Equivalent 30-second GRPs from the BARB linear-TV export (Q1 only — ${num(AM.tvGrpQ1)} GRPs Jan–Mar; the file carries no cost column, and Apr–Jun TV delivery wasn't supplied, so H1 spend is taken from the attribution ATL line). Radio Q1 £${num(AM.radioQ1)}. GRPs do vary week to week but not enough, against noisy organic demand, to pin down a response curve over 13 weeks.</p>
+<h2 class="sec">TV spot-length effectiveness (Q1 BARB)</h2>
+${(()=>{ const s=AM.spotLen;
+  const rows=s.map(r=>({cells:[ r.len, num(r.spots), (r.imp/1e6).toFixed(0)+'M', r.eqsh+'%', r.eff.toFixed(2), gbpM(r.spend), num(r.incf), gbp(r.cpi), r.fps.toFixed(3) ]}));
+  const t={sp:s.reduce((a,r)=>a+r.spots,0),spend:s.reduce((a,r)=>a+r.spend,0),incf:s.reduce((a,r)=>a+r.incf,0)};
+  rows.push({cls:'tot',cells:['TV total', num(t.sp), (s.reduce((a,r)=>a+r.imp,0)/1e6).toFixed(0)+'M', '100%', '', gbpM(t.spend), num(t.incf), gbp(t.spend/t.incf), (t.incf/t.sp).toFixed(3)]});
+  return tbl([{t:'Spot length'},{t:'Spots (Q1)',r:1},{t:'Impacts',r:1},{t:'Airtime share',r:1},{t:'Effect. index',r:1},{t:'Inferred spend',r:1},{t:'Incr FTDs',r:1},{t:'Cost / incr FTD',r:1},{t:'FTDs / spot',r:1}], rows);
+})()}
+${chartbox('c_atl_spot')}
+<p class="note"><b>The read:</b> MrQ's TV runs two lengths — <b>10s (53% of spots, 36% of airtime) and 30s (47% of spots, 64% of airtime)</b>. Applying a standard short-term-response <b>effectiveness index (10s ≈ 0.65 of a 30s per impression</b>, from branding-recall curves), the 10s punches <b>above its airtime cost weight</b>: because airtime price scales ~with duration (10s ≈ half a 30s) but a 10s still delivers ~65% of the response, <b>the 10s is ~23% cheaper per incremental FTD (£${num(AM.spotLen[0].cpi)} vs £${num(AM.spotLen[1].cpi)})</b>. The 30s drives more FTDs <b>per spot</b> (${AM.spotLen[1].fps.toFixed(2)} vs ${AM.spotLen[0].fps.toFixed(2)}) and builds more brand memory, so it earns its place for long-term equity — but for <b>short-term acquisition efficiency the mix could tilt further toward 10s</b>. <b>Assumption-driven</b>: the effectiveness index and the duration-proportional cost split are benchmarks, not measured; the file has no per-spot cost and Q1 delivery only. A copy-test (10s vs 30s brand-search lift) would confirm the curve.</p>
 <h2 class="sec">Method &amp; caveats</h2>
 <div class="callout"><ul style="margin:6px 0;padding-left:18px">
 <li><b>Halo channels</b>: Direct, Organic Search, PPC Brand, RAF, iOS/Android Organic, Unattributed, Referral, Organic Social — the lines brand media plausibly lifts. Paid-targeted channels (Affiliate, Meta, UAC, Apple, PPC Generic) are excluded.</li>
@@ -1439,7 +1448,7 @@ ${chartbox('c_atl_grp')}
 <p class="note">Point-in-time analysis, data to ${AM.asOf}. Built from the uploaded Linear TV (BARB, Q1) and Media Data Collection files + the attribution ATL spend line. Not refreshed by the daily job.</p>`;
 }
 
-if(D.atlModel){ EMBED.atl={weeks:D.atlModel.weeks, chAlloc:D.atlModel.chAlloc, mediaMix:D.atlModel.mediaMix}; }
+if(D.atlModel){ EMBED.atl={weeks:D.atlModel.weeks, chAlloc:D.atlModel.chAlloc, mediaMix:D.atlModel.mediaMix, spotLen:D.atlModel.spotLen}; }
 
 const TABS = [['summary','Summary'],['rec','Recommendations'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),...(panes.sfun?[['sfun','Quality funnel']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],...(panes.satl?[['satl','ATL model']]:[]),['s9','Channel opt'],...(panes.sinc?[['sinc','Incremental CPA']]:[]),['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
 const tabbar = TABS.map((t,i)=>`<button class="tab${i===0?' active':''}" data-pane="${t[0]}">${t[1]}</button>`).join('');
@@ -1785,6 +1794,12 @@ function buildPane(id){
       ]},options:baseOpts({plugins:{title:{display:true,text:'ATL spend & modelled incremental FTDs by medium'}},scales:{y:{position:'left',ticks:{callback:v=>'£'+Math.round(v/1e6)+'m'}},y1:{position:'right',grid:{drawOnChartArea:false}}}})});
     }
   }
+    if(EMBED.atl.spotLen){ const s=EMBED.atl.spotLen;
+      mkChart('c_atl_spot',{type:'bar',data:{labels:s.map(x=>x.len),datasets:[
+        {label:'Incremental FTDs (base)',data:s.map(x=>x.incf),backgroundColor:COL.blue,xAxisID:'x'},
+        {label:'Cost / incr FTD £ (top axis)',data:s.map(x=>x.cpi),backgroundColor:COL.pink,xAxisID:'x2'}
+      ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'TV spot length — incremental FTDs vs cost/incr FTD'}},scales:{x:{position:'bottom',beginAtZero:true,title:{display:true,text:'incremental FTDs'}},x2:{position:'top',beginAtZero:true,grid:{drawOnChartArea:false},title:{display:true,text:'cost / incr FTD (£)'},ticks:{callback:v=>'£'+v}}}})});
+    }
   if(id==='s8'){
     mkChart('c_atl',{type:'bar',data:{labels:EMBED.months,datasets:[{label:'ATL spend (£)',data:EMBED.atlMonthly.map(Math.round),backgroundColor:COL.navy}]},options:baseOpts({plugins:{title:{display:true,text:'Monthly ATL (brand) spend'},legend:{display:false}}})});
   }
