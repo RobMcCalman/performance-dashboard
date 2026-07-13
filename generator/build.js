@@ -636,6 +636,19 @@ ${kpi('MTD net PLTV', gbpM(mtd.p), `fcst ${gbpM(moFcst.p)}`)}
 ${kpi('MTD PLTV/FTD', gbp(mtd.ppf), `fcst ${gbp(div(moFcst.p,moFcst.f))} · net`)}
 ${kpi('MTD LTV:CAC', f2(mtd.ltv), `CPA ${gbp(mtd.cpa)}`)}
 </div>
+<h2 class="sec">Full-month: plan vs forecast</h2>
+${(()=>{
+  const planCpa=div(planRef.s,planRef.f), fcCpa=div(moFcst.s,moFcst.f), planLtv=div(planRef.p,planRef.s);
+  const rows=[
+    {cells:['Spend', gbpM(planRef.s), gbpM(mtd.s), gbpM(moFcst.s), `<span class="pill ${ragPace(paceS)}">${pct(paceS)}</span>`]},
+    {cells:['FTDs', num(planRef.f), num(mtd.f), num(moFcst.f), `<span class="pill ${ragPace(paceF)}">${pct(paceF)}</span>`]},
+    {cells:['Net 12m PLTV', gbpM(planRef.p), gbpM(mtd.p), gbpM(moFcst.p), `<span class="pill ${ragPace(paceP)}">${pct(paceP)}</span>`]},
+    {cells:['CPA', gbp(planCpa), gbp(mtd.cpa), gbp(fcCpa), `<span class="pill ${ragPace(div(planCpa,fcCpa))}">${pct(div(planCpa,fcCpa))}</span>`]},
+    {cells:['LTV:CAC', f2(planLtv), f2(mtd.ltv), f2(moFcst.ltv), `<span class="pill ${ragPace(div(moFcst.ltv,planLtv))}">${pct(div(moFcst.ltv,planLtv))}</span>`]},
+  ];
+  return tbl([{t:'Metric'},{t:`${MO_CUR} plan`,r:1},{t:`MTD (1–${MD})`,r:1},{t:'Full-month fcst',r:1},{t:'Fcst vs plan',r:1}], rows);
+})()}
+<p class="note">Full-month forecast = MTD actuals + remaining days × trailing daily average (affiliate gap-filled). Plan is the ${MO_CUR} monthly target (net of the 15% affiliate revshare). For CPA, the pill is plan÷forecast (higher = cheaper than plan = good); for spend/FTDs/PLTV/LTV:CAC it is forecast÷plan. Per-channel plan-vs-forecast is on the Targets tab.</p>
 <div class="grid2" style="margin-top:14px">${chartbox('c_mtd_spend')}${chartbox('c_mtd_ftd')}</div>
 <h2 class="sec">CPA — daily (MTD, net)</h2>
 ${chartbox('c_mtd_cpa')}
