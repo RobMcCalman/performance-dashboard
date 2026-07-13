@@ -507,8 +507,8 @@ ${kpi('Budget used (spend)', pct(div(ytd.s,planFY.s)), `${pct(YEAR_ELAPSED_DAYS/
 </div>
 <div class="rec"><h3>Recommended optimisations</h3><ol>
 <li><b>Tighten the softest affiliates.</b> ${affAlerts.length? `${affAlerts.length} affiliate(s) above the £20k/4-week spend bar are below 0.8 net LTV:CAC — ${affAlerts.map(a=>affName(a.aid)+' ('+f2(a.ltv)+')').join(', ')}. Renegotiate CPA before scaling.` : 'No large affiliate is below 0.8 net LTV:CAC this 4-week window — hold current deals and watch the lagging tail.'}</li>
-<li><b>Lean into brand search &amp; UAC.</b> ${adgBest.slice(0,3).map(a=>a.ag).join(', ')} are the best material ad groups (LTV:CAC ${f2(adgBest[0].ltv)}–${f2(adgBest[2].ltv)}). Shift incremental budget here.</li>
-<li><b>Rework the worst app placements.</b> ${adgWorst.slice(0,2).map(a=>`${a.channel} ${a.ag} (${f2(a.ltv)})`).join(', ')} convert below break-even last-click — time-decay re-credits some app value, so verify before hard-cutting.</li>
+<li><b>Lean into brand search &amp; UAC.</b> ${adgBest.slice(0,3).map(a=>a.ag||a.camp||a.channel).join(', ')} are the best material ad groups (LTV:CAC ${f2(adgBest[0].ltv)}–${f2(adgBest[2].ltv)}). Shift incremental budget here.</li>
+<li><b>Rework the worst app placements.</b> ${adgWorst.slice(0,2).map(a=>`${a.channel} ${a.ag||a.camp||''} (${f2(a.ltv)})`).join(', ')} convert below break-even last-click — time-decay re-credits some app value, so verify before hard-cutting.</li>
 <li><b>Mind the June mix.</b> Blended PLTV/FTD is ${gbp(mtd.ppf)} (vs ${gbp(moBlend[4].ppf)} in May) — diluted by FTD growth skewing to low-value ${standout.ch} (${pct1(standout.share)} share at ${gbp(standout.ppf)}/FTD), not within-channel decay.</li>
 </ol></div>
 <div class="health"><h3>Data health &amp; anomaly check <span>last complete week (22 Jun) vs prior (15 Jun) + lag watch</span></h3><ul>
