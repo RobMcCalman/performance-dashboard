@@ -1381,7 +1381,50 @@ if(D.funnel && panes.sfun){
   };
 }
 
-const TABS = [['summary','Summary'],['rec','Recommendations'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),...(panes.sfun?[['sfun','Quality funnel']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],['s9','Channel opt'],...(panes.sinc?[['sinc','Incremental CPA']]:[]),['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
+// ---------- ATL IMPACT MODEL (brand/TV halo, Jan-Jun 2026) ----------
+if(D.atlModel){
+  const AM=D.atlModel; const S=AM.ftd, T=AM.top;
+  panes.satl = `<h2 class="sec">ATL impact model — Jan–Jun 2026 <span style="color:var(--muted);font-weight:600">(brand/TV halo · scenario model)</span></h2>
+<div class="callout"><b>How to read this.</b> ATL (TV, radio, AVOOH, online video, sponsorship) is <b>always-on and near-flat</b> week to week, and carries <b>no directly-attributed FTDs</b>. With no on/off or geo variation in the data, a regression <b>cannot causally identify</b> ATL's effect — fitting weekly halo demand on adstocked ATL spend returns a near-zero/negative coefficient dominated by trend and other paid spend. So this is a <b>transparent benchmark-anchored scenario model</b>, not a fitted causal estimate: we attribute a plausible <b>halo share</b> of demand in the channels ATL lifts (Direct, Organic Search, brand PPC, RAF, iOS/Android Organic, Unattributed, Referral, Organic Social) and size the money. Treat as directional; the only way to measure this properly is a regional hold-out or a deliberate spend on/off test (see recommendation).</div>
+<div class="kpis">
+${kpi('ATL spend H1', gbpM(AM.atlH1), 'TV+radio+AVOOH+OV+sponsorship')}
+${kpi('Halo-channel FTDs H1', num(AM.haloH1), `${pct1(AM.haloH1/AM.totFtd)} of all FTDs · £${AM.ppf}/FTD net`)}
+${kpi('Incremental FTDs (base)', num(S.base.f), `${S.base.pctTot}% of all FTDs · ${S.low.f.toLocaleString('en-GB')}–${S.high.f.toLocaleString('en-GB')} range`)}
+${kpi('12m PLTV : spend (base)', S.base.roi.toFixed(2)+'x', `cost/incr FTD £${num(S.base.cpi)}`)}
+</div>
+<h2 class="sec">Lower funnel — incremental FTDs &amp; 12-month value</h2>
+${tbl([{t:'Scenario'},{t:'Halo share',r:1},{t:'Incr FTDs',r:1},{t:'% of all FTDs',r:1},{t:'Incr net PLTV (12m)',r:1},{t:'Cost / incr FTD',r:1},{t:'12m PLTV:spend',r:1}], [
+ {cells:['Low', S.low.share+'%', num(S.low.f), S.low.pctTot+'%', gbpM(S.low.pltv), gbp(S.low.cpi), `<span class="pill red">${S.low.roi.toFixed(2)}x</span>`]},
+ {cls:'tot',cells:['Base', S.base.share+'%', num(S.base.f), S.base.pctTot+'%', gbpM(S.base.pltv), gbp(S.base.cpi), `<span class="pill red">${S.base.roi.toFixed(2)}x</span>`]},
+ {cells:['High', S.high.share+'%', num(S.high.f), S.high.pctTot+'%', gbpM(S.high.pltv), gbp(S.high.cpi), `<span class="pill amber">${S.high.roi.toFixed(2)}x</span>`]},
+])}
+<p class="note"><b>On a 12-month direct-value basis ATL is well below breakeven</b> — it would need to be driving <b>~${AM.breakevenShare}% of all halo-channel FTDs</b> (vs the 8–18% modelled) for its £${gbpM(AM.atlH1).slice(1)} H1 spend to return 1.0x on 12-month net PLTV alone. That is expected and <b>not</b> the right sole lens for brand: ATL's justification rests on (a) <b>multi-year LTV</b> beyond the 12-month PLTV window, (b) <b>cross-channel efficiency</b> — cheaper brand search, higher organic/direct conversion (the 2026 blended CPA is −20% YoY while ATL runs always-on), and (c) category presence/consideration. Those are real but not measurable from this dataset. Net PLTV per halo FTD = £${AM.ppf}.</p>
+<h2 class="sec">Upper funnel — traffic &amp; registration lift</h2>
+${tbl([{t:'Scenario'},{t:'Halo share',r:1},{t:'Incr new sessions',r:1},{t:'Incr registrations',r:1}], [
+ {cells:['Low', T.low.share+'%', num(T.low.snew), num(T.low.reg)]},
+ {cls:'tot',cells:['Base', T.base.share+'%', num(T.base.snew), num(T.base.reg)]},
+ {cells:['High', T.high.share+'%', num(T.high.snew), num(T.high.reg)]},
+])}
+<p class="note">H1 new sessions ${num(AM.snewH1)} · registrations ${num(AM.regH1)}. Upper-funnel halo shares are set slightly below the FTD share (brand media touches many who never convert), so the implied new-session→registration→FTD ladder stays internally consistent.</p>
+<h2 class="sec">ATL spend &amp; adstock vs halo demand — weekly</h2>
+${chartbox('c_atl_dem')}
+<p class="note">ATL weekly spend (bars), 2-week-half-life adstock (line, brand carryover), and halo-channel FTDs (line, right axis). Note how flat spend is — the absence of variation is exactly why the effect isn't statistically identifiable. Adstock λ=0.5.</p>
+<h2 class="sec">TV delivery — weekly GRPs (Q1, BARB)</h2>
+${chartbox('c_atl_grp')}
+<p class="note">Equivalent 30-second GRPs from the BARB linear-TV export (Q1 only — ${num(AM.tvGrpQ1)} GRPs Jan–Mar; the file carries no cost column, and Apr–Jun TV delivery wasn't supplied, so H1 spend is taken from the attribution ATL line). Radio Q1 £${num(AM.radioQ1)}. GRPs do vary week to week but not enough, against noisy organic demand, to pin down a response curve over 13 weeks.</p>
+<h2 class="sec">Method &amp; caveats</h2>
+<div class="callout"><ul style="margin:6px 0;padding-left:18px">
+<li><b>Halo channels</b>: Direct, Organic Search, PPC Brand, RAF, iOS/Android Organic, Unattributed, Referral, Organic Social — the lines brand media plausibly lifts. Paid-targeted channels (Affiliate, Meta, UAC, Apple, PPC Generic) are excluded.</li>
+<li><b>Scenario shares</b> (8/13/18% lower funnel; 6/10/15% upper) are external benchmarks for UK online-gaming TV halo, <b>not</b> measured from MrQ data. The regression on 26 weeks of near-flat always-on spend produced no usable coefficient (R² driven by trend + other paid spend).</li>
+<li><b>Value</b> uses net 12-month PLTV per halo FTD (£${AM.ppf}); ROI is 12-month PLTV ÷ ATL spend and ignores longer-term LTV and cross-channel efficiency.</li>
+<li><b>Recommendation</b>: to replace these assumptions with a measured number, run a <b>regional hold-out</b> (dark a TV region for 6–8 weeks) or a <b>deliberate national on/off burst</b>, and read the halo-channel + brand-search response. That is the only way to get a defensible ATL ROI.</li>
+</ul></div>
+<p class="note">Point-in-time analysis, data to ${AM.asOf}. Built from the uploaded Linear TV (BARB, Q1) and Media Data Collection files + the attribution ATL spend line. Not refreshed by the daily job.</p>`;
+}
+
+if(D.atlModel){ EMBED.atl={weeks:D.atlModel.weeks}; }
+
+const TABS = [['summary','Summary'],['rec','Recommendations'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),...(panes.sfun?[['sfun','Quality funnel']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],...(panes.satl?[['satl','ATL model']]:[]),['s9','Channel opt'],...(panes.sinc?[['sinc','Incremental CPA']]:[]),['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
 const tabbar = TABS.map((t,i)=>`<button class="tab${i===0?' active':''}" data-pane="${t[0]}">${t[1]}</button>`).join('');
 const paneHTML = TABS.map((t,i)=>`<section class="pane${i===0?' active':''}" id="pane-${t[0]}">${panes[t[0]]||''}</section>`).join('');
 
@@ -1689,6 +1732,18 @@ function buildPane(id){
       {label:'App',data:pm.App,backgroundColor:COL.sky,stack:'a'},
       {label:'Other',data:pm.Other,backgroundColor:COL.grey,stack:'a'}
     ]},options:baseOpts({plugins:{title:{display:true,text:'Monthly FTDs by platform'}},scales:{x:{stacked:true},y:{stacked:true}}})});
+  }
+  if(id==='satl' && EMBED.atl){
+    const w=EMBED.atl.weeks;
+    mkChart('c_atl_dem',{data:{labels:w.map(x=>x.w),datasets:[
+      {type:'bar',label:'ATL spend £ (wk)',data:w.map(x=>x.atl),backgroundColor:'rgba(10,46,203,.25)',yAxisID:'y'},
+      {type:'line',label:'ATL adstock (λ=0.5)',data:w.map(x=>x.ads),borderColor:COL.pink,borderWidth:2,pointRadius:0,tension:.3,yAxisID:'y'},
+      {type:'line',label:'Halo-channel FTDs (right)',data:w.map(x=>x.halo),borderColor:COL.green,borderWidth:2,pointRadius:0,tension:.3,yAxisID:'y1'}
+    ]},options:baseOpts({plugins:{title:{display:true,text:'ATL spend & adstock vs halo FTDs — weekly'}},scales:{y:{position:'left',ticks:{callback:v=>'£'+Math.round(v/1000)+'k'}},y1:{position:'right',grid:{drawOnChartArea:false}}}})});
+    mkChart('c_atl_grp',{type:'bar',data:{labels:w.map(x=>x.w),datasets:[
+      {label:'TV GRPs (30s equiv, Q1)',data:w.map(x=>x.grp),backgroundColor:COL.navy},
+      {type:'line',label:'Halo FTDs',data:w.map(x=>x.halo),borderColor:COL.green,borderWidth:2,pointRadius:0,tension:.3,yAxisID:'y1'}
+    ]},options:baseOpts({plugins:{title:{display:true,text:'TV GRPs (Q1 BARB) vs halo FTDs'}},scales:{y:{title:{display:true,text:'GRPs'}},y1:{position:'right',grid:{drawOnChartArea:false}}}})});
   }
   if(id==='s8'){
     mkChart('c_atl',{type:'bar',data:{labels:EMBED.months,datasets:[{label:'ATL spend (£)',data:EMBED.atlMonthly.map(Math.round),backgroundColor:COL.navy}]},options:baseOpts({plugins:{title:{display:true,text:'Monthly ATL (brand) spend'},legend:{display:false}}})});
