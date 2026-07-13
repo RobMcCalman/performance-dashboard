@@ -658,7 +658,18 @@ ${chartbox('c_mtd_ppf')}
 <p class="note">Recent-day cohorts are least matured and typically revise <b>up</b>. MTD blended PLTV/FTD ${gbp(mtd.ppf)}.</p>
 <h2 class="sec">MTD by channel</h2>
 ${tbl([{t:'Channel'},{t:'Spend',r:1},{t:'FTDs',r:1},{t:'CPA',r:1},{t:'12m PLTV',r:1},{t:'PLTV/FTD',r:1},{t:'LTV:CAC',r:1}], rows)}
-<p class="note">* ${RMcomplete?`${MO_CUR} is a complete month — forecast equals actuals`:`Affiliate spend gap-filled for ${GAPLBL}; forecast = MTD + remaining days × trailing daily average`}.</p>`;
+<p class="note">* ${RMcomplete?`${MO_CUR} is a complete month — forecast equals actuals`:`Affiliate spend gap-filled for ${GAPLBL}; forecast = MTD + remaining days × trailing daily average`}.</p>
+<h2 class="sec">By channel — plan vs full-month forecast</h2>
+${(()=>{
+  const fcCh=ch=>{ const r=junCh[ch]; if(!r) return {s:0,f:0,p:0}; if(RMcomplete) return {s:r.s,f:r.f,p:r.pn}; const t=(D.trail4Ch&&D.trail4Ch[ch])||{s:0,f:0,p:0}, k=RMdim-DAYS_ELAPSED; return {s:(ch==='Affiliate'?r.s+AFF_GAP_28:r.s)+k*(t.s/28), f:r.f+k*(t.f/28), p:r.pn+k*(t.p/28)}; };
+  const chans=Object.keys(PLAN).filter(c=>c!=='Display/Programmatic');
+  const rws=chans.map(ch=>{ const pl=planCh(ch,RM-1), fc=fcCh(ch); return {ch,pl,fc,pcS:div(fc.s,pl.s),pcF:div(fc.f,pl.f),pcP:div(fc.p,pl.p)}; }).filter(r=>r.pl.s>0||r.pl.f>0||r.fc.f>0).sort((a,b)=>b.pl.p-a.pl.p);
+  const tot=rws.reduce((a,r)=>({ps:a.ps+r.pl.s,pf:a.pf+r.pl.f,pp:a.pp+r.pl.p,fs:a.fs+r.fc.s,ff:a.ff+r.fc.f,fp:a.fp+r.fc.p}),{ps:0,pf:0,pp:0,fs:0,ff:0,fp:0});
+  const body=rws.map(r=>({cells:[ r.ch, gbpK(r.pl.s), gbpK(r.fc.s), r.pl.s?`<span class="pill ${ragPace(r.pcS)}">${pct(r.pcS)}</span>`:'—', num(r.pl.f), num(r.fc.f), r.pl.f?`<span class="pill ${ragPace(r.pcF)}">${pct(r.pcF)}</span>`:'—', gbpK(r.pl.p), gbpK(r.fc.p), r.pl.p?`<span class="pill ${ragPace(r.pcP)}">${pct(r.pcP)}</span>`:'—' ]}));
+  body.push({cls:'tot',cells:['TOTAL', gbpM(tot.ps), gbpM(tot.fs), `<span class="pill ${ragPace(div(tot.fs,tot.ps))}">${pct(div(tot.fs,tot.ps))}</span>`, num(tot.pf), num(tot.ff), `<span class="pill ${ragPace(div(tot.ff,tot.pf))}">${pct(div(tot.ff,tot.pf))}</span>`, gbpM(tot.pp), gbpM(tot.fp), `<span class="pill ${ragPace(div(tot.fp,tot.pp))}">${pct(div(tot.fp,tot.pp))}</span>`]});
+  return tbl([{t:'Channel'},{t:'Plan spend',r:1},{t:'Fcst spend',r:1},{t:'%',r:1},{t:'Plan FTDs',r:1},{t:'Fcst FTDs',r:1},{t:'%',r:1},{t:'Plan PLTV',r:1},{t:'Fcst PLTV',r:1},{t:'%',r:1}], body);
+})()}
+<p class="note">${MO_CUR} channel plan vs full-month forecast (net of the 15% affiliate revshare), ranked by planned PLTV. Same forecast basis as above. Green ≥100% of plan · amber 90–99% · red &lt;90%.</p>`;
 }
 
 // ---- S2b TARGETS ----
