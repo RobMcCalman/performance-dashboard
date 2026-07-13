@@ -1376,7 +1376,7 @@ if(D.funnel && panes.sfun){
   const wkP3={}; D.daily.forEach(dd=>{ if(dd.date<'2026-01-01') return; const dt=new Date(dd.date+'T00:00:00Z'); const mon=new Date(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth(),dt.getUTCDate()-((dt.getUTCDay()+6)%7))); const k=String(mon.getUTCMonth()+1).padStart(2,'0')+'-'+String(mon.getUTCDate()).padStart(2,'0'); wkP3[k]=(wkP3[k]||0)+dd.p; });
   EMBED.funnel={
     mo:D.funnel.mo.map((r,i)=>({m:r.m,ftds:r.ftds,apd2:r.apd2,pp8:r.pp8,qore:r.qore,pba:r.pba,ppf:Math.round(div(moTot[i+1]?moTot[i+1].p:0,r.ftds))})),
-    wk:D.funnel.wk.map(r=>({w:r.w,apdP:+pcf2(r.apd2,r.ftds).toFixed(1),a0P:r.apd0!=null?+pcf2(r.apd0,r.ftds).toFixed(1):null,ppP:+pcf2(r.pp8,r.ftds).toFixed(1),pbaP:+pcf2(r.pba,r.ftds).toFixed(2),seonP:+pcf2(r.seon,r.regs).toFixed(1),dupaP:+pcf2(r.dupa,r.regs).toFixed(1),ufiP:+pcf2(r.ufi,r.ftds).toFixed(2),ppf:Math.round(div(wkP3[r.w]||0,r.ftds))})),
+    wk:D.funnel.wk.map(r=>({w:r.w,apdP:+pcf2(r.apd2,r.ftds).toFixed(1),a0P:r.apd0!=null?+pcf2(r.apd0,r.ftds).toFixed(1):null,a1P:r.apd1!=null?+pcf2(r.apd1,r.ftds).toFixed(1):null,ppP:+pcf2(r.pp8,r.ftds).toFixed(1),pbaP:+pcf2(r.pba,r.ftds).toFixed(2),seonP:+pcf2(r.seon,r.regs).toFixed(1),dupaP:+pcf2(r.dupa,r.regs).toFixed(1),ufiP:+pcf2(r.ufi,r.ftds).toFixed(2),ppf:Math.round(div(wkP3[r.w]||0,r.ftds))})),
     ch:D.funnel.ch.map(r=>({ch:r.ch,ppP:+pcf2(r.pp8,r.f).toFixed(1),apdP:+pcf2(r.apd2,r.fm).toFixed(1),pbaP:+pcf2(r.pba,r.f).toFixed(2),ufiP:+pcf2(r.ufi,r.f).toFixed(2)}))
   };
 }
@@ -1653,6 +1653,7 @@ function buildPane(id){
     mkChart('c_fun_wk',{type:'line',data:{labels:F.wk.map(x=>x.w),datasets:[
       {label:'APD2+ %',data:F.wk.map(x=>x.apdP),borderColor:COL.green,tension:.3,pointRadius:0,yAxisID:'y'},
       {label:'PP 8-10 %',data:F.wk.map(x=>x.ppP),borderColor:COL.navy,tension:.3,pointRadius:0,yAxisID:'y'},
+      {label:'APD1 % (one-day)',data:F.wk.map(x=>x.a1P),borderColor:COL.sky,tension:.3,pointRadius:0,yAxisID:'y'},
       {label:'APD0 % (freeloaders)',data:F.wk.map(x=>x.a0P),borderColor:COL.pink,borderDash:[5,3],tension:.3,pointRadius:0,yAxisID:'y'},
       {label:'Net PLTV/FTD (£, right)',data:F.wk.map(x=>x.ppf),borderColor:COL.sky,borderDash:[6,4],tension:.3,pointRadius:0,yAxisID:'y1'}
     ]},options:baseOpts({plugins:{title:{display:true,text:'Weekly FTD quality rates + net PLTV/FTD (right, £) - final point is WTD partial'}},scales:{y:{position:'left',ticks:{callback:v=>v+'%'}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>'£'+v}}}})});
