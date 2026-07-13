@@ -1076,7 +1076,7 @@ ${tbl([{t:'Channel'},{t:'Spend',r:1},{t:'FTDs',r:1},{t:'CPA',r:1},{t:'12m PLTV',
 // ---- S10 AD-GROUPS ----
 {
   const head=[{t:'Channel'},{t:'Campaign'},{t:'Ad group'},{t:'Spend',r:1},{t:'FTDs',r:1},{t:'CPA',r:1},{t:'PLTV',r:1},{t:'LTV:CAC',r:1}];
-  const mk = a=>({cells:[ a.channel, `<span class="camp">${a.camp||'—'}</span>`, `<span class="camp">${a.ag}</span>`, gbpK(a.s), num(a.f), gbp(a.cpa), gbpK(a.p), `<span class="pill ${ragLtv(a.ltv)}">${f2(a.ltv)}</span>` ]});
+  const mk = a=>({cells:[ a.channel, `<span class="camp">${a.camp||'—'}</span>`, `<span class="camp">${a.ag||'—'}</span>`, gbpK(a.s), num(a.f), gbp(a.cpa), gbpK(a.p), `<span class="pill ${ragLtv(a.ltv)}">${f2(a.ltv)}</span>` ]});
   panes.s10 = `<h2 class="sec">Ad-group leaderboard — last 4 weeks (spend ≥ £500, FTDs ≥ 3)</h2>
 <h2 class="sec" style="margin-top:8px">Best by LTV:CAC</h2>
 ${tbl(head, adgBest.map(mk))}
