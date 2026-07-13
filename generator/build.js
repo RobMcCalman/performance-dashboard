@@ -1472,6 +1472,8 @@ header.hero p{margin:0;opacity:.9;font-size:13px;max-width:880px}
 .headline .hl{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:12px;padding:8px 14px}
 .headline .hl .l{font-size:10px;text-transform:uppercase;letter-spacing:.06em;opacity:.85}
 .headline .hl .v{font-size:19px;font-weight:800;letter-spacing:-.4px}
+.headline .hl .yoy{font-size:10px;font-weight:600;opacity:.82;margin-top:2px}
+.headline .hl .yoy.up{color:#42D486}.headline .hl .yoy.dn{color:#FF9db0}
 .tabbar{position:sticky;top:0;z-index:30;background:rgba(245,246,251,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);display:flex;gap:4px;overflow-x:auto;padding:8px 18px;margin-bottom:18px}
 .tab{flex:0 0 auto;border:1px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:12px;padding:7px 13px;border-radius:9px;cursor:pointer;white-space:nowrap;font-family:inherit}
 .tab:hover{color:var(--blue)}
@@ -1537,9 +1539,17 @@ footer{margin:30px 18px 0;font-size:11.5px;color:var(--muted);border-top:1px sol
 <p>Aggregate acquisition performance — spend, FTDs, 12-month PLTV, LTV:CAC and quality (APD2+). Affiliate PLTV is net of the 15% revshare haircut throughout; plan and actual are like-for-like.</p>
 <span class="asof">As of ${TODAY} · actuals through ${ASOF} (fully-landed days)</span>
 <div class="headline">
-<div class="hl"><div class="l">YTD 12m PLTV (net)</div><div class="v">${gbpM(ytd.p)}</div></div>
-<div class="hl"><div class="l">YTD spend</div><div class="v">${gbpM(ytd.s)}</div></div>
-<div class="hl"><div class="l">Blended LTV:CAC</div><div class="v">${f2(div(ytd.p,ytd.s))}</div></div>
+${(()=>{ const sg=v=>(v>=0?'+':'')+pct(v); const cls=(v,good)=>((good?v>=0:v<0)?'up':'dn');
+  const ppf26=div(ytd.p,ytd.f), ppf25=div(yoy.pltv25,yoy.ftds25), ppfD=ppf26/ppf25-1;
+  const tile=(l,v,d,good)=>`<div class="hl"><div class="l">${l}</div><div class="v">${v}</div><div class="yoy ${cls(d,good)}">YoY ${sg(d)}</div></div>`;
+  return [
+    tile('YTD spend', gbpM(ytd.s), yoy.spend26/yoy.spend25-1, true),
+    tile('YTD FTDs', num(ytd.f), yoy.ftdsD, true),
+    tile('YTD CPA', gbp(yoy.cpa26), yoy.cpaD, false),
+    tile('YTD PLTV/FTD (net)', gbp(ppf26), ppfD, true),
+    tile('YTD 12m PLTV (net)', gbpM(ytd.p), yoy.pltv26/yoy.pltv25-1, true),
+    tile('Blended LTV:CAC', f2(div(ytd.p,ytd.s)), yoy.ltvD, true),
+  ].join(''); })()}
 </div>
 </header>
 <nav class="tabbar">${tabbar}</nav>
