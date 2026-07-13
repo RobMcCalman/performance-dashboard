@@ -1367,7 +1367,7 @@ ${chartbox('c_fun_mo')}
 ${chartbox('c_fun_wk')}
 <div style="margin-top:14px">${tbl([{t:'Week (w/c)'},{t:'FTDs',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'APD0',r:1},{t:'APD0 %',r:1},{t:'APD1',r:1},{t:'APD1 %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Net PLTV/FTD',r:1}], wkRows)}</div>
 <p class="note">PBA and Qore are published monthly only (ThoughtSpot / MBR) — no weekly or channel split. UFI, APD0, duplicate and SEON detail live in the KPI cards, the flags above and the Registration risk section.</p>
-<h2 class="sec">Channel quality — YTD</h2>
+<h2 class="sec">Channel quality — last 4 weeks (15 Jun–12 Jul)</h2>
 ${chartbox('c_fun_ch',540)}
 <div style="margin-top:14px">${tbl([{t:'Channel'},{t:'FTDs',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'APD0',r:1},{t:'APD0 %',r:1},{t:'APD1',r:1},{t:'APD1 %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Avg PP score',r:1},{t:'Net PLTV/FTD',r:1}], chRows)}</div>
 <p class="note"><b>Definitions (per Fraud &amp; Payments):</b> SEON = accounts closed as fraud at registration (status CLOSED/FRAUD). UFI = RESTRICTED/UNDER_FRAUD_INVESTIGATION — high-risk accounts identified after first deposit, docs requested before withdrawal release. Duplicates: auto-blocks at registration (DUPLICATE_AUTO + AUTO_ORIGINAL) vs manual blocks after registration (DUPLICATE_OTHER + GAMSTOP_BREACH + SE_BREACH); legacy DUPLICATE_EXACT has no 2026 volume. PBA (freeloaders — deposit only for an offer): the monthly <b>% FTDs — First-week PBA</b> values are the OFFICIAL numbers from the "Bonus Abuse Metrics for FTDs" ThoughtSpot liveboard (First-Week PBA variant: FTDs flagged PBA within their first week; read 13 Jul 2026 at monthly granularity). <b>Jan–Jun are final</b>; <b>July is provisional</b> (~14.8%, applied to full-month 1–12 FTDs) because July cohorts' first weeks haven't fully elapsed and the pinboard tile wouldn't render the current July count — it will firm up. The platform PBA status on dim_player does NOT reconcile with this metric (a different source), so no weekly or channel PBA split is shown. Full automation (weekly/channel + live July) needs the PV dataset allow-listed in BigQuery (DD-596). <b>APD0</b> = FTDs with zero paid playing days (any window, from <code>core.fct_gameplay_daily</code>, actual paid wagers only) — the strict freeloader read; measured for all months to 12 Jul (Jun/Jul still maturing downward). The MBR's softer "no play in week 1" APD0 runs 1.3–2.0%/mo. PP = player-potential 1–10 (PP 8–10 = MBR "PPQore"); APD2+ = 2+ active playing days; Qore = paid wagering >£1,000. Statuses are current, not point-in-time, so recent cohorts revise up as reviews land. Reg-stage channel rows use last-click at registration; PBA/UFI/dup-manual/PP use last-click at FTD; APD2+ % and PLTV/FTD use the registration-anchored spend mart. Channels under 2,000 regs show "—".</p>`;
@@ -1663,7 +1663,7 @@ function buildPane(id){
     mkChart('c_fun_ch',{type:'bar',data:{labels:F.ch.map(x=>x.ch),datasets:[
       {label:'APD2+ %',data:F.ch.map(x=>x.apdP),backgroundColor:COL.green},
       {label:'PP 8-10 %',data:F.ch.map(x=>x.ppP),backgroundColor:COL.navy}
-    ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Channel quality - % of FTDs (YTD)'}},scales:{x:{ticks:{callback:v=>v+'%'}}}})});
+    ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Channel quality - % of FTDs (last 4 wks)'}},scales:{x:{ticks:{callback:v=>v+'%'}}}})});
   }
   if(id==='sq' && EMBED.ftdq){
     const q=EMBED.ftdq;
