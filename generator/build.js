@@ -884,7 +884,7 @@ ${kpi('Cost per FTD', gbp(L.cpf), `cost per APD2+ ${gbp(L.cpa2)}`)}
 <div class="grid2" style="margin-top:14px">${chartbox('q_vol')}${chartbox('q_ret')}</div>
 <div class="grid2" style="margin-top:14px">${chartbox('q_ppf')}${chartbox('q_imm')}</div>
 ${chartbox('q_cost')}
-<div style="margin-top:14px">${tbl([{t:'Week'},{t:'FTDs',r:1},{t:'IMM %',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'Act.days/FTD',r:1},{t:'Savvy %',r:1},{t:'PLTV/FTD',r:1},{t:'Cost/FTD',r:1},{t:'Cost/APD2+',r:1}], qrows)}</div>
+<div style="margin-top:14px">${tbl([{t:'Week'},{t:'FTDs',r:1},{t:'IMM %',r:1},{t:'FW-APD2+',r:1},{t:'FW-APD2+ %',r:1},{t:'Act.days/FTD',r:1},{t:'Savvy %',r:1},{t:'PLTV/FTD',r:1},{t:'Cost/FTD',r:1},{t:'Cost/APD2+',r:1}], qrows)}</div>
 ${FTDQCH?`<h2 class="sec">By channel — quality (last 4 complete weeks: ${FTDQCH.last4[0]}–${FTDQCH.last4[1]})</h2>
 <div style="margin-top:6px">${tbl([{t:'Channel'},{t:'FTDs',r:1},{t:'IMM %',r:1},{t:'APD2+ %',r:1},{t:'Act.days/FTD',r:1},{t:'Savvy %',r:1},{t:'PLTV/FTD',r:1},{t:'Cost/FTD',r:1},{t:'Cost/APD2+',r:1}], FTDQCH.t4.map(r=>({cells:[ r.ch, num(r.ftd), pct1(r.immR/100), `<span class="pill ${r.apd2R>=48?'green':r.apd2R>=44?'amber':'red'}">${r0(r.apd2R)}%</span>`, r.avgapd.toFixed(2), pct1(r.savR/100), gbp(r.ppf), r.cpf?gbp(r.cpf):'—', r.cpa2?gbp(r.cpa2):'—' ]})))}</div>
 <h2 class="sec">Channel deep-dive — weekly</h2>
@@ -1345,7 +1345,7 @@ ${kpi('Duplicate auto-blocks', num(fyt.dupa), pct1(dupaB/100)+' of regs')}
 ${kpi('FTDs', num(fyt.ftds), 'YTD')}
 ${kpi('First-week PBA (freeloaders)', num(fyt.pba), pct1(pbaB/100)+' of FTDs')}
 ${kpi('Under fraud investigation', num(fyt.ufi), pct1(ufiB/100)+' of FTDs')}
-${kpi('APD0 — no paid play', num(fyt.apd0), pct1(a0B/100)+' of FTDs (Jun/Jul maturing)')}
+${kpi('FW-APD0 — no first-week play', num(fyt.apd0), pct1(a0B/100)+' of FTDs (Jun/Jul maturing)')}
 ${kpi('PP 8–10', num(fyt.pp8), pct1(ppB/100)+' of FTDs')}
 ${kpi('Qore FTDs', num(qTot), pct1(qB/100)+' of Jan–Jun FTDs')}
 </div>
@@ -1358,29 +1358,29 @@ ${chartbox('c_fun_seon')}
 <p class="note">SEON closes fraudulent accounts at registration (normally ~8–10% of regs). Duplicate auto-blocks = DUPLICATE_AUTO + DUPLICATE_AUTO_ORIGINAL, also applied at registration. These populations largely never reach FTD, which is why they are shown against registrations, not FTDs.</p>
 <h2 class="sec">Monthly FTD funnel</h2>
 ${chartbox('c_fun_mo')}
-<div style="margin-top:14px">${tbl([{t:'Month'},{t:'FTDs',r:1},{t:'First-week PBA',r:1},{t:'% FTDs — First-week PBA',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Qore FTDs',r:1},{t:'Qore %',r:1},{t:'Net PLTV/FTD',r:1}], moRows)}</div>
+<div style="margin-top:14px">${tbl([{t:'Month'},{t:'FTDs',r:1},{t:'First-week PBA',r:1},{t:'% FTDs — First-week PBA',r:1},{t:'FW-APD2+',r:1},{t:'FW-APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Qore FTDs',r:1},{t:'Qore %',r:1},{t:'Net PLTV/FTD',r:1}], moRows)}</div>
 <p class="note">${MONTHS[CUR_MO-1]} is partial (1–${DD}); APD2+, PP and PLTV/FTD still mature (~2-day APD lag; potential scores and PLTV re-score over the first weeks). PLTV/FTD is net of the 15% affiliate revshare. Closed-as-fraud after FTD is small (${num(fyt.cfr)} YTD) and not shown as a column. Monthly UFI, manual-duplicate and APD0 detail (YTD: UFI ${num(fyt.ufi)} · dup manual ${num(fyt.dupm)} · APD0 ${num(fyt.apd0)} Jan–May) lives in the weekly and channel tables, KPI cards and flags. Qore FTDs are published monthly in the MBR — no weekly or channel split available.</p>
 <h2 class="sec">Clean FTDs — ex PBA &amp; APD0 — and true PLTV/FTD</h2>
-<div style="margin-top:14px">${tbl([{t:'Month'},{t:'FTDs',r:1},{t:'First-week PBA',r:1},{t:'APD0',r:1},{t:'APD1',r:1},{t:'APD1 %',r:1},{t:'Clean FTDs',r:1},{t:'Clean %',r:1},{t:'Net PLTV',r:1},{t:'PLTV/FTD (all)',r:1},{t:'True PLTV/FTD (clean)',r:1}], clRows)}</div>
-<p class="note">Clean FTDs = FTDs − First-week PBA (official ThoughtSpot series) − APD0 (zero paid playing days). The two populations overlap to an unknown degree (player-level PBA isn't accessible yet — DD-596), so Clean FTDs is a conservative floor and true PLTV/FTD a ceiling. APD0 (zero paid playing days) and APD1 (exactly one) are measured for every month from core.fct_gameplay_daily (fresh to 12 Jul); together APD0+APD1 = the ≤1-day low-engagement share. APD1 is informational — Clean FTDs removes only PBA + APD0. Jun (7.8%) &amp; Jul (8.2%) are <b>measured but still maturing</b> — recent FTDs have had little time to log a first paid playing day, so both will revise <b>down</b> as those cohorts play; treat them as an upper bound. Net PLTV keeps the whole cohort's value (PBA/APD0 players contribute ≈£0), so true PLTV/FTD reads as net value per genuine customer.</p>
+<div style="margin-top:14px">${tbl([{t:'Month'},{t:'FTDs',r:1},{t:'First-week PBA',r:1},{t:'FW-APD0',r:1},{t:'FW-APD1',r:1},{t:'FW-APD1 %',r:1},{t:'Clean FTDs',r:1},{t:'Clean %',r:1},{t:'Net PLTV',r:1},{t:'PLTV/FTD (all)',r:1},{t:'True PLTV/FTD (clean)',r:1}], clRows)}</div>
+<p class="note">Clean FTDs = FTDs − First-week PBA (official ThoughtSpot series) − APD0 (zero paid playing days). The two populations overlap to an unknown degree (player-level PBA isn't accessible yet — DD-596), so Clean FTDs is a conservative floor and true PLTV/FTD a ceiling. FW-APD0 / FW-APD1 / FW-APD2+ are the <b>first-week engagement ladder</b> (0 / exactly 1 / 2+ paid playing days in the 7 days after FTD), from core.fct_gameplay_daily; they sum to 100% and FW-APD2+ reconciles with the mart's apd_2_players. Clean FTDs removes only PBA + FW-APD0 (FW-APD1 is informational). July is still maturing (first weeks not fully elapsed). Context: measured over <b>all time</b>, ~65% of FTDs eventually reach 2+ paid days — first-week is the early-activation read. Net PLTV keeps the whole cohort's value (PBA/APD0 players contribute ≈£0), so true PLTV/FTD reads as net value per genuine customer.</p>
 <h2 class="sec">Weekly funnel</h2>
 ${chartbox('c_fun_wk')}
-<div style="margin-top:14px">${tbl([{t:'Week (w/c)'},{t:'FTDs',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'APD0',r:1},{t:'APD0 %',r:1},{t:'APD1',r:1},{t:'APD1 %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Net PLTV/FTD',r:1}], wkRows)}</div>
+<div style="margin-top:14px">${tbl([{t:'Week (w/c)'},{t:'FTDs',r:1},{t:'FW-APD2+',r:1},{t:'FW-APD2+ %',r:1},{t:'FW-APD0',r:1},{t:'FW-APD0 %',r:1},{t:'FW-APD1',r:1},{t:'FW-APD1 %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Net PLTV/FTD',r:1}], wkRows)}</div>
 <p class="note">PBA and Qore are published monthly only (ThoughtSpot / MBR) — no weekly or channel split. UFI, APD0, duplicate and SEON detail live in the KPI cards, the flags above and the Registration risk section.</p>
 <h2 class="sec">Channel quality — last 4 weeks (15 Jun–12 Jul)</h2>
 ${chartbox('c_fun_ch',540)}
-<div style="margin-top:14px">${tbl([{t:'Channel'},{t:'FTDs',r:1},{t:'APD2+',r:1},{t:'APD2+ %',r:1},{t:'APD0',r:1},{t:'APD0 %',r:1},{t:'APD1',r:1},{t:'APD1 %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Avg PP score',r:1},{t:'Net PLTV/FTD',r:1}], chRows)}</div>
+<div style="margin-top:14px">${tbl([{t:'Channel'},{t:'FTDs',r:1},{t:'FW-APD2+',r:1},{t:'FW-APD2+ %',r:1},{t:'FW-APD0',r:1},{t:'FW-APD0 %',r:1},{t:'FW-APD1',r:1},{t:'FW-APD1 %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Avg PP score',r:1},{t:'Net PLTV/FTD',r:1}], chRows)}</div>
 <h2 class="sec">Quality drag — worst-performing spend (${D.funnel.drag.window})</h2>
 ${(()=>{ const D2=D.funnel.drag; const vp=v=>`<span class="pill ${v<0.8?'red':v<1.0?'amber':'green'}">${v.toFixed(2)}</span>`;
   const verdict=v=>v<0.8?'<span class="pill red">Cut/renegotiate</span>':v<1.0?'<span class="pill amber">Watch</span>':'<span class="pill green">Keep</span>';
   const a0c=v=>v==null?'—':pillHi(v,6,8), a1c=v=>v==null?'—':pillHi(v,35,45), a2c=v=>v==null?'—':pillLo(v,50,45);
   const aff=D2.aff.map(r=>({cells:[ r.n, gbpK(r.s), num(r.f), vp(r.ltv), a0c(r.a0), a1c(r.a1), a2c(r.a2), verdict(r.ltv) ]}));
   const adg=D2.adg.map(r=>({cells:[ r.label, gbpK(r.s), r.f!=null?num(r.f):'—', vp(r.ltv), a0c(r.a0), a1c(r.a1), a2c(r.a2), verdict(r.ltv) ]}));
-  const hdr=[{t:'Spend',r:1},{t:'FTDs',r:1},{t:'Net LTV:CAC',r:1},{t:'APD0 %',r:1},{t:'APD1 %',r:1},{t:'APD2+ %',r:1},{t:'Verdict'}];
+  const hdr=[{t:'Spend',r:1},{t:'FTDs',r:1},{t:'Net LTV:CAC',r:1},{t:'FW-APD0 %',r:1},{t:'FW-APD1 %',r:1},{t:'FW-APD2+ %',r:1},{t:'Verdict'}];
   return `<h3 class="subsec">Affiliate partners</h3>${tbl([{t:'Affiliate'},...hdr], aff)}
 <h3 class="subsec">Other campaigns / ad groups (paid, ex-affiliate)</h3>${tbl([{t:'Channel · ad group'},...hdr], adg)}`;
 })()}
-<p class="note">The spend most dragging blended quality/value down, last 4 weeks, net of the 15% affiliate revshare. <b>Affiliates:</b> the premium big-three (nicasinoprem, newriseproject, moonshot, ~£964k/4wk) sit below breakeven with the highest freeloader (savvy) rates; the Simona Todoroska / Moar volume books (digadvfree, digadvsocial, bca22hmcuk) clear breakeven only on rock-bottom CPA but leak 55–60% one-day players. <b>Campaigns:</b> Meta App installs/purchase and Meta web-volume/incremental, UAC iOS slots, and PPC brand-other convert well below break-even last-click (time-decay re-credits some app value — verify before hard-cutting). <b>APD0/APD1/APD2+ are the gameplay engagement ladder</b> (0 / exactly 1 / 2+ paid playing days) and sum to ~100% of FTDs, consistent across both tables — red = worse for APD0/APD1 (more low-engagement), green = better for APD2+. <b>Verdict</b>: Cut/renegotiate &lt;0.8 net · Watch 0.8–1.0 · Keep ≥1.0. Recent-cohort APD rates are maturation-inflated (level is an upper bound; ranking reliable). iOS slots_Q ladder omitted (n=25). LTV:CAC net of the 15% affiliate revshare.</p>
+<p class="note">The spend most dragging blended quality/value down, last 4 weeks, net of the 15% affiliate revshare. <b>Affiliates:</b> the premium big-three (nicasinoprem, newriseproject, moonshot, ~£964k/4wk) sit below breakeven with the highest freeloader (savvy) rates; the Simona Todoroska / Moar volume books (digadvfree, digadvsocial, bca22hmcuk) clear breakeven only on rock-bottom CPA but leak 55–60% one-day players. <b>Campaigns:</b> Meta App installs/purchase and Meta web-volume/incremental, UAC iOS slots, and PPC brand-other convert well below break-even last-click (time-decay re-credits some app value — verify before hard-cutting). <b>FW-APD0/FW-APD1/FW-APD2+ are the first-week engagement ladder</b> (0 / exactly 1 / 2+ paid days in the first week) and sum to ~100% — red = worse for FW-APD0/FW-APD1, green = better for FW-APD2+. <b>Verdict</b>: Cut/renegotiate &lt;0.8 net · Watch 0.8–1.0 · Keep ≥1.0. iOS slots_Q ladder omitted (n=25). LTV:CAC net of the 15% affiliate revshare.</p>
 <p class="note"><b>Definitions (per Fraud &amp; Payments):</b> SEON = accounts closed as fraud at registration (status CLOSED/FRAUD). UFI = RESTRICTED/UNDER_FRAUD_INVESTIGATION — high-risk accounts identified after first deposit, docs requested before withdrawal release. Duplicates: auto-blocks at registration (DUPLICATE_AUTO + AUTO_ORIGINAL) vs manual blocks after registration (DUPLICATE_OTHER + GAMSTOP_BREACH + SE_BREACH); legacy DUPLICATE_EXACT has no 2026 volume. PBA (freeloaders — deposit only for an offer): the monthly <b>% FTDs — First-week PBA</b> values are the OFFICIAL numbers from the "Bonus Abuse Metrics for FTDs" ThoughtSpot liveboard (First-Week PBA variant: FTDs flagged PBA within their first week; read 13 Jul 2026 at monthly granularity). <b>Jan–Jun are final</b>; <b>July is provisional</b> (~14.8%, applied to full-month 1–12 FTDs) because July cohorts' first weeks haven't fully elapsed and the pinboard tile wouldn't render the current July count — it will firm up. The platform PBA status on dim_player does NOT reconcile with this metric (a different source), so no weekly or channel PBA split is shown. Full automation (weekly/channel + live July) needs the PV dataset allow-listed in BigQuery (DD-596). <b>APD0</b> = FTDs with zero paid playing days (any window, from <code>core.fct_gameplay_daily</code>, actual paid wagers only) — the strict freeloader read; measured for all months to 12 Jul (Jun/Jul still maturing downward). The MBR's softer "no play in week 1" APD0 runs 1.3–2.0%/mo. PP = player-potential 1–10 (PP 8–10 = MBR "PPQore"); APD2+ = 2+ active playing days; Qore = paid wagering >£1,000. Statuses are current, not point-in-time, so recent cohorts revise up as reviews land. Reg-stage channel rows use last-click at registration; PBA/UFI/dup-manual/PP use last-click at FTD; APD2+ % and PLTV/FTD use the registration-anchored spend mart. Channels under 2,000 regs show "—".</p>`;
 }
 
@@ -1658,21 +1658,21 @@ function buildPane(id){
     ]},options:baseOpts({plugins:{title:{display:true,text:'Registration risk - weekly (% of registrations; final point WTD partial)'}},scales:{y:{ticks:{callback:v=>v+'%'}}}})});
     mkChart('c_fun_mo',{type:'bar',data:{labels:F.mo.map(x=>x.m),datasets:[
       {label:'FTDs',data:F.mo.map(x=>x.ftds),backgroundColor:'rgba(10,46,203,.25)'},
-      {label:'APD2+',data:F.mo.map(x=>x.apd2),backgroundColor:COL.green},
+      {label:'FW-APD2+',data:F.mo.map(x=>x.apd2),backgroundColor:COL.green},
       {label:'PP 8-10',data:F.mo.map(x=>x.pp8),backgroundColor:COL.navy},
       {label:'Qore FTDs',data:F.mo.map(x=>x.qore),backgroundColor:COL.yellow},
       {label:'First-week PBA (official)',data:F.mo.map(x=>x.pba),backgroundColor:COL.pink},
       {type:'line',label:'Net PLTV/FTD (£, right)',data:F.mo.map(x=>x.ppf),borderColor:COL.sky,borderWidth:2,tension:.3,yAxisID:'y1'}
     ]},options:baseOpts({plugins:{title:{display:true,text:'Monthly funnel - FTDs vs APD2+, PP 8-10, Qore, PBA + net PLTV/FTD'}},scales:{y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>'£'+v}}}})});
     mkChart('c_fun_wk',{type:'line',data:{labels:F.wk.map(x=>x.w),datasets:[
-      {label:'APD2+ %',data:F.wk.map(x=>x.apdP),borderColor:COL.green,tension:.3,pointRadius:0,yAxisID:'y'},
+      {label:'FW-APD2+ %',data:F.wk.map(x=>x.apdP),borderColor:COL.green,tension:.3,pointRadius:0,yAxisID:'y'},
       {label:'PP 8-10 %',data:F.wk.map(x=>x.ppP),borderColor:COL.navy,tension:.3,pointRadius:0,yAxisID:'y'},
-      {label:'APD1 % (one-day)',data:F.wk.map(x=>x.a1P),borderColor:COL.sky,tension:.3,pointRadius:0,yAxisID:'y'},
-      {label:'APD0 % (freeloaders)',data:F.wk.map(x=>x.a0P),borderColor:COL.pink,borderDash:[5,3],tension:.3,pointRadius:0,yAxisID:'y'},
+      {label:'FW-APD1 %',data:F.wk.map(x=>x.a1P),borderColor:COL.sky,tension:.3,pointRadius:0,yAxisID:'y'},
+      {label:'FW-APD0 %',data:F.wk.map(x=>x.a0P),borderColor:COL.pink,borderDash:[5,3],tension:.3,pointRadius:0,yAxisID:'y'},
       {label:'Net PLTV/FTD (£, right)',data:F.wk.map(x=>x.ppf),borderColor:COL.sky,borderDash:[6,4],tension:.3,pointRadius:0,yAxisID:'y1'}
     ]},options:baseOpts({plugins:{title:{display:true,text:'Weekly FTD quality rates + net PLTV/FTD (right, £) - final point is WTD partial'}},scales:{y:{position:'left',ticks:{callback:v=>v+'%'}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>'£'+v}}}})});
     mkChart('c_fun_ch',{type:'bar',data:{labels:F.ch.map(x=>x.ch),datasets:[
-      {label:'APD2+ %',data:F.ch.map(x=>x.apdP),backgroundColor:COL.green},
+      {label:'FW-APD2+ %',data:F.ch.map(x=>x.apdP),backgroundColor:COL.green},
       {label:'PP 8-10 %',data:F.ch.map(x=>x.ppP),backgroundColor:COL.navy}
     ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Channel quality - % of FTDs (last 4 wks)'}},scales:{x:{ticks:{callback:v=>v+'%'}}}})});
   }
