@@ -721,9 +721,9 @@ function buildPane(id){
     ]},options:baseOpts({plugins:{title:{display:true,text:'TV GRPs (Q1 BARB) vs halo FTDs'}},scales:{y:{title:{display:true,text:'GRPs'}},y1:{position:'right',grid:{drawOnChartArea:false}}}})});
     if(EMBED.atl.chAlloc){ const a=EMBED.atl.chAlloc;
       mkChart('c_atl_ch',{type:'bar',data:{labels:a.map(x=>x.ch),datasets:[
-        {label:'Incremental FTDs (ATL, base)',data:a.map(x=>x.incf),backgroundColor:COL.blue},
-        {label:'Incremental net PLTV £ (right)',data:a.map(x=>x.incp),backgroundColor:COL.green,yAxisID:'y1'}
-      ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'ATL-attributed incremental FTDs & net PLTV by channel (base case)'}},scales:{x:{title:{display:true,text:'incremental FTDs'}},y1:{display:false}}})});
+        {label:'Incremental FTDs (bottom axis)',data:a.map(x=>x.incf),backgroundColor:COL.blue,xAxisID:'x'},
+        {label:'Incremental net PLTV £ (top axis)',data:a.map(x=>x.incp),backgroundColor:COL.green,xAxisID:'x2'}
+      ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'ATL-attributed incremental FTDs & net PLTV by channel (base case) — independent scales'}},scales:{x:{position:'bottom',beginAtZero:true,title:{display:true,text:'incremental FTDs'}},x2:{position:'top',beginAtZero:true,grid:{drawOnChartArea:false},title:{display:true,text:'incremental net PLTV (£)'},ticks:{callback:v=>'£'+Math.round(v/1000)+'k'}}}})});
     }
     if(EMBED.atl.mediaMix){ const m=EMBED.atl.mediaMix;
       mkChart('c_atl_med',{type:'bar',data:{labels:m.map(x=>x.m),datasets:[
