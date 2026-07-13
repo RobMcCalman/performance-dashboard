@@ -1548,6 +1548,7 @@ ${(()=>{ const sg=v=>(v>=0?'+':'')+pct(v); const cls=(v,good)=>((good?v>=0:v<0)?
     tile('YTD CPA', gbp(yoy.cpa26), yoy.cpaD, false),
     tile('YTD PLTV/FTD (net)', gbp(ppf26), ppfD, true),
     tile('YTD 12m PLTV (net)', gbpM(ytd.p), yoy.pltv26/yoy.pltv25-1, true),
+    tile('YTD APD2+', num(ytd.apd), div(ytd.apd,D.y2025ytd.apd)-1, true),
     tile('Blended LTV:CAC', f2(div(ytd.p,ytd.s)), yoy.ltvD, true),
   ].join(''); })()}
 </div>
