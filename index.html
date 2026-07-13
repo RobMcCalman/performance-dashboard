@@ -514,6 +514,7 @@ const COL={blue:'#0A2ECB',sky:'#00B2FF',green:'#1c8f53',pink:'#FF63F6',yellow:'#
 function mkChart(canvasId,cfg){
   if(!cfg||typeof cfg.type!=='string'||!cfg.type) throw new Error('Chart config missing type for '+canvasId);
   const el=document.getElementById(canvasId); if(!el) return null;
+  const ex=(typeof Chart!=='undefined')&&Chart.getChart?Chart.getChart(el):null; if(ex) ex.destroy();
   return new Chart(el.getContext('2d'),cfg);
 }
 const baseOpts=(extra)=>Object.assign({responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},boxWidth:12}}},scales:{}},extra||{});
@@ -737,13 +738,13 @@ function buildPane(id){
         {label:'Incremental FTDs (base, right)',data:m.map(x=>x.incf),backgroundColor:COL.green,yAxisID:'y1'}
       ]},options:baseOpts({plugins:{title:{display:true,text:'ATL spend & modelled incremental FTDs by medium'}},scales:{y:{position:'left',ticks:{callback:v=>'£'+Math.round(v/1e6)+'m'}},y1:{position:'right',grid:{drawOnChartArea:false}}}})});
     }
-  }
     if(EMBED.atl.spotLen){ const s=EMBED.atl.spotLen;
       mkChart('c_atl_spot',{type:'bar',data:{labels:s.map(x=>x.len),datasets:[
         {label:'Incremental FTDs (base)',data:s.map(x=>x.incf),backgroundColor:COL.blue,xAxisID:'x'},
         {label:'Cost / incr FTD £ (top axis)',data:s.map(x=>x.cpi),backgroundColor:COL.pink,xAxisID:'x2'}
       ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'TV spot length — incremental FTDs vs cost/incr FTD'}},scales:{x:{position:'bottom',beginAtZero:true,title:{display:true,text:'incremental FTDs'}},x2:{position:'top',beginAtZero:true,grid:{drawOnChartArea:false},title:{display:true,text:'cost / incr FTD (£)'},ticks:{callback:v=>'£'+v}}}})});
     }
+  }
   if(id==='s8'){
     mkChart('c_atl',{type:'bar',data:{labels:EMBED.months,datasets:[{label:'ATL spend (£)',data:EMBED.atlMonthly.map(Math.round),backgroundColor:COL.navy}]},options:baseOpts({plugins:{title:{display:true,text:'Monthly ATL (brand) spend'},legend:{display:false}}})});
   }
