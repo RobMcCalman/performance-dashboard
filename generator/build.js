@@ -1406,6 +1406,14 @@ ${tbl([{t:'Scenario'},{t:'Halo share',r:1},{t:'Incr new sessions',r:1},{t:'Incr 
  {cells:['High', T.high.share+'%', num(T.high.snew), num(T.high.reg)]},
 ])}
 <p class="note">H1 new sessions ${num(AM.snewH1)} · registrations ${num(AM.regH1)}. Upper-funnel halo shares are set slightly below the FTD share (brand media touches many who never convert), so the implied new-session→registration→FTD ladder stays internally consistent.</p>
+<h2 class="sec">Where the ATL halo lands — by channel (base case)</h2>
+${(()=>{ const a=AM.chAlloc, t=AM.chAllocTot;
+  const rows=a.map(r=>({cells:[ r.ch, num(r.f), r.w+'%', num(r.incf), gbpK(r.incp), gbp(r.ppf) ]}));
+  rows.push({cls:'tot',cells:['TOTAL (base)', num(AM.haloH1), pct1(t.incf/AM.haloH1), num(t.incf), gbpM(t.incp), gbp(AM.ppf)]});
+  return tbl([{t:'Halo channel'},{t:'H1 FTDs',r:1},{t:'ATL sensitivity',r:1},{t:'Incr FTDs (ATL)',r:1},{t:'Incr net PLTV',r:1},{t:'Net PLTV/FTD',r:1}], rows);
+})()}
+${chartbox('c_atl_ch')}
+<p class="note">Base-case incremental FTDs split across the halo channels using differentiated <b>ATL-sensitivity weights</b> (the share of each channel's FTDs plausibly triggered by brand/TV): brand search and direct respond most to TV (someone sees an ad, then searches “MrQ” or types the URL), organic/RAF least. Weights are judgement calls chosen to sum to the 13% blended base; they are illustrative, not measured. <b>Read:</b> ~62% of ATL's modelled value lands in <b>brand PPC, Organic Search and Direct</b> — so the clearest place to see (and test) an ATL effect is <b>brand-search volume and direct/app traffic</b>, which is also where a hold-out test would read fastest.</p>
 <h2 class="sec">ATL spend &amp; adstock vs halo demand — weekly</h2>
 ${chartbox('c_atl_dem')}
 <p class="note">ATL weekly spend (bars), 2-week-half-life adstock (line, brand carryover), and halo-channel FTDs (line, right axis). Note how flat spend is — the absence of variation is exactly why the effect isn't statistically identifiable. Adstock λ=0.5.</p>
@@ -1422,7 +1430,7 @@ ${chartbox('c_atl_grp')}
 <p class="note">Point-in-time analysis, data to ${AM.asOf}. Built from the uploaded Linear TV (BARB, Q1) and Media Data Collection files + the attribution ATL spend line. Not refreshed by the daily job.</p>`;
 }
 
-if(D.atlModel){ EMBED.atl={weeks:D.atlModel.weeks}; }
+if(D.atlModel){ EMBED.atl={weeks:D.atlModel.weeks, chAlloc:D.atlModel.chAlloc}; }
 
 const TABS = [['summary','Summary'],['rec','Recommendations'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),...(panes.sfun?[['sfun','Quality funnel']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],...(panes.satl?[['satl','ATL model']]:[]),['s9','Channel opt'],...(panes.sinc?[['sinc','Incremental CPA']]:[]),['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
 const tabbar = TABS.map((t,i)=>`<button class="tab${i===0?' active':''}" data-pane="${t[0]}">${t[1]}</button>`).join('');
@@ -1735,7 +1743,7 @@ function buildPane(id){
   }
   if(id==='satl' && EMBED.atl){
     const w=EMBED.atl.weeks;
-    mkChart('c_atl_dem',{data:{labels:w.map(x=>x.w),datasets:[
+    mkChart('c_atl_dem',{type:'bar',data:{labels:w.map(x=>x.w),datasets:[
       {type:'bar',label:'ATL spend £ (wk)',data:w.map(x=>x.atl),backgroundColor:'rgba(10,46,203,.25)',yAxisID:'y'},
       {type:'line',label:'ATL adstock (λ=0.5)',data:w.map(x=>x.ads),borderColor:COL.pink,borderWidth:2,pointRadius:0,tension:.3,yAxisID:'y'},
       {type:'line',label:'Halo-channel FTDs (right)',data:w.map(x=>x.halo),borderColor:COL.green,borderWidth:2,pointRadius:0,tension:.3,yAxisID:'y1'}
@@ -1744,6 +1752,12 @@ function buildPane(id){
       {label:'TV GRPs (30s equiv, Q1)',data:w.map(x=>x.grp),backgroundColor:COL.navy},
       {type:'line',label:'Halo FTDs',data:w.map(x=>x.halo),borderColor:COL.green,borderWidth:2,pointRadius:0,tension:.3,yAxisID:'y1'}
     ]},options:baseOpts({plugins:{title:{display:true,text:'TV GRPs (Q1 BARB) vs halo FTDs'}},scales:{y:{title:{display:true,text:'GRPs'}},y1:{position:'right',grid:{drawOnChartArea:false}}}})});
+    if(EMBED.atl.chAlloc){ const a=EMBED.atl.chAlloc;
+      mkChart('c_atl_ch',{type:'bar',data:{labels:a.map(x=>x.ch),datasets:[
+        {label:'Incremental FTDs (ATL, base)',data:a.map(x=>x.incf),backgroundColor:COL.blue},
+        {label:'Incremental net PLTV £ (right)',data:a.map(x=>x.incp),backgroundColor:COL.green,yAxisID:'y1'}
+      ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'ATL-attributed incremental FTDs & net PLTV by channel (base case)'}},scales:{x:{title:{display:true,text:'incremental FTDs'}},y1:{display:false}}})});
+    }
   }
   if(id==='s8'){
     mkChart('c_atl',{type:'bar',data:{labels:EMBED.months,datasets:[{label:'ATL spend (£)',data:EMBED.atlMonthly.map(Math.round),backgroundColor:COL.navy}]},options:baseOpts({plugins:{title:{display:true,text:'Monthly ATL (brand) spend'},legend:{display:false}}})});
