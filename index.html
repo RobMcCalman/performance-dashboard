@@ -747,7 +747,7 @@ function buildPane(id){
       mkChart('c_atl_ch',{type:'bar',data:{labels:a.map(x=>x.ch),datasets:[
         {label:'Incremental FTDs (bottom axis)',data:a.map(x=>x.incf),backgroundColor:COL.blue,xAxisID:'x'},
         {label:'Incremental net PLTV £ (top axis)',data:a.map(x=>x.incp),backgroundColor:COL.green,xAxisID:'x2'}
-      ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'ATL-attributed incremental FTDs & net PLTV by channel (base case) — independent scales'}},scales:{x:{position:'bottom',beginAtZero:true,title:{display:true,text:'incremental FTDs'}},x2:{position:'top',beginAtZero:true,grid:{drawOnChartArea:false},title:{display:true,text:'incremental net PLTV (£)'},ticks:{callback:v=>'£'+Math.round(v/1000)+'k'}}}})});
+      ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'ATL-attributed incremental FTDs & net PLTV by channel (base case) — independent scales'}},scales:{x:{position:'bottom',beginAtZero:true,title:{display:true,text:'Incremental FTDs (blue bars)',color:COL.blue},ticks:{color:COL.blue}},x2:{position:'top',beginAtZero:true,grid:{drawOnChartArea:false},title:{display:true,text:'Incremental net PLTV £ (green bars)',color:COL.green},ticks:{color:COL.green,callback:v=>'£'+Math.round(v/1000)+'k'}}}})});
     }
     if(EMBED.atl.mediaMix){ const m=EMBED.atl.mediaMix;
       mkChart('c_atl_med',{type:'bar',data:{labels:m.map(x=>x.m),datasets:[
@@ -759,7 +759,7 @@ function buildPane(id){
       mkChart('c_atl_spot',{type:'bar',data:{labels:s.map(x=>x.len),datasets:[
         {label:'Incremental FTDs (base)',data:s.map(x=>x.incf),backgroundColor:COL.blue,xAxisID:'x'},
         {label:'Cost / incr FTD £ (top axis)',data:s.map(x=>x.cpi),backgroundColor:COL.pink,xAxisID:'x2'}
-      ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'TV spot length — incremental FTDs vs cost/incr FTD'}},scales:{x:{position:'bottom',beginAtZero:true,title:{display:true,text:'incremental FTDs'}},x2:{position:'top',beginAtZero:true,grid:{drawOnChartArea:false},title:{display:true,text:'cost / incr FTD (£)'},ticks:{callback:v=>'£'+v}}}})});
+      ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'TV spot length — incremental FTDs vs cost/incr FTD'}},scales:{x:{position:'bottom',beginAtZero:true,title:{display:true,text:'Incremental FTDs (blue bars)',color:COL.blue},ticks:{color:COL.blue}},x2:{position:'top',beginAtZero:true,grid:{drawOnChartArea:false},title:{display:true,text:'Cost / incr FTD £ (pink bars)',color:COL.pink},ticks:{color:COL.pink,callback:v=>'£'+v}}}})});
     }
   }
   if(id==='s8'){
