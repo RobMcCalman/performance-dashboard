@@ -1374,16 +1374,29 @@ ${chartbox('c_fun_ch',540)}
 <div style="margin-top:14px">${tbl([{t:'Channel'},{t:'FTDs',r:1},{t:'FW-APD2+',r:1},{t:'FW-APD2+ %',r:1},{t:'FW-APD0',r:1},{t:'FW-APD0 %',r:1},{t:'FW-APD1',r:1},{t:'FW-APD1 %',r:1},{t:'PP 8–10 (FTD)',r:1},{t:'PP % (FTD)',r:1},{t:'PP 8–10 (reg)',r:1},{t:'PP % (reg)',r:1},{t:'Avg PP score',r:1},{t:'Net PLTV/FTD',r:1}], chRows)}</div>
 <h2 class="sec">Channel value cascade — ${D.funnel.cascWindow||'last 4 weeks'}</h2>
 ${(D.funnel.casc?(()=>{ const C=D.funnel.casc;
-  const T=C.reduce((a,r)=>({regs:a.regs+r.regs,pp8:a.pp8+r.pp8reg,pp9:a.pp9+r.pp9reg,ftds:a.ftds+r.ftds,qore:a.qore+r.qore,pn:a.pn+r.pn}),{regs:0,pp8:0,pp9:0,ftds:0,qore:0,pn:0});
-  const pp8B=pcf(T.pp8,T.regs),pp9B=pcf(T.pp9,T.regs),ftdB=pcf(T.ftds,T.regs),qoreB=pcf(T.qore,T.ftds),ppfB=div(T.pn,T.ftds);
+  const T=C.reduce((a,r)=>({regs:a.regs+r.regs,pp8:a.pp8+r.pp8reg,pp9:a.pp9+r.pp9reg,ftds:a.ftds+r.ftds,pp8f:a.pp8f+(r.pp8ftd||0),qore:a.qore+r.qore,pn:a.pn+r.pn}),{regs:0,pp8:0,pp9:0,ftds:0,pp8f:0,qore:0,pn:0});
+  const pp8B=pcf(T.pp8,T.regs),pp9B=pcf(T.pp9,T.regs),ftdB=pcf(T.ftds,T.regs),p8fB=pcf(T.pp8f,T.ftds),qoreB=pcf(T.qore,T.ftds),ppfB=div(T.pn,T.ftds);
   const g=(v,b)=>`<span class="pill ${v>=b?'green':v>=b*0.75?'amber':'red'}">${v.toFixed(1)}%</span>`;
-  const rows=C.filter(r=>r.regs>=200).map(r=>{ const p8=pcf(r.pp8reg,r.regs),p9=pcf(r.pp9reg,r.regs),cf=pcf(r.ftds,r.regs),q=pcf(r.qore,r.ftds),ppf=div(r.pn,r.ftds);
-    return {cells:[ r.ch, num(r.regs), num(r.pp8reg), g(p8,pp8B), num(r.pp9reg), g(p9,pp9B), num(r.ftds), g(cf,ftdB), num(r.qore), g(q,qoreB), gbpK(r.pn), `<span class="pill ${ppf>=ppfB?'green':ppf>=ppfB*0.75?'amber':'red'}">${gbp(ppf)}</span>` ]}; });
-  rows.push({cls:'tot',cells:['All channels', num(T.regs), num(T.pp8), pct1(pp8B/100), num(T.pp9), pct1(pp9B/100), num(T.ftds), pct1(ftdB/100), num(T.qore), pct1(qoreB/100), gbpK(T.pn), gbp(ppfB)]});
-  return `<div class="callout">Reads left→right as a value cascade per channel: <b>Registrations → PP 8–10 regs → FTDs → Qore FTDs → net PLTV</b>. PP 8–10 / 9–10 reg % = high-/top-potential share of registrations (pre-deposit, from player-potential scores); Reg→FTD % = deposit conversion; Qore % = FTDs going on to wager £1,000+ (of FTDs). Pills are green/amber/red vs the blended rate. Qore &amp; PLTV are to-date and still maturing for recent cohorts. Channels under 200 regs hidden.</div>
+  const rows=C.filter(r=>r.regs>=200).map(r=>{ const p8=pcf(r.pp8reg,r.regs),p9=pcf(r.pp9reg,r.regs),cf=pcf(r.ftds,r.regs),p8f=pcf(r.pp8ftd,r.ftds),q=pcf(r.qore,r.ftds),ppf=div(r.pn,r.ftds);
+    return {cells:[ r.ch, num(r.regs), num(r.pp8reg), g(p8,pp8B), num(r.pp9reg), g(p9,pp9B), num(r.ftds), g(cf,ftdB), num(r.pp8ftd), g(p8f,p8fB), num(r.qore), g(q,qoreB), gbpK(r.pn), `<span class="pill ${ppf>=ppfB?'green':ppf>=ppfB*0.75?'amber':'red'}">${gbp(ppf)}</span>` ]}; });
+  rows.push({cls:'tot',cells:['All channels', num(T.regs), num(T.pp8), pct1(pp8B/100), num(T.pp9), pct1(pp9B/100), num(T.ftds), pct1(ftdB/100), num(T.pp8f), pct1(p8fB/100), num(T.qore), pct1(qoreB/100), gbpK(T.pn), gbp(ppfB)]});
+  return `<div class="callout">Reads left→right as a value cascade per channel: <b>Registrations → PP 8–10 regs → FTDs → PP 8–10 FTDs → Qore FTDs → net PLTV</b>. PP 8–10 / 9–10 reg % = high-/top-potential share of registrations (pre-deposit, from player-potential scores); Reg→FTD % = deposit conversion; Qore % = FTDs going on to wager £1,000+ (of FTDs). Pills are green/amber/red vs the blended rate. Qore &amp; PLTV are to-date and still maturing for recent cohorts. Channels under 200 regs hidden.</div>
 ${chartbox('c_fun_casc',300)}
-<div style="margin-top:14px">${tbl([{t:'Channel'},{t:'Registrations',r:1},{t:'PP 8–10 reg',r:1},{t:'% reg',r:1},{t:'PP 9–10 reg',r:1},{t:'% reg',r:1},{t:'FTD',r:1},{t:'Reg→FTD %',r:1},{t:'Qore FTD',r:1},{t:'% FTD',r:1},{t:'Net PLTV',r:1},{t:'PLTV/FTD',r:1}], rows)}</div>
+<div style="margin-top:14px">${tbl([{t:'Channel'},{t:'Registrations',r:1},{t:'PP 8–10 reg',r:1},{t:'% reg',r:1},{t:'PP 9–10 reg',r:1},{t:'% reg',r:1},{t:'FTD',r:1},{t:'Reg→FTD %',r:1},{t:'PP 8–10 FTD',r:1},{t:'% FTD',r:1},{t:'Qore FTD',r:1},{t:'% FTD',r:1},{t:'Net PLTV',r:1},{t:'PLTV/FTD',r:1}], rows)}</div>
 <p class="note">Cascade window: ${D.funnel.cascWindow}. Registrations &amp; PP tiers from <code>attributed_registrations</code> ⋈ <code>dim_player</code> (last-click at registration); FTD &amp; Qore from <code>attributed_ftds</code> ⋈ gameplay (Qore = cumulative paid wagers &gt; £1,000); net PLTV net of the 15% affiliate revshare. Blended: ${pct1(pp8B/100)} of regs are PP 8–10, ${pct1(ftdB/100)} of regs deposit, ${pct1(qoreB/100)} of FTDs reach Qore, £${r0(ppfB)}/FTD.</p>`;
+})():'')}
+${(D.funnel.cascYtd?(()=>{ const C=D.funnel.cascYtd;
+  const T=C.reduce((a,r)=>({regs:a.regs+r.regs,pp8:a.pp8+r.pp8reg,pp9:a.pp9+r.pp9reg,ftds:a.ftds+r.ftds,pp8f:a.pp8f+(r.pp8ftd||0),qore:a.qore+r.qore,pn:a.pn+r.pn}),{regs:0,pp8:0,pp9:0,ftds:0,pp8f:0,qore:0,pn:0});
+  const pp8B=pcf(T.pp8,T.regs),pp9B=pcf(T.pp9,T.regs),ftdB=pcf(T.ftds,T.regs),p8fB=pcf(T.pp8f,T.ftds),qoreB=pcf(T.qore,T.ftds),ppfB=div(T.pn,T.ftds);
+  const g=(v,b)=>`<span class="pill ${v>=b?'green':v>=b*0.75?'amber':'red'}">${v.toFixed(1)}%</span>`;
+  const rows=C.filter(r=>r.regs>=200).map(r=>{ const p8=pcf(r.pp8reg,r.regs),p9=pcf(r.pp9reg,r.regs),cf=pcf(r.ftds,r.regs),p8f=pcf(r.pp8ftd,r.ftds),q=pcf(r.qore,r.ftds),ppf=div(r.pn,r.ftds);
+    return {cells:[ r.ch, num(r.regs), num(r.pp8reg), g(p8,pp8B), num(r.pp9reg), g(p9,pp9B), num(r.ftds), g(cf,ftdB), num(r.pp8ftd), g(p8f,p8fB), num(r.qore), g(q,qoreB), gbpK(r.pn), `<span class="pill ${ppf>=ppfB?'green':ppf>=ppfB*0.75?'amber':'red'}">${gbp(ppf)}</span>` ]}; });
+  rows.push({cls:'tot',cells:['All channels', num(T.regs), num(T.pp8), pct1(pp8B/100), num(T.pp9), pct1(pp9B/100), num(T.ftds), pct1(ftdB/100), num(T.pp8f), pct1(p8fB/100), num(T.qore), pct1(qoreB/100), gbpK(T.pn), gbp(ppfB)]});
+  return `<h2 class="sec">Channel value cascade — ${D.funnel.cascYtdWindow}</h2>
+<div class="callout">Same cascade over the full year, so <b>Qore &amp; PLTV are mature</b> — compare against the 4-week view above to see how much the recent-cohort numbers will still climb (YTD Qore ${pct1(qoreB/100)} of FTDs vs the 4-week read).</div>
+${chartbox('c_fun_casc_ytd',300)}
+<div style="margin-top:14px">${tbl([{t:'Channel'},{t:'Registrations',r:1},{t:'PP 8–10 reg',r:1},{t:'% reg',r:1},{t:'PP 9–10 reg',r:1},{t:'% reg',r:1},{t:'FTD',r:1},{t:'Reg→FTD %',r:1},{t:'PP 8–10 FTD',r:1},{t:'% FTD',r:1},{t:'Qore FTD',r:1},{t:'% FTD',r:1},{t:'Net PLTV',r:1},{t:'PLTV/FTD',r:1}], rows)}</div>
+<p class="note">${D.funnel.cascYtdWindow}. Sources as the 4-week cascade. Blended: ${pct1(pp8B/100)} of regs PP 8–10, ${pct1(ftdB/100)} of regs deposit, ${pct1(qoreB/100)} of FTDs reach Qore, £${r0(ppfB)}/FTD net.</p>`;
 })():'')}
 <h2 class="sec">Quality drag — worst-performing spend (${D.funnel.drag.window})</h2>
 ${(()=>{ const D2=D.funnel.drag; const vp=v=>`<span class="pill ${v<0.8?'red':v<1.0?'amber':'green'}">${v.toFixed(2)}</span>`;
@@ -1406,7 +1419,8 @@ if(D.funnel && panes.sfun){
     mo:D.funnel.mo.map((r,i)=>({m:r.m,ftds:r.ftds,apd2:r.apd2,pp8:r.pp8,qore:r.qore,pba:r.pba,ppf:Math.round(div(moTot[i+1]?moTot[i+1].p:0,r.ftds))})),
     wk:D.funnel.wk.map(r=>({w:r.w,apdP:+pcf2(r.apd2,r.ftds).toFixed(1),a0P:r.apd0!=null?+pcf2(r.apd0,r.ftds).toFixed(1):null,a1P:r.apd1!=null?+pcf2(r.apd1,r.ftds).toFixed(1):null,ppP:+pcf2(r.pp8,r.ftds).toFixed(1),pbaP:+pcf2(r.pba,r.ftds).toFixed(2),seonP:+pcf2(r.seon,r.regs).toFixed(1),dupaP:+pcf2(r.dupa,r.regs).toFixed(1),ufiP:+pcf2(r.ufi,r.ftds).toFixed(2),ppf:Math.round(div(wkP3[r.w]||0,r.ftds))})),
     ch:D.funnel.ch.map(r=>({ch:r.ch,ppP:+pcf2(r.pp8,r.f).toFixed(1),ppRegP:(r.regs&&r.pp8reg!=null)?+pcf2(r.pp8reg,r.regs).toFixed(1):null,apdP:+pcf2(r.apd2,r.fm).toFixed(1),pbaP:+pcf2(r.pba,r.f).toFixed(2),ufiP:+pcf2(r.ufi,r.f).toFixed(2)})),
-    casc:(()=>{const C=D.funnel.casc||[];return {regs:C.reduce((a,r)=>a+r.regs,0),pp8:C.reduce((a,r)=>a+r.pp8reg,0),ftds:C.reduce((a,r)=>a+r.ftds,0),qore:C.reduce((a,r)=>a+r.qore,0)};})()
+    casc:(()=>{const C=D.funnel.casc||[];return {regs:C.reduce((a,r)=>a+r.regs,0),pp8:C.reduce((a,r)=>a+r.pp8reg,0),ftds:C.reduce((a,r)=>a+r.ftds,0),pp8f:C.reduce((a,r)=>a+(r.pp8ftd||0),0),qore:C.reduce((a,r)=>a+r.qore,0)};})(),
+    cascYtd:(()=>{const C=D.funnel.cascYtd||[];return {regs:C.reduce((a,r)=>a+r.regs,0),pp8:C.reduce((a,r)=>a+r.pp8reg,0),ftds:C.reduce((a,r)=>a+r.ftds,0),pp8f:C.reduce((a,r)=>a+(r.pp8ftd||0),0),qore:C.reduce((a,r)=>a+r.qore,0)};})()
   };
 }
 
@@ -1692,7 +1706,8 @@ function buildPane(id){
       {label:'PP 8-10 % (FTD)',data:F.ch.map(x=>x.ppP),backgroundColor:COL.navy},
       {label:'PP 8-10 % (reg)',data:F.ch.map(x=>x.ppRegP),backgroundColor:COL.sky}
     ]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Channel quality - PP 8-10 share: FTDs vs registrations (last 4 wks)'}},scales:{x:{ticks:{callback:v=>v+'%'}}}})});
-    if(F.casc) mkChart('c_fun_casc',{type:'bar',data:{labels:['Registrations','PP 8-10 regs','FTDs','Qore FTDs'],datasets:[{label:'Players (last 4 wks, all channels)',data:[F.casc.regs,F.casc.pp8,F.casc.ftds,F.casc.qore],backgroundColor:[COL.blue,COL.sky,COL.green,COL.navy]}]},options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},title:{display:true,text:'Blended cascade — Registrations → PP 8-10 → FTD → Qore FTD (last 4 wks)'}}})});
+    if(F.casc) mkChart('c_fun_casc',{type:'bar',data:{labels:['Registrations','PP 8-10 regs','FTDs','PP 8-10 FTDs','Qore FTDs'],datasets:[{label:'Players (last 4 wks, all channels)',data:[F.casc.regs,F.casc.pp8,F.casc.ftds,F.casc.pp8f,F.casc.qore],backgroundColor:[COL.blue,COL.sky,COL.green,COL.pink,COL.navy]}]},options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},title:{display:true,text:'Blended cascade — Registrations → PP 8-10 → FTD → Qore FTD (last 4 wks)'}}})});
+    if(F.cascYtd) mkChart('c_fun_casc_ytd',{type:'bar',data:{labels:['Registrations','PP 8-10 regs','FTDs','PP 8-10 FTDs','Qore FTDs'],datasets:[{label:'Players (YTD 2026, all channels)',data:[F.cascYtd.regs,F.cascYtd.pp8,F.cascYtd.ftds,F.cascYtd.pp8f,F.cascYtd.qore],backgroundColor:[COL.blue,COL.sky,COL.green,COL.pink,COL.navy]}]},options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},title:{display:true,text:'Blended cascade — Registrations → PP 8-10 → FTD → Qore FTD (YTD 2026)'}}})});
   }
   if(id==='sq' && EMBED.ftdq){
     const q=EMBED.ftdq;
