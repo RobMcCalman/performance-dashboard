@@ -1469,9 +1469,9 @@ ${chartbox('c_atl_med')}
 <h2 class="sec">ATL spend &amp; adstock vs halo demand — weekly</h2>
 ${chartbox('c_atl_dem')}
 <p class="note">ATL weekly spend (bars), 2-week-half-life adstock (line, brand carryover), and halo-channel FTDs (line, right axis). Note how flat spend is — the absence of variation is exactly why the effect isn't statistically identifiable. Adstock λ=0.5.</p>
-<h2 class="sec">TV delivery — weekly GRPs (Q1, BARB)</h2>
+<h2 class="sec">TV delivery — weekly GRPs (H1, BARB)</h2>
 ${chartbox('c_atl_grp')}
-<p class="note">Equivalent 30-second GRPs from the BARB linear-TV export (Q1 only — ${num(AM.tvGrpQ1)} GRPs Jan–Mar; the file carries no cost column, and Apr–Jun TV delivery wasn't supplied, so H1 spend is taken from the attribution ATL line). Radio Q1 £${num(AM.radioQ1)}. GRPs do vary week to week but not enough, against noisy organic demand, to pin down a response curve over 13 weeks.</p>
+<p class="note">Equivalent 30-second GRPs from the BARB linear-TV export, now covering <b>all of H1 — ${num(AM.tvGrpH1)} GRPs Jan–Jun</b> (Q1 ${num(AM.tvGrpQ1)} + Q2 ${num(AM.tvGrpQ2)}). Neither BARB file carries a cost column, so H1 spend is still taken from the attribution ATL line. Radio Q1 £${num(AM.radioQ1)}. GRPs vary week to week — Q2 ran heavier (peak ~87 GRPs w/c 27 Apr) — but against noisy organic demand still can't pin down a response curve, so the halo remains a scenario, not a fitted coefficient.</p>
 <h2 class="sec">TV spot-length effectiveness (Q1 BARB)</h2>
 ${(()=>{ const s=AM.spotLen;
   const rows=s.map(r=>({cells:[ r.len, num(r.spots), (r.imp/1e6).toFixed(0)+'M', r.eqsh+'%', r.eff.toFixed(2), gbpM(r.spend), num(r.incf), gbp(r.cpi), r.fps.toFixed(3) ]}));
@@ -1829,7 +1829,7 @@ function buildPane(id){
     mkChart('c_atl_grp',{type:'bar',data:{labels:w.map(x=>x.w),datasets:[
       {label:'TV GRPs (30s equiv, Q1)',data:w.map(x=>x.grp),backgroundColor:COL.navy},
       {type:'line',label:'Halo FTDs',data:w.map(x=>x.halo),borderColor:COL.green,borderWidth:2,pointRadius:0,tension:.3,yAxisID:'y1'}
-    ]},options:baseOpts({plugins:{title:{display:true,text:'TV GRPs (Q1 BARB) vs halo FTDs'}},scales:{y:{title:{display:true,text:'GRPs'}},y1:{position:'right',grid:{drawOnChartArea:false}}}})});
+    ]},options:baseOpts({plugins:{title:{display:true,text:'TV GRPs (H1 BARB) vs halo FTDs'}},scales:{y:{title:{display:true,text:'GRPs'}},y1:{position:'right',grid:{drawOnChartArea:false}}}})});
     if(EMBED.atl.chAlloc){ const a=EMBED.atl.chAlloc;
       mkChart('c_atl_ch',{type:'bar',data:{labels:a.map(x=>x.ch),datasets:[
         {label:'Incremental FTDs (bottom axis)',data:a.map(x=>x.incf),backgroundColor:COL.blue,xAxisID:'x'},
