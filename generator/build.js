@@ -1378,11 +1378,11 @@ ${(D.funnel.casc?(()=>{ const C=D.funnel.casc;
   const pp8B=pcf(T.pp8,T.regs),pp9B=pcf(T.pp9,T.regs),ftdB=pcf(T.ftds,T.regs),p8fB=pcf(T.pp8f,T.ftds),qoreB=pcf(T.qore,T.ftds),ppfB=div(T.pn,T.ftds);
   const g=(v,b)=>`<span class="pill ${v>=b?'green':v>=b*0.75?'amber':'red'}">${v.toFixed(1)}%</span>`;
   const rows=C.filter(r=>r.regs>=200).map(r=>{ const p8=pcf(r.pp8reg,r.regs),p9=pcf(r.pp9reg,r.regs),cf=pcf(r.ftds,r.regs),p8f=pcf(r.pp8ftd,r.ftds),q=pcf(r.qore,r.ftds),ppf=div(r.pn,r.ftds);
-    return {cells:[ r.ch, num(r.regs), num(r.pp8reg), g(p8,pp8B), num(r.pp9reg), g(p9,pp9B), num(r.ftds), g(cf,ftdB), num(r.pp8ftd), g(p8f,p8fB), num(r.qore), g(q,qoreB), gbpK(r.pn), `<span class="pill ${ppf>=ppfB?'green':ppf>=ppfB*0.75?'amber':'red'}">${gbp(ppf)}</span>` ]}; });
-  rows.push({cls:'tot',cells:['All channels', num(T.regs), num(T.pp8), pct1(pp8B/100), num(T.pp9), pct1(pp9B/100), num(T.ftds), pct1(ftdB/100), num(T.pp8f), pct1(p8fB/100), num(T.qore), pct1(qoreB/100), gbpK(T.pn), gbp(ppfB)]});
+    return {cells:[ r.ch, num(r.regs), num(r.pp8reg), g(p8,pp8B), num(r.ftds), g(cf,ftdB), num(r.pp8ftd), g(p8f,p8fB), num(r.qore), g(q,qoreB), gbpK(r.pn), `<span class="pill ${ppf>=ppfB?'green':ppf>=ppfB*0.75?'amber':'red'}">${gbp(ppf)}</span>` ]}; });
+  rows.push({cls:'tot',cells:['All channels', num(T.regs), num(T.pp8), pct1(pp8B/100), num(T.ftds), pct1(ftdB/100), num(T.pp8f), pct1(p8fB/100), num(T.qore), pct1(qoreB/100), gbpK(T.pn), gbp(ppfB)]});
   return `<div class="callout">Reads left→right as a value cascade per channel: <b>Registrations → PP 8–10 regs → FTDs → PP 8–10 FTDs → Qore FTDs → net PLTV</b>. PP 8–10 / 9–10 reg % = high-/top-potential share of registrations (pre-deposit, from player-potential scores); Reg→FTD % = deposit conversion; Qore % = FTDs going on to wager £1,000+ (of FTDs). Pills are green/amber/red vs the blended rate. Qore &amp; PLTV are to-date and still maturing for recent cohorts. Channels under 200 regs hidden.</div>
 ${chartbox('c_fun_casc',300)}
-<div style="margin-top:14px">${tbl([{t:'Channel'},{t:'Registrations',r:1},{t:'PP 8–10 reg',r:1},{t:'% reg',r:1},{t:'PP 9–10 reg',r:1},{t:'% reg',r:1},{t:'FTD',r:1},{t:'Reg→FTD %',r:1},{t:'PP 8–10 FTD',r:1},{t:'% FTD',r:1},{t:'Qore FTD',r:1},{t:'% FTD',r:1},{t:'Net PLTV',r:1},{t:'PLTV/FTD',r:1}], rows)}</div>
+<div style="margin-top:14px">${tbl([{t:'Channel'},{t:'Registrations',r:1},{t:'PP 8–10 reg',r:1},{t:'% reg',r:1},{t:'FTD',r:1},{t:'Reg→FTD %',r:1},{t:'PP 8–10 FTD',r:1},{t:'% FTD',r:1},{t:'Qore FTD',r:1},{t:'% FTD',r:1},{t:'Net PLTV',r:1},{t:'PLTV/FTD',r:1}], rows)}</div>
 <p class="note">Cascade window: ${D.funnel.cascWindow}. Registrations &amp; PP tiers from <code>attributed_registrations</code> ⋈ <code>dim_player</code> (last-click at registration); FTD &amp; Qore from <code>attributed_ftds</code> ⋈ gameplay (Qore = cumulative paid wagers &gt; £1,000); net PLTV net of the 15% affiliate revshare. Blended: ${pct1(pp8B/100)} of regs are PP 8–10, ${pct1(ftdB/100)} of regs deposit, ${pct1(qoreB/100)} of FTDs reach Qore, £${r0(ppfB)}/FTD.</p>`;
 })():'')}
 ${(D.funnel.cascYtd?(()=>{ const C=D.funnel.cascYtd;
@@ -1390,12 +1390,12 @@ ${(D.funnel.cascYtd?(()=>{ const C=D.funnel.cascYtd;
   const pp8B=pcf(T.pp8,T.regs),pp9B=pcf(T.pp9,T.regs),ftdB=pcf(T.ftds,T.regs),p8fB=pcf(T.pp8f,T.ftds),qoreB=pcf(T.qore,T.ftds),ppfB=div(T.pn,T.ftds);
   const g=(v,b)=>`<span class="pill ${v>=b?'green':v>=b*0.75?'amber':'red'}">${v.toFixed(1)}%</span>`;
   const rows=C.filter(r=>r.regs>=200).map(r=>{ const p8=pcf(r.pp8reg,r.regs),p9=pcf(r.pp9reg,r.regs),cf=pcf(r.ftds,r.regs),p8f=pcf(r.pp8ftd,r.ftds),q=pcf(r.qore,r.ftds),ppf=div(r.pn,r.ftds);
-    return {cells:[ r.ch, num(r.regs), num(r.pp8reg), g(p8,pp8B), num(r.pp9reg), g(p9,pp9B), num(r.ftds), g(cf,ftdB), num(r.pp8ftd), g(p8f,p8fB), num(r.qore), g(q,qoreB), gbpK(r.pn), `<span class="pill ${ppf>=ppfB?'green':ppf>=ppfB*0.75?'amber':'red'}">${gbp(ppf)}</span>` ]}; });
-  rows.push({cls:'tot',cells:['All channels', num(T.regs), num(T.pp8), pct1(pp8B/100), num(T.pp9), pct1(pp9B/100), num(T.ftds), pct1(ftdB/100), num(T.pp8f), pct1(p8fB/100), num(T.qore), pct1(qoreB/100), gbpK(T.pn), gbp(ppfB)]});
+    return {cells:[ r.ch, num(r.regs), num(r.pp8reg), g(p8,pp8B), num(r.ftds), g(cf,ftdB), num(r.pp8ftd), g(p8f,p8fB), num(r.qore), g(q,qoreB), gbpK(r.pn), `<span class="pill ${ppf>=ppfB?'green':ppf>=ppfB*0.75?'amber':'red'}">${gbp(ppf)}</span>` ]}; });
+  rows.push({cls:'tot',cells:['All channels', num(T.regs), num(T.pp8), pct1(pp8B/100), num(T.ftds), pct1(ftdB/100), num(T.pp8f), pct1(p8fB/100), num(T.qore), pct1(qoreB/100), gbpK(T.pn), gbp(ppfB)]});
   return `<h2 class="sec">Channel value cascade — ${D.funnel.cascYtdWindow}</h2>
 <div class="callout">Same cascade over the full year, so <b>Qore &amp; PLTV are mature</b> — compare against the 4-week view above to see how much the recent-cohort numbers will still climb (YTD Qore ${pct1(qoreB/100)} of FTDs vs the 4-week read).</div>
 ${chartbox('c_fun_casc_ytd',300)}
-<div style="margin-top:14px">${tbl([{t:'Channel'},{t:'Registrations',r:1},{t:'PP 8–10 reg',r:1},{t:'% reg',r:1},{t:'PP 9–10 reg',r:1},{t:'% reg',r:1},{t:'FTD',r:1},{t:'Reg→FTD %',r:1},{t:'PP 8–10 FTD',r:1},{t:'% FTD',r:1},{t:'Qore FTD',r:1},{t:'% FTD',r:1},{t:'Net PLTV',r:1},{t:'PLTV/FTD',r:1}], rows)}</div>
+<div style="margin-top:14px">${tbl([{t:'Channel'},{t:'Registrations',r:1},{t:'PP 8–10 reg',r:1},{t:'% reg',r:1},{t:'FTD',r:1},{t:'Reg→FTD %',r:1},{t:'PP 8–10 FTD',r:1},{t:'% FTD',r:1},{t:'Qore FTD',r:1},{t:'% FTD',r:1},{t:'Net PLTV',r:1},{t:'PLTV/FTD',r:1}], rows)}</div>
 <p class="note">${D.funnel.cascYtdWindow}. Sources as the 4-week cascade. Blended: ${pct1(pp8B/100)} of regs PP 8–10, ${pct1(ftdB/100)} of regs deposit, ${pct1(qoreB/100)} of FTDs reach Qore, £${r0(ppfB)}/FTD net.</p>`;
 })():'')}
 <h2 class="sec">Quality drag — worst-performing spend (${D.funnel.drag.window})</h2>
