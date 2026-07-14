@@ -82,6 +82,7 @@ const last26 = weeks.slice(-26);
 
 // ---------- current ISO week + trailing 4 COMPLETE weeks (dynamic window) ----------
 const curWeekStart = weekStart(ASOF);
+const _CWS = new Date(curWeekStart+'T00:00:00Z'); const CWS_LBL = 'Mon '+_CWS.getUTCDate()+' '+MONTHS[_CWS.getUTCMonth()];
 const _t4e = new Date(curWeekStart+'T00:00:00Z'); _t4e.setUTCDate(_t4e.getUTCDate()-1);   // last Sunday before this week
 const _t4s = new Date(_t4e); _t4s.setUTCDate(_t4s.getUTCDate()-27);                        // 28 days back
 const T4S=_t4s.toISOString().slice(0,10), T4E=_t4e.toISOString().slice(0,10);
@@ -538,7 +539,7 @@ ${swings.filter(s=>!['Affiliate App','Email'].includes(s.ch)).map(s=>`<li><b>${s
     r.f? `<span class="pill ${ragLtv(r.ltv)}">${f2(r.ltv)}</span>` : pill('grey','n/a')
   ]}));
   panes.s1 = `<h2 class="sec">This week — week-to-date + forecast</h2>
-<div class="callout">Current ISO week (from Mon 29 Jun) has <b>${DAYS_LANDED_WK} fully-landed day${DAYS_LANDED_WK===1?'':'s'}</b> so far. Forecast = week-to-date (${num(wtd.f)} FTDs) + the trailing-4-complete-week daily average applied to each remaining day, <b>weighted by its day-of-week shape</b> (8-week profile) — so the busy Fri/Sat aren't under-counted the way a flat ×(7−landed) average would. Remaining days this week: ${REM_SHAPE} (1.00× = an average day). Trailing weekly average shown for context.</div>
+<div class="callout">Current ISO week (from ${CWS_LBL}) has <b>${DAYS_LANDED_WK} fully-landed day${DAYS_LANDED_WK===1?'':'s'}</b> so far. Forecast = week-to-date (${num(wtd.f)} FTDs) + the trailing-4-complete-week daily average applied to each remaining day, <b>weighted by its day-of-week shape</b> (8-week profile) — so the busy Fri/Sat aren't under-counted the way a flat ×(7−landed) average would. Remaining days this week: ${REM_SHAPE} (1.00× = an average day). Trailing weekly average shown for context.</div>
 <h3 class="subsec">Actual week-to-date — ${DAYS_LANDED_WK} landed day${DAYS_LANDED_WK===1?'':'s'} of 7</h3>
 <div class="kpis" style="margin-top:8px">
 ${kpi('WTD spend', gbpK(wtd.s), `${DAYS_LANDED_WK} of 7 days · affiliate gap-filled`)}
