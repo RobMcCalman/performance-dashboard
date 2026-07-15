@@ -1493,7 +1493,20 @@ ${chartbox('c_atl_spot')}
 
 if(D.atlModel){ EMBED.atl={weeks:D.atlModel.weeks, chAlloc:D.atlModel.chAlloc, mediaMix:D.atlModel.mediaMix, spotLen:D.atlModel.spotLen}; }
 
-const TABS = [['summary','Summary'],['rec','Recommendations'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),...(panes.sfun?[['sfun','Quality funnel']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],...(panes.satl?[['satl','ATL model']]:[]),['s9','Channel opt'],...(panes.sinc?[['sinc','Incremental CPA']]:[]),['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
+if(D.ctrend){
+  EMBED.ctrend=D.ctrend;
+  const _cto=D.ctrend.order.map(c=>`<option value="${c}">${c}</option>`).join('');
+  panes.sctr = `<h2 class="sec">Channel trends — daily, last 60 days</h2>
+<div class="callout">Pick a channel to see its daily trend over the last 60 days across all five metrics. <b>Solid line = daily actual</b>; <b>dashed = 7-day trailing average</b> (cuts through day-to-day noise — read this for the trend). CPA &amp; LTV:CAC are blank for organic channels (zero spend), and single-day ratios on low-volume channels are jumpy. PLTV net of the 15% affiliate revshare; values are to-date so the most recent days still mature upward.</div>
+<div class="selrow"><select id="ctrSel">${_cto}</select></div>
+${chartbox('c_ctr_ftd',300)}
+${chartbox('c_ctr_spend',300)}
+${chartbox('c_ctr_cpa',300)}
+${chartbox('c_ctr_ppf',300)}
+${chartbox('c_ctr_cac',300)}
+<p class="note">Daily FTDs, spend, net CPA (spend÷FTDs), net PLTV/FTD and net LTV:CAC (PLTV÷spend) by last-click channel, ${D.ctrend.days[0]}–${D.ctrend.days[D.ctrend.days.length-1]} 2026. Source: <code>attribution_spend_metrics</code>. Affiliate spend feed lags ~1 day (final point may read £0). Excludes the Unattributed residual bucket.</p>`;
+}
+const TABS = [['summary','Summary'],['rec','Recommendations'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),...(panes.sfun?[['sfun','Quality funnel']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],...(panes.sctr?[['sctr','Channel trends']]:[]),['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],...(panes.satl?[['satl','ATL model']]:[]),['s9','Channel opt'],...(panes.sinc?[['sinc','Incremental CPA']]:[]),['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
 const tabbar = TABS.map((t,i)=>`<button class="tab${i===0?' active':''}" data-pane="${t[0]}">${t[1]}</button>`).join('');
 const paneHTML = TABS.map((t,i)=>`<section class="pane${i===0?' active':''}" id="pane-${t[0]}">${panes[t[0]]||''}</section>`).join('');
 
@@ -1864,6 +1877,7 @@ function buildPane(id){
     mkChart('affMom',{type:'bar',data:{labels:a.map(x=>x.n),datasets:[{label:'Δ net PLTV May→Jun (£)',data:a.map(x=>x.dP),backgroundColor:a.map(x=>x.dP>=0?COL.green:COL.pink)}]},options:baseOpts({indexAxis:'y',plugins:{title:{display:true,text:'Affiliate ΔPLTV — biggest movers (matched 1–${MD})'},legend:{display:false}}})});
   }
   if(id==='s11'){ drawChannel(); }
+  if(id==='sctr'){ drawCtrend(); }
   if(id==='s12'){
     const w=EMBED.weeks;
     mkChart('c_wk_sf',{type:'bar',data:{labels:w.map(x=>x.w),datasets:[{type:'bar',label:'Spend (£)',data:w.map(x=>Math.round(x.s)),backgroundColor:'rgba(10,46,203,.22)',yAxisID:'y'},{type:'line',label:'FTDs',data:w.map(x=>x.f),borderColor:COL.green,yAxisID:'y1',tension:.3,pointRadius:0},{type:'line',label:'Plan FTDs',data:EMBED.weeklyFtdPlan.map(Math.round),borderColor:COL.pink,borderDash:[6,4],yAxisID:'y1',pointRadius:0}]},options:baseOpts({plugins:{title:{display:true,text:'Weekly spend & FTDs'}},scales:{y:{position:'left'},y1:{position:'right',grid:{drawOnChartArea:false}}}})});
@@ -1923,7 +1937,28 @@ document.querySelectorAll('.tab').forEach(btn=>{
     requestAnimationFrame(()=>{ pane.querySelectorAll('canvas').forEach(c=>{ const ch=Chart.getChart(c); if(ch) ch.resize(); }); });
   });
 });
-document.addEventListener('change',e=>{ if(e.target && e.target.id==='chanSel') drawChannel(); if(e.target && e.target.id==='qchSel') drawQualCh(); });
+function drawCtrend(){
+  if(!EMBED.ctrend) return;
+  const sel=document.getElementById('ctrSel'); if(!sel) return;
+  const C=EMBED.ctrend, ch=sel.value, o=C.ch[ch]; if(!o) return;
+  const days=C.days, NUL=days.map(()=>null), organic=!o.s.some(x=>x>0);
+  const cpa=o.s.map((v,i)=>o.f[i]?v/o.f[i]:null);
+  const ppf=o.f.map((v,i)=>v?o.p[i]/v:null);
+  const cac=o.s.map((v,i)=>v?o.p[i]/v:null);
+  const maAvg=(a,w)=>a.map((_,i)=>{let t=0,c=0;for(let j=Math.max(0,i-w+1);j<=i;j++){if(a[j]!=null){t+=a[j];c++;}}return c?t/c:null;});
+  const maR=(nm,dn,w)=>nm.map((_,i)=>{let t=0,b=0;for(let j=Math.max(0,i-w+1);j<=i;j++){t+=nm[j];b+=dn[j];}return b?t/b:null;});
+  const rnd=(a,m)=>a.map(v=>v==null?null:(m==='x'?+(+v).toFixed(3):Math.round(v)));
+  const ln=(id,title,daily,mavg,col,m)=>mkChart(id,{type:'line',data:{labels:days,datasets:[
+    {label:'daily',data:rnd(daily,m),borderColor:col,tension:.25,pointRadius:0,spanGaps:false},
+    {label:'7-day avg',data:rnd(mavg,m),borderColor:COL.pink,borderDash:[6,4],pointRadius:0,tension:.25,spanGaps:true}
+  ]},options:baseOpts({plugins:{title:{display:true,text:ch+' — '+title}},scales:{x:{ticks:{maxTicksLimit:12,maxRotation:0,autoSkip:true}},y:{beginAtZero:true,ticks:m==='£'?{callback:v=>'£'+v}:(m==='x'?{callback:v=>v+'x'}:{})}}})});
+  ln('c_ctr_ftd','daily FTDs',o.f,maAvg(o.f,7),COL.green,'int');
+  ln('c_ctr_spend','daily spend (£)',o.s,maAvg(o.s,7),COL.blue,'£');
+  ln('c_ctr_cpa','net CPA (£)',cpa,organic?NUL:maR(o.s,o.f,7),COL.navy,'£');
+  ln('c_ctr_ppf','net PLTV / FTD (£)',ppf,maR(o.p,o.f,7),COL.sky,'£');
+  ln('c_ctr_cac','net LTV:CAC',cac,organic?NUL:maR(o.p,o.s,7),COL.green,'x');
+}
+document.addEventListener('change',e=>{ if(e.target && e.target.id==='chanSel') drawChannel(); if(e.target && e.target.id==='qchSel') drawQualCh(); if(e.target && e.target.id==='ctrSel') drawCtrend(); });
 // build summary (no charts) + first chart pane lazily; nothing to build for summary
 </script>
 </body></html>`;
