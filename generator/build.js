@@ -1478,6 +1478,15 @@ ${(()=>{ const m=AM.mediaMix;
 })()}
 ${chartbox('c_atl_med')}
 <p class="note"><b>Impact split by medium = spend share × an effectiveness weight</b> (relative halo per £: video/addressable formats — AVOOH, online video — weighted above linear TV; radio and OOH below). <b>TV is ~83% of ATL spend and impact</b>, but its spend here is <b>inferred as the residual</b> (${gbpM(AM.atlH1)} ATL total minus tracked media) because the BARB file carries GRPs (638 in Q1) but <b>no cost column</b>. Radio and AVOOH H1 are <b>estimated as Q1×2</b> (always-on) since the files stop at 31 Mar; online video, sponsorship and OOH are file actuals. Effectiveness weights are judgement calls, not measured — a hold-out or on/off test is still needed to size each medium properly. All value at £${AM.ppf} net PLTV/FTD.</p>
+<h3 class="subsec">Sponsorship — modelled conversion impact by placement (Q1)</h3>
+${(D.atlModel.sponBreak?(()=>{ const b=D.atlModel.sponBreak;
+  const roip=v=>`<span class="pill ${v>=1?'green':v>=0.8?'amber':'red'}">${v.toFixed(2)}x</span>`;
+  const rows=b.map(r=>({cells:[ r.n, gbpK(r.sp), (r.imp/1e6).toFixed(1)+'M', '£'+Math.round(r.cpm), num(r.incf), gbp(r.cpi), gbpK(r.incp), roip(r.roi) ]}));
+  const t={sp:b.reduce((a,r)=>a+r.sp,0),imp:b.reduce((a,r)=>a+r.imp,0),incf:b.reduce((a,r)=>a+r.incf,0),incp:b.reduce((a,r)=>a+r.incp,0)};
+  rows.push({cls:'tot',cells:['Sponsorship (Q1)', gbpK(t.sp), (t.imp/1e6).toFixed(1)+'M', '£'+Math.round(t.sp/t.imp*1000), num(t.incf), gbp(t.sp/t.incf), gbpK(t.incp), roip(t.incp/t.sp)]});
+  return tbl([{t:'Placement'},{t:'Q1 spend',r:1},{t:'Impressions',r:1},{t:'CPM',r:1},{t:'Modelled incr FTDs',r:1},{t:'Cost / incr FTD',r:1},{t:'Incr net PLTV',r:1},{t:'12m ROI',r:1}], rows);
+})():'')}
+<p class="note"><b>Pushing the model one level below media type — illustrative only.</b> The Sponsorship medium's modelled incremental FTDs are split across the two placements <b>pro-rata by Q1 spend</b> (same response weight), so cost per incremental FTD is identical by construction (£740) — the split shows <i>scale</i>, not relative effectiveness. Impressions &amp; CPM are file actuals: <b>DAZN £22 CPM</b>, concentrated on mid-March racing (Cheltenham 14–15 Mar ≈ £20k/day); <b>Discovery £13 CPM</b>, steadier. <b>Q1 only</b> — no Q2 sponsorship data in the file, so this isn't full-H1. Like all ATL it's untracked: no FTD is genuinely attributable to a placement, and both sit at <b>~0.22x on 12-month PLTV</b> (in line with blended ATL) — brand plays, not direct response. A placement-level on/off test is the only route to a real per-property number.</p>
 <h2 class="sec">ATL spend &amp; adstock vs halo demand — weekly</h2>
 ${chartbox('c_atl_dem')}
 <p class="note">ATL weekly spend (bars), 2-week-half-life adstock (line, brand carryover), and halo-channel FTDs (line, right axis). Note how flat spend is — the absence of variation is exactly why the effect isn't statistically identifiable. Adstock λ=0.5.</p>
