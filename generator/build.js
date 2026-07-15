@@ -1527,7 +1527,18 @@ ${chartbox('c_ctr_ppf',300)}
 ${chartbox('c_ctr_cac',300)}
 <p class="note">Daily FTDs, spend, net CPA (spend÷FTDs), net PLTV/FTD and net LTV:CAC (PLTV÷spend) by last-click channel, ${D.ctrend.days[0]}–${D.ctrend.days[D.ctrend.days.length-1]} 2026. Source: <code>attribution_spend_metrics</code>. Affiliate spend feed lags ~1 day (final point may read £0). Excludes the Unattributed residual bucket.</p>`;
 }
-const TABS = [['summary','Summary'],['rec','Recommendations'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),...(panes.sfun?[['sfun','Quality funnel']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],...(panes.sctr?[['sctr','Channel trends']]:[]),['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],...(panes.satl?[['satl','ATL model']]:[]),['s9','Channel opt'],...(panes.sinc?[['sinc','Incremental CPA']]:[]),['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],['s11','Per-channel'],['s12','Weekly trends']];
+if(D.revshare){
+  EMBED.revshare={ m:D.revshare.rows.map(r=>r.m), ltv15:D.revshare.rows.map(r=>+r.ltv15.toFixed(3)), ltv10:D.revshare.rows.map(r=>+r.ltv10.toFixed(3)), a15:D.revshare.rows.map(r=>+r.affltv15.toFixed(3)), a10:D.revshare.rows.map(r=>+r.affltv10.toFixed(3)) };
+  const R=D.revshare, pill=v=>`<span class="pill ${v>=1?'green':v>=0.8?'amber':'red'}">${v.toFixed(2)}</span>`, dlt=(a,b)=>'+'+(b-a).toFixed(3);
+  const rvr=R.rows.map(r=>({cells:[r.m, gbpM(r.sp), gbpM(r.net15), gbpM(r.net10), pill(r.ltv15), pill(r.ltv10), dlt(r.ltv15,r.ltv10), pill(r.affltv15), pill(r.affltv10)]}));
+  rvr.push({cls:'tot',cells:['H1', gbpM(R.tot.sp), gbpM(R.tot.net15), gbpM(R.tot.net10), pill(R.tot.ltv15), pill(R.tot.ltv10), dlt(R.tot.ltv15,R.tot.ltv10), pill(R.tot.affltv15), pill(R.tot.affltv10)]});
+  panes.srev = `<h2 class="sec">Revshare sensitivity — affiliate haircut 15% → 10% (H1, Jan–Jun)</h2>
+<div class="callout"><b>Scenario:</b> what H1 would have looked like if the affiliate revenue-share haircut were <b>10% instead of 15%</b> — i.e. affiliate net PLTV valued at <b>×0.90</b> rather than ×0.85. Spend, FTDs and all other channels are unchanged; only affiliate net value rises. This is a <b>valuation re-basis, not a demand change</b> — it doesn't assume more or better players, just a smaller revshare deduction. Total LTV:CAC = total net PLTV ÷ total spend.</div>
+${tbl([{t:'Month'},{t:'Spend',r:1},{t:'Net PLTV @15%',r:1},{t:'Net PLTV @10%',r:1},{t:'Blended LTV:CAC @15%',r:1},{t:'@10%',r:1},{t:'Δ',r:1},{t:'Affiliate LTV:CAC @15%',r:1},{t:'@10%',r:1}], rvr)}
+${chartbox('c_rev')}
+<p class="note">Reducing the haircut to 10% lifts <b>H1 blended LTV:CAC from ${R.tot.ltv15.toFixed(2)} to ${R.tot.ltv10.toFixed(2)}</b> (+${(R.tot.ltv10-R.tot.ltv15).toFixed(3)}, ~+${((R.tot.ltv10/R.tot.ltv15-1)*100).toFixed(1)}%) and recognises <b>£${(R.tot.uplift/1000).toFixed(0)}k more net PLTV</b> across H1. At the <b>affiliate channel level</b> it rises from ${R.tot.affltv15.toFixed(2)} to ${R.tot.affltv10.toFixed(2)} — <b>still below 1.0 for H1 overall</b>, though Apr &amp; May individually tip past break-even at 10%. So the change flatters affiliate economics but doesn't fix them: the sub-break-even months stay sub-break-even. Pure valuation re-basis of existing PLTV; no change to spend, volume or player quality. Green ≥1.0 · amber 0.8–1.0 · red &lt;0.8.</p>`;
+}
+const TABS = [['summary','Summary'],['rec','Recommendations'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),...(panes.sfun?[['sfun','Quality funnel']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],...(panes.sctr?[['sctr','Channel trends']]:[]),['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],...(panes.satl?[['satl','ATL model']]:[]),['s9','Channel opt'],...(panes.sinc?[['sinc','Incremental CPA']]:[]),['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],...(panes.srev?[['srev','Revshare 10%']]:[]),['s11','Per-channel'],['s12','Weekly trends']];
 const tabbar = TABS.map((t,i)=>`<button class="tab${i===0?' active':''}" data-pane="${t[0]}">${t[1]}</button>`).join('');
 const paneHTML = TABS.map((t,i)=>`<section class="pane${i===0?' active':''}" id="pane-${t[0]}">${panes[t[0]]||''}</section>`).join('');
 
@@ -1899,6 +1910,15 @@ function buildPane(id){
   }
   if(id==='s11'){ drawChannel(); }
   if(id==='sctr'){ drawCtrend(); }
+  if(id==='srev' && EMBED.revshare){ const r=EMBED.revshare;
+    mkChart('c_rev',{type:'line',data:{labels:r.m,datasets:[
+      {label:'Blended LTV:CAC @15%',data:r.ltv15,borderColor:COL.navy,tension:.3,pointRadius:2},
+      {label:'Blended LTV:CAC @10%',data:r.ltv10,borderColor:COL.blue,borderDash:[5,3],tension:.3,pointRadius:2},
+      {label:'Affiliate LTV:CAC @15%',data:r.a15,borderColor:COL.pink,tension:.3,pointRadius:2},
+      {label:'Affiliate LTV:CAC @10%',data:r.a10,borderColor:COL.green,borderDash:[5,3],tension:.3,pointRadius:2},
+      {label:'Break-even 1.0',data:r.m.map(()=>1),borderColor:COL.grey,borderDash:[2,2],pointRadius:0}
+    ]},options:baseOpts({plugins:{title:{display:true,text:'LTV:CAC — 15% vs 10% affiliate haircut (H1)'}},scales:{y:{ticks:{callback:v=>v+'x'}}}})});
+  }
   if(id==='s12'){
     const w=EMBED.weeks;
     mkChart('c_wk_sf',{type:'bar',data:{labels:w.map(x=>x.w),datasets:[{type:'bar',label:'Spend (£)',data:w.map(x=>Math.round(x.s)),backgroundColor:'rgba(10,46,203,.22)',yAxisID:'y'},{type:'line',label:'FTDs',data:w.map(x=>x.f),borderColor:COL.green,yAxisID:'y1',tension:.3,pointRadius:0},{type:'line',label:'Plan FTDs',data:EMBED.weeklyFtdPlan.map(Math.round),borderColor:COL.pink,borderDash:[6,4],yAxisID:'y1',pointRadius:0}]},options:baseOpts({plugins:{title:{display:true,text:'Weekly spend & FTDs'}},scales:{y:{position:'left'},y1:{position:'right',grid:{drawOnChartArea:false}}}})});
