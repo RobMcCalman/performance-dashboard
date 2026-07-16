@@ -641,7 +641,7 @@ ${(()=>{
 // ---- S2 MONTH-TO-DATE ----
 {
   const mtdRows = mixRows.map(r=>{ const s=(r.ch==='Affiliate'? r.s+AFF_GAP_28 : r.s); return {ch:r.ch,s,f:r.f,p:r.p,apd:r.apd,ltv:div(r.p,s),cpa:div(s,r.f)}; }).filter(r=>r.s>0||r.f>0).sort((a,b)=>b.s-a.s);
-  const rows = mtdRows.map(r=>({cells:[ r.ch+(r.ch==='Affiliate'?' *':''), gbpK(r.s), num(r.f), r.f?gbp(r.cpa):'—', gbpK(r.p), r.f?gbp(div(r.p,r.f)):'—', r.f?`<span class="pill ${ragLtv(r.ltv)}">${f2(r.ltv)}</span>`:pill('grey','n/a') ]}));
+  const rows = mtdRows.map(r=>({cells:[ r.ch+(r.ch==='Affiliate'?' *':''), gbpK(r.s), num(r.f), r.f?gbp(r.cpa):'—', gbpK(r.p), r.f?(gbp(div(r.p,r.f))+(r.ch==='Affiliate'?` <span style="color:var(--muted);font-weight:600">(${gbp(div(r.p,r.f*0.85))})</span>`:'')):'—', r.f?`<span class="pill ${ragLtv(r.ltv)}">${f2(r.ltv)}</span>`:pill('grey','n/a') ]}));
   rows.push({cls:'tot',cells:['TOTAL', gbpM(mtd.s), num(mtd.f), gbp(mtd.cpa), gbpM(mtd.p), gbp(div(mtd.p,mtd.f)), `<span class="pill ${ragLtv(mtd.ltv)}">${f2(mtd.ltv)}</span>`]});
   panes.s2 = `<h2 class="sec">Reference month — ${MO_CUR} 1–${MD}${RMcomplete?' (complete)':', gap-filled'} + forecast</h2>
 <div class="kpis">
@@ -673,7 +673,7 @@ ${chartbox('c_mtd_ppf')}
 <p class="note">Recent-day cohorts are least matured and typically revise <b>up</b>. MTD blended PLTV/FTD ${gbp(mtd.ppf)}.</p>
 <h2 class="sec">MTD by channel</h2>
 ${tbl([{t:'Channel'},{t:'Spend',r:1},{t:'FTDs',r:1},{t:'CPA',r:1},{t:'12m PLTV',r:1},{t:'PLTV/FTD',r:1},{t:'LTV:CAC',r:1}], rows)}
-<p class="note">* ${RMcomplete?`${MO_CUR} is a complete month — forecast equals actuals`:`Affiliate spend gap-filled for ${GAPLBL}; forecast = MTD + remaining days × trailing daily average`}.</p>
+<p class="note">* ${RMcomplete?`${MO_CUR} is a complete month — forecast equals actuals`:`Affiliate spend gap-filled for ${GAPLBL}; forecast = MTD + remaining days × trailing daily average`}. Affiliate PLTV/FTD is net of the 15% revshare, with the <b>gross</b> (pre-haircut) value in brackets.</p>
 <h2 class="sec">By channel — plan vs full-month forecast</h2>
 ${(()=>{
   const fcCh=ch=>{ const r=junCh[ch]; if(!r) return {s:0,f:0,p:0}; if(RMcomplete) return {s:r.s,f:r.f,p:r.pn}; const t=(D.trail4Ch&&D.trail4Ch[ch])||{s:0,f:0,p:0}, k=RMdim-DAYS_ELAPSED; return {s:(ch==='Affiliate'?r.s+AFF_GAP_28:r.s)+k*(t.s/28), f:r.f+k*(t.f/28), p:r.pn+k*(t.p/28)}; };
