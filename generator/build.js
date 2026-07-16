@@ -323,8 +323,8 @@ const WC_FIX = { // matches per calendar day (group stage from kickoffadventures
   '2026-06-17':5,'2026-06-18':4,'2026-06-19':4,'2026-06-20':3,'2026-06-21':5,'2026-06-22':4,
   '2026-06-23':4,'2026-06-24':6,'2026-06-25':6,'2026-06-26':6,'2026-06-27':6,
   '2026-06-28':1,'2026-06-29':3,'2026-06-30':3,'2026-07-01':3,'2026-07-02':3,'2026-07-03':3,
-  '2026-07-04':2,'2026-07-05':2,'2026-07-06':2,'2026-07-07':2 }; // 28 Jun–3 Jul = Round of 32; 4–7 Jul = Round of 16
-const WC_ENG = {'2026-06-17':'v Croatia (W 4-2)','2026-06-23':'v Ghana (D 0-0)','2026-06-27':'v Panama (W 2-0)','2026-07-01':'v DR Congo (W 2-1, Kane ×2 — R32)','2026-07-05':'v Mexico (W 3-1, Kane — R16)'};
+  '2026-07-04':2,'2026-07-05':2,'2026-07-06':2,'2026-07-07':2,'2026-07-08':0,'2026-07-09':1,'2026-07-10':1,'2026-07-11':2,'2026-07-14':1,'2026-07-15':1 }; // 28 Jun–3 Jul = Round of 32; 4–7 Jul = Round of 16
+const WC_ENG = {'2026-06-17':'v Croatia (W 4-2)','2026-06-23':'v Ghana (D 0-0)','2026-06-27':'v Panama (W 2-0)','2026-07-01':'v DR Congo (W 2-1, Kane ×2 — R32)','2026-07-05':'v Mexico (W 3-2, Kane — R16)','2026-07-11':'v Norway (W 2-1 — QF)','2026-07-15':'v Argentina (L 1-2 — SF)'};
 // 2026 World Cup Round of 32 — fixtures & results (US match dates; results confirmed through 1 Jul, later ties scheduled)
 const WC_R32 = [
   {d:'2026-06-28', m:'South Africa v Canada', r:'0–1'},
@@ -346,14 +346,28 @@ const WC_R32 = [
 ];
 // 2026 World Cup Round of 16 — 4–7 Jul (US match dates); results in through ASOF, later ties scheduled
 const WC_R16 = [
-  {d:'2026-07-04', m:'Brazil v Paraguay', r:'2–1'},
-  {d:'2026-07-04', m:'France v Norway', r:'3–1'},
-  {d:'2026-07-05', m:'England v Mexico', r:'3–1'},
-  {d:'2026-07-05', m:'Belgium v United States', r:'2–2 (4–3 pens)'},
-  {d:'2026-07-06', m:'Spain v Morocco', r:''},
-  {d:'2026-07-06', m:'Argentina v Colombia', r:''},
-  {d:'2026-07-07', m:'Portugal v Switzerland', r:''},
-  {d:'2026-07-07', m:'Egypt v Canada', r:''},
+  {d:'2026-07-04', m:'Morocco v Canada', r:'3–0'},
+  {d:'2026-07-04', m:'France v Paraguay', r:'1–0'},
+  {d:'2026-07-05', m:'Norway v Brazil', r:'2–1'},
+  {d:'2026-07-05', m:'England v Mexico', r:'3–2'},
+  {d:'2026-07-06', m:'Spain v Portugal', r:'1–0'},
+  {d:'2026-07-06', m:'Belgium v United States', r:'4–1'},
+  {d:'2026-07-07', m:'Argentina v Egypt', r:'3–2'},
+  {d:'2026-07-07', m:'Switzerland v Colombia', r:'0–0 (4–3 pens)'},
+];
+const WC_QF = [
+  {d:'2026-07-09', m:'France v Morocco', r:'2–0'},
+  {d:'2026-07-10', m:'Spain v Belgium', r:'2–1'},
+  {d:'2026-07-11', m:'England v Norway', r:'2–1'},
+  {d:'2026-07-11', m:'Argentina v Switzerland', r:'3–1'},
+];
+const WC_SF = [
+  {d:'2026-07-14', m:'Spain v France', r:'2–0'},
+  {d:'2026-07-15', m:'Argentina v England', r:'2–1'},
+];
+const WC_FINAL = [
+  {d:'2026-07-18', m:'3rd place: France v England', r:''},
+  {d:'2026-07-19', m:'Final: Spain v Argentina', r:''},
 ];
 const WC_START='2026-06-11';
 // baseline: pre-tournament & pre-heat (May 12 - Jun 10) day-of-week FTD norms
@@ -958,11 +972,19 @@ ${tbl([{t:'Date'},{t:'Match'},{t:'Result'}], WC_R32.map(x=>({cells:[
   x.r? (x.m.includes('England')?`<b>${x.r}</b>`:x.r) : `<span class="pill grey">scheduled</span>`
 ]})))}
 <h2 class="sec">Round of 16 — fixtures &amp; results</h2>
-<div class="callout">The Round of 16 (16 teams, 8 ties) runs 4–7 Jul. Results in through ${GAPLBL}; the 6–7 Jul ties are scheduled. <b>England 3–1 Mexico</b> (5 Jul) — Kane again — books a quarter-final. The 4–5 Jul match days now feed the fixtures line and index above. Dates shown are match (US local) dates.</div>
+<div class="callout">The Round of 16 (4–7 Jul) is <b>complete</b>. <b>England 3–2 Mexico</b> (5 Jul) — Kane again — booked a quarter-final. Dates shown are match (US local) dates.</div>
 ${tbl([{t:'Date'},{t:'Match'},{t:'Result'}], WC_R16.map(x=>({cells:[
   fmtDM(x.d), x.m.includes('England')?`<b>${x.m}</b>`:x.m,
   x.r? (x.m.includes('England')?`<b>${x.r}</b>`:x.r) : `<span class="pill grey">scheduled</span>`
 ]})))}
+<h2 class="sec">Quarter-finals — fixtures &amp; results</h2>
+<div class="callout">The quarter-finals ran 9–11 Jul and are <b>complete</b>. <b>England 2–1 Norway</b> (11 Jul) sent England to the semis; all four higher seeds came through. Dates shown are match (US local) dates.</div>
+${tbl([{t:'Date'},{t:'Match'},{t:'Result'}], WC_QF.map(x=>({cells:[fmtDM(x.d), x.m.includes('England')?`<b>${x.m}</b>`:x.m, x.m.includes('England')?`<b>${x.r}</b>`:x.r]})))}
+<h2 class="sec">Semi-finals — fixtures &amp; results</h2>
+<div class="callout"><b>Spain 2–0 France</b> (14 Jul) and <b>Argentina 2–1 England</b> (15 Jul) — England went out at the semi-final, undone by two late Argentina goals. <b>Final: Spain v Argentina</b>, 19 Jul (MetLife); France v England play off for third on 18 Jul.</div>
+${tbl([{t:'Date'},{t:'Match'},{t:'Result'}], WC_SF.map(x=>({cells:[fmtDM(x.d), x.m.includes('England')?`<b>${x.m}</b>`:x.m, x.m.includes('England')?`<b>${x.r}</b>`:x.r]})))}
+<h2 class="sec">Final &amp; third-place play-off</h2>
+${tbl([{t:'Date'},{t:'Match'},{t:'Result'}], WC_FINAL.map(x=>({cells:[fmtDM(x.d), x.m.includes('England')?`<b>${x.m}</b>`:x.m, x.r? x.r : `<span class="pill grey">scheduled</span>`]})))}
 <p class="note">World-Cup-themed UAC ad groups were among June's best acquisition performers (<b>world cup – brand focus</b> 82 FTDs @ LTV:CAC 2.34, <b>world cup – game focus</b> 62 @ 1.87) — the tournament was a positive <i>targeted</i> lever even though blended daily volume didn't lift. Caveats: daily granularity can't show an intra-evening dip during the ~2-hour match windows; the heatwave overlaps two of three England games; fixture counts are as-scheduled (Iran's Group G withdrawal noted); 28 Jun onward are Round-of-32 days (real fixtures, table above).</p>`;
 }
 
