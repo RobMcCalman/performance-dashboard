@@ -323,8 +323,8 @@ const WC_FIX = { // matches per calendar day (group stage from kickoffadventures
   '2026-06-17':5,'2026-06-18':4,'2026-06-19':4,'2026-06-20':3,'2026-06-21':5,'2026-06-22':4,
   '2026-06-23':4,'2026-06-24':6,'2026-06-25':6,'2026-06-26':6,'2026-06-27':6,
   '2026-06-28':1,'2026-06-29':3,'2026-06-30':3,'2026-07-01':3,'2026-07-02':3,'2026-07-03':3,
-  '2026-07-04':2,'2026-07-05':2,'2026-07-06':2,'2026-07-07':2,'2026-07-08':0,'2026-07-09':1,'2026-07-10':1,'2026-07-11':2,'2026-07-14':1,'2026-07-15':1 }; // 28 Jun–3 Jul = Round of 32; 4–7 Jul = Round of 16
-const WC_ENG = {'2026-06-17':'v Croatia (W 4-2)','2026-06-23':'v Ghana (D 0-0)','2026-06-27':'v Panama (W 2-0)','2026-07-01':'v DR Congo (W 2-1, Kane ×2 — R32)','2026-07-05':'v Mexico (W 3-2, Kane — R16)','2026-07-11':'v Norway (W 2-1 — QF)','2026-07-15':'v Argentina (L 1-2 — SF)'};
+  '2026-07-04':2,'2026-07-05':2,'2026-07-06':2,'2026-07-07':2,'2026-07-08':0,'2026-07-09':1,'2026-07-10':1,'2026-07-11':2,'2026-07-14':1,'2026-07-15':1,'2026-07-18':1,'2026-07-19':1 }; // 28 Jun–3 Jul = Round of 32; 4–7 Jul = Round of 16
+const WC_ENG = {'2026-06-17':'v Croatia (W 4-2)','2026-06-23':'v Ghana (D 0-0)','2026-06-27':'v Panama (W 2-0)','2026-07-01':'v DR Congo (W 2-1, Kane ×2 — R32)','2026-07-05':'v Mexico (W 3-2, Kane — R16)','2026-07-11':'v Norway (W 2-1 — QF)','2026-07-15':'v Argentina (L 1-2 — SF)','2026-07-18':'v France (W 6-4 — 3rd place, bronze)'};
 // 2026 World Cup Round of 32 — fixtures & results (US match dates; results confirmed through 1 Jul, later ties scheduled)
 const WC_R32 = [
   {d:'2026-06-28', m:'South Africa v Canada', r:'0–1'},
@@ -366,8 +366,8 @@ const WC_SF = [
   {d:'2026-07-15', m:'Argentina v England', r:'2–1'},
 ];
 const WC_FINAL = [
-  {d:'2026-07-18', m:'3rd place: France v England', r:''},
-  {d:'2026-07-19', m:'Final: Spain v Argentina', r:''},
+  {d:'2026-07-18', m:'3rd place: France v England', r:'4–6 (England bronze — Saka ×2, Bellingham; best in 60 yrs)'},
+  {d:'2026-07-19', m:'Final: Spain v Argentina', r:'1–0 (Ferran Torres a.e.t. — Spain champions)'},
 ];
 const WC_START='2026-06-11';
 // baseline: pre-tournament & pre-heat (May 12 - Jun 10) day-of-week FTD norms
