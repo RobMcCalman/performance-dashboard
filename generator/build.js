@@ -654,10 +654,12 @@ ${kpi('MTD LTV:CAC', f2(mtd.ltv), `CPA ${gbp(mtd.cpa)}`)}
 <h2 class="sec">Full-month: plan vs forecast</h2>
 ${(()=>{
   const planCpa=div(planRef.s,planRef.f), fcCpa=div(moFcst.s,moFcst.f), planLtv=div(planRef.p,planRef.s);
+  const planPpf=div(planRef.p,planRef.f), mtdPpf=div(mtd.p,mtd.f), fcPpf=div(moFcst.p,moFcst.f);
   const rows=[
     {cells:['Spend', gbpM(planRef.s), gbpM(mtd.s), gbpM(moFcst.s), `<span class="pill ${ragPace(paceS)}">${pct(paceS)}</span>`]},
     {cells:['FTDs', num(planRef.f), num(mtd.f), num(moFcst.f), `<span class="pill ${ragPace(paceF)}">${pct(paceF)}</span>`]},
     {cells:['Net 12m PLTV', gbpM(planRef.p), gbpM(mtd.p), gbpM(moFcst.p), `<span class="pill ${ragPace(paceP)}">${pct(paceP)}</span>`]},
+    {cells:['Net PLTV/FTD', gbp(planPpf), gbp(mtdPpf), gbp(fcPpf), `<span class="pill ${ragPace(div(fcPpf,planPpf))}">${pct(div(fcPpf,planPpf))}</span>`]},
     {cells:['CPA', gbp(planCpa), gbp(mtd.cpa), gbp(fcCpa), `<span class="pill ${ragPace(div(planCpa,fcCpa))}">${pct(div(planCpa,fcCpa))}</span>`]},
     {cells:['LTV:CAC', f2(planLtv), f2(mtd.ltv), f2(moFcst.ltv), `<span class="pill ${ragPace(div(moFcst.ltv,planLtv))}">${pct(div(moFcst.ltv,planLtv))}</span>`]},
   ];
