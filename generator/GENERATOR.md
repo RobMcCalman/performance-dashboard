@@ -14,8 +14,8 @@ and "new Chart( occurrences: 1" (every chart goes through the mkChart type-guard
 
 ## Daily refresh = refresh the DYNAMIC parts of data.json, then run build.js
 All money/volume rules unchanged: ISO weeks Mon; fully-landed days through YESTERDAY (= ASOF);
-**net PLTV applies the 15% Affiliate revshare haircut everywhere**:
-`SUM(IF(channel='Affiliate', sum_pltv*0.85, sum_pltv))`. CPA=spend/FTDs; LTV:CAC=netPLTV/spend.
+**net PLTV applies a DATE-AWARE Affiliate revshare haircut**: 15% before 1 Apr 2026, 10% from 1 Apr onwards:
+`SUM(CASE WHEN channel='Affiliate' AND date>=DATE'2026-04-01' THEN sum_pltv*0.90 WHEN channel='Affiliate' THEN sum_pltv*0.85 ELSE sum_pltv END)`. CPA=spend/FTDs; LTV:CAC=netPLTV/spend.
 Affiliate (Raventrack) spend lags ~2–4 days (posts £0 then back-fills) → gap-fill; APD2+ ~2-day lag.
 
 ### data.json keys
@@ -39,7 +39,7 @@ DYNAMIC (re-query every run, all 2026 unless noted; date<=ASOF):
 - `y2025ytd` {f,pg,apd} — 2025 Jan1..(same day-of-year as ASOF) model FTDs/PLTV gross/APD (YoY like-for-like).
 
 STATIC (set once; carry forward unchanged):
-- `plan` — EMBEDDED PLAN by channel (s/f/p monthly arrays). Affiliate p is GROSS; build.js applies ×0.85.
+- `plan` — EMBEDDED PLAN by channel (s/f/p monthly arrays). Affiliate p is GROSS; build.js applies ×0.85 (months Jan–Mar) / ×0.90 (Apr onwards).
 - `y2025spend` — 12 monthly FY25-tracker spend constants (NEVER use BigQuery 2025 spend).
 - `y2025mon` — 12 monthly 2025 model {f,pg}.
 - `weekTargets` [{mon,wk,type,pay,ftds,spend,cpa,pltv,ltv}] — H2 weekly-plan workbook (Mon-Sun). Used by "This week vs target".
@@ -49,14 +49,14 @@ STATIC (set once; carry forward unchanged):
 `build.js` also embeds static reference: F25CH (2025 channel FTDs), WC_FIX/WC_ENG (2026 World Cup fixture schedule). Extend WC only if the tournament schedule changes.
 
 ### Per-field SQL (MrQ MCP attributionBigQuery, table mrq-data.dbt.attribution_spend_metrics; fully-qualify; set @asof)
-- monch: `SELECT EXTRACT(MONTH FROM date) mo, channel, ROUND(SUM(spend)) s, ROUND(SUM(ftd_players)) f, ROUND(SUM(IF(channel='Affiliate',sum_pltv*0.85,sum_pltv))) pn, ROUND(SUM(apd_2_players)) apd FROM ... WHERE date BETWEEN '2026-01-01' AND @asof GROUP BY mo,channel`
+- monch: `SELECT EXTRACT(MONTH FROM date) mo, channel, ROUND(SUM(spend)) s, ROUND(SUM(ftd_players)) f, ROUND(SUM(CASE WHEN channel='Affiliate' AND date>=DATE'2026-04-01' THEN sum_pltv*0.90 WHEN channel='Affiliate' THEN sum_pltv*0.85 ELSE sum_pltv END)) pn, ROUND(SUM(apd_2_players)) apd FROM ... WHERE date BETWEEN '2026-01-01' AND @asof GROUP BY mo,channel`
 - daily: same SUMs (s,f,p=net,apd) GROUP BY date, date 2025-12-22..@asof.
 - affDaily: channel='Affiliate', current-month..@asof, GROUP BY date (s,f).
 - asofCh: WHERE date=@asof GROUP BY channel (s,f,p=net).
 - plat: GROUP BY EXTRACT(MONTH), attribution_platform.
-- aff: channel='Affiliate', current-month, GROUP BY affiliate_id, ROUND(SUM(sum_pltv*0.85)) p, ORDER BY s DESC LIMIT 20.
+- aff: channel='Affiliate', current-month, GROUP BY affiliate_id, ROUND(SUM(CASE WHEN date>=DATE'2026-04-01' THEN sum_pltv*0.90 ELSE sum_pltv*0.85 END)) p, ORDER BY s DESC LIMIT 20.
 - affMom / mayMTD: conditional SUM over prior-month 1..N and current-month 1..N (see this session's queries).
-- td: table attribution_model_reconciliation, last 4 complete wks, model_version in (last_click,time_decay), ROUND(SUM(IF(channel='Affiliate',pltv*0.85,pltv))) p.
+- td: table attribution_model_reconciliation, last 4 complete wks, model_version in (last_click,time_decay), ROUND(SUM(CASE WHEN channel='Affiliate' AND date>=DATE'2026-04-01' THEN pltv*0.90 WHEN channel='Affiliate' THEN pltv*0.85 ELSE pltv END)) p.
 - adg: GROUP BY channel,name,ad_group_name HAVING spend>=500 AND ftds>=3 (last 4 wks).
 - traffic: SUM(num_sessions/_new/_returning), registrations, legitimate_registrations, ftd_players — totals (kpi), weekly (wk), by channel (chan).
 - last2: by-channel ftd_players for the last complete ISO week vs the prior one.

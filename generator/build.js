@@ -123,7 +123,7 @@ moFcst.cpa=div(moFcst.s,moFcst.f); moFcst.ltv=div(moFcst.p,moFcst.s);
 const PLAN = D.plan;
 function planMo(mo){ // 0-indexed month
   let s=0,f=0,p=0;
-  for(const ch in PLAN){ const c=PLAN[ch]; s+=c.s[mo]; f+=c.f[mo]; p+= (ch==='Affiliate'? c.p[mo]*0.85 : c.p[mo]); }
+  for(const ch in PLAN){ const c=PLAN[ch]; s+=c.s[mo]; f+=c.f[mo]; p+= (ch==='Affiliate'? c.p[mo]*(mo>=3?0.90:0.85) : c.p[mo]); }
   return {s,f,p};
 }
 const planRef = planMo(RM-1);
@@ -132,10 +132,10 @@ let planFY={s:0,f:0,p:0}; for(let m=0;m<12;m++){ const x=planMo(m); planFY.s+=x.
 let planYTD={s:0,f:0,p:0}; for(let m=0;m<CUR_MO-1;m++){ const x=planMo(m); planYTD.s+=x.s; planYTD.f+=x.f; planYTD.p+=x.p; }
 { const j=planMo(CUR_MO-1); planYTD.s+=j.s*DAYS_ELAPSED/DIM; planYTD.f+=j.f*DAYS_ELAPSED/DIM; planYTD.p+=j.p*DAYS_ELAPSED/DIM; }
 // per-channel plan helper (net)
-function planCh(ch,mo){ const c=PLAN[ch]; if(!c) return {s:0,f:0,p:0}; return {s:c.s[mo],f:c.f[mo],p:(ch==='Affiliate'?c.p[mo]*0.85:c.p[mo])}; }
+function planCh(ch,mo){ const c=PLAN[ch]; if(!c) return {s:0,f:0,p:0}; return {s:c.s[mo],f:c.f[mo],p:(ch==='Affiliate'?c.p[mo]*(mo>=3?0.90:0.85):c.p[mo])}; }
 const planMonthlyF = []; for(let m=0;m<12;m++) planMonthlyF.push(planMo(m).f);
 // per-channel annual net PLTV-per-FTD ratio (for deriving weekly PLTV targets by channel)
-const PLAN_RATIO = {}; for(const ch in PLAN){ let tp=0,tf=0; for(let m=0;m<12;m++){ tp+=(ch==='Affiliate'?PLAN[ch].p[m]*0.85:PLAN[ch].p[m]); tf+=PLAN[ch].f[m]; } PLAN_RATIO[ch]=tf?tp/tf:0; }
+const PLAN_RATIO = {}; for(const ch in PLAN){ let tp=0,tf=0; for(let m=0;m<12;m++){ tp+=(ch==='Affiliate'?PLAN[ch].p[m]*(m>=3?0.90:0.85):PLAN[ch].p[m]); tf+=PLAN[ch].f[m]; } PLAN_RATIO[ch]=tf?tp/tf:0; }
 
 // pace
 const paceP = div(moFcst.p, planRef.p), paceF = div(moFcst.f, planRef.f), paceS = div(moFcst.s, planRef.s);
@@ -571,7 +571,7 @@ ${(()=>{
     .map(r=>({cells:[ r.ch + (r.ch==='Affiliate'?' *':''), gbpK(r.s), num(r.f), r.f?gbp(r.cpa):'—', gbpK(r.p), r.f?gbp(div(r.p,r.f)):'—', r.f?`<span class="pill ${ragLtv(r.ltv)}">${f2(r.ltv)}</span>`:pill('grey','n/a') ]}));
   return tbl([{t:'Channel'},{t:'WTD spend',r:1},{t:'WTD FTDs',r:1},{t:'CPA',r:1},{t:'WTD net PLTV',r:1},{t:'PLTV/FTD',r:1},{t:'LTV:CAC',r:1}], rows);
 })()}
-<p class="note">Actual landed FTDs, spend and net PLTV so far this ISO week (${DAYS_LANDED_WK} of 7 days), by last-click channel. * Affiliate spend gap-filled for the lagging feed day at the trailing CPA; PLTV net of the 15% revshare. CPA/LTV:CAC on partial-week actuals are noisy — read the full-week forecast below and the pace table for a fuller picture.</p>
+<p class="note">Actual landed FTDs, spend and net PLTV so far this ISO week (${DAYS_LANDED_WK} of 7 days), by last-click channel. * Affiliate spend gap-filled for the lagging feed day at the trailing CPA; PLTV net of the affiliate revshare (15% to Mar, 10% from Apr). CPA/LTV:CAC on partial-week actuals are noisy — read the full-week forecast below and the pace table for a fuller picture.</p>
 <h3 class="subsec">Full-week forecast</h3>
 <div class="kpis" style="margin-top:8px">
 ${kpi('Forecast spend', gbpM(wkFcst.s), `trailing wk ${gbpM(trailWk.s)}`)}
@@ -635,13 +635,13 @@ ${(()=>{
   trows.push({cls:'tot',cells:['TOTAL', num(T.tf), num(T.ff), `<span class="pill ${ragPace(div(T.ff,T.tf))}">${pct(div(T.ff,T.tf))}</span>`, gbpK(T.ts), gbpK(T.fs), `${gbp(div(T.ts,T.tf))}→${gbp(div(T.fs,T.ff))}`, gbpK(T.tp), gbpK(T.fp), `<span class="pill ${ragPace(div(T.fp,T.tp))}">${pct(div(T.fp,T.tp))}</span>`, `${f2(div(T.tp,T.ts))}→${f2(div(T.fp,T.fs))}`]});
   return tbl([{t:'Channel'},{t:'Tgt FTDs',r:1},{t:'Fcst FTDs',r:1},{t:'FTDs %',r:1},{t:'Tgt spend',r:1},{t:'Fcst spend',r:1},{t:'CPA',r:1},{t:'Tgt PLTV',r:1},{t:'Fcst PLTV',r:1},{t:'PLTV %',r:1},{t:'LTV:CAC',r:1}], trows);
 })()}
-<p class="note">Targets = the H2 weekly-plan workbook by channel (FTDs &amp; spend direct from the sheet; PLTV = target FTDs × plan net PLTV-per-FTD). Forecast = trailing-4-week weekly average by channel. Pace = forecast ÷ target. * Affiliate forecast spend gap-filled for ${GAPLBL} at trailing CPA ${gbp(AFF_CPA)}; ATL carries spend with 0 FTDs (brand). PLTV net of the 15% affiliate revshare.</p>`;
+<p class="note">Targets = the H2 weekly-plan workbook by channel (FTDs &amp; spend direct from the sheet; PLTV = target FTDs × plan net PLTV-per-FTD). Forecast = trailing-4-week weekly average by channel. Pace = forecast ÷ target. * Affiliate forecast spend gap-filled for ${GAPLBL} at trailing CPA ${gbp(AFF_CPA)}; ATL carries spend with 0 FTDs (brand). PLTV net of the affiliate revshare (15% to Mar, 10% from Apr).</p>`;
 }
 
 // ---- S2 MONTH-TO-DATE ----
 {
   const mtdRows = mixRows.map(r=>{ const s=(r.ch==='Affiliate'? r.s+AFF_GAP_28 : r.s); return {ch:r.ch,s,f:r.f,p:r.p,apd:r.apd,ltv:div(r.p,s),cpa:div(s,r.f)}; }).filter(r=>r.s>0||r.f>0).sort((a,b)=>b.s-a.s);
-  const rows = mtdRows.map(r=>({cells:[ r.ch+(r.ch==='Affiliate'?' *':''), gbpK(r.s), num(r.f), r.f?gbp(r.cpa):'—', gbpK(r.p), r.f?(gbp(div(r.p,r.f))+(r.ch==='Affiliate'?` <span style="color:var(--muted);font-weight:600">(${gbp(div(r.p,r.f*0.85))})</span>`:'')):'—', r.f?(`<span class="pill ${ragLtv(r.ltv)}">${f2(r.ltv)}</span>`+(r.ch==='Affiliate'?` <span style="color:var(--muted);font-weight:600">(${f2(r.ltv/0.85)})</span>`:'')):pill('grey','n/a') ]}));
+  const rows = mtdRows.map(r=>({cells:[ r.ch+(r.ch==='Affiliate'?' *':''), gbpK(r.s), num(r.f), r.f?gbp(r.cpa):'—', gbpK(r.p), r.f?(gbp(div(r.p,r.f))+(r.ch==='Affiliate'?` <span style="color:var(--muted);font-weight:600">(${gbp(div(r.p,r.f*0.90))})</span>`:'')):'—', r.f?(`<span class="pill ${ragLtv(r.ltv)}">${f2(r.ltv)}</span>`+(r.ch==='Affiliate'?` <span style="color:var(--muted);font-weight:600">(${f2(r.ltv/0.90)})</span>`:'')):pill('grey','n/a') ]}));
   rows.push({cls:'tot',cells:['TOTAL', gbpM(mtd.s), num(mtd.f), gbp(mtd.cpa), gbpM(mtd.p), gbp(div(mtd.p,mtd.f)), `<span class="pill ${ragLtv(mtd.ltv)}">${f2(mtd.ltv)}</span>`]});
   panes.s2 = `<h2 class="sec">Reference month — ${MO_CUR} 1–${MD}${RMcomplete?' (complete)':', gap-filled'} + forecast</h2>
 <div class="kpis">
@@ -665,7 +665,7 @@ ${(()=>{
   ];
   return tbl([{t:'Metric'},{t:`${MO_CUR} plan`,r:1},{t:`MTD (1–${MD})`,r:1},{t:'Full-month fcst',r:1},{t:'Fcst vs plan',r:1}], rows);
 })()}
-<p class="note">Full-month forecast = MTD actuals + remaining days × trailing daily average (affiliate gap-filled). Plan is the ${MO_CUR} monthly target (net of the 15% affiliate revshare). For CPA, the pill is plan÷forecast (higher = cheaper than plan = good); for spend/FTDs/PLTV/LTV:CAC it is forecast÷plan. Per-channel plan-vs-forecast is on the Targets tab.</p>
+<p class="note">Full-month forecast = MTD actuals + remaining days × trailing daily average (affiliate gap-filled). Plan is the ${MO_CUR} monthly target (net of the affiliate revshare (15% to Mar, 10% from Apr)). For CPA, the pill is plan÷forecast (higher = cheaper than plan = good); for spend/FTDs/PLTV/LTV:CAC it is forecast÷plan. Per-channel plan-vs-forecast is on the Targets tab.</p>
 <div class="grid2" style="margin-top:14px">${chartbox('c_mtd_spend')}${chartbox('c_mtd_ftd')}</div>
 <h2 class="sec">CPA — daily (MTD, net)</h2>
 ${chartbox('c_mtd_cpa')}
@@ -675,7 +675,7 @@ ${chartbox('c_mtd_ppf')}
 <p class="note">Recent-day cohorts are least matured and typically revise <b>up</b>. MTD blended PLTV/FTD ${gbp(mtd.ppf)}.</p>
 <h2 class="sec">MTD by channel</h2>
 ${tbl([{t:'Channel'},{t:'Spend',r:1},{t:'FTDs',r:1},{t:'CPA',r:1},{t:'12m PLTV',r:1},{t:'PLTV/FTD',r:1},{t:'LTV:CAC',r:1}], rows)}
-<p class="note">* ${RMcomplete?`${MO_CUR} is a complete month — forecast equals actuals`:`Affiliate spend gap-filled for ${GAPLBL}; forecast = MTD + remaining days × trailing daily average`}. Affiliate PLTV/FTD and LTV:CAC are net of the 15% revshare, with the <b>gross</b> (pre-haircut) values in brackets.</p>
+<p class="note">* ${RMcomplete?`${MO_CUR} is a complete month — forecast equals actuals`:`Affiliate spend gap-filled for ${GAPLBL}; forecast = MTD + remaining days × trailing daily average`}. Affiliate PLTV/FTD and LTV:CAC are net of the affiliate revshare (15% to Mar, 10% from Apr), with the <b>gross</b> (pre-haircut) values in brackets.</p>
 <h2 class="sec">By channel — plan vs full-month forecast</h2>
 ${(()=>{
   const fcCh=ch=>{ const r=junCh[ch]; if(!r) return {s:0,f:0,p:0}; if(RMcomplete) return {s:r.s,f:r.f,p:r.pn}; const t=(D.trail4Ch&&D.trail4Ch[ch])||{s:0,f:0,p:0}, k=RMdim-DAYS_ELAPSED; return {s:(ch==='Affiliate'?r.s+AFF_GAP_28:r.s)+k*(t.s/28), f:r.f+k*(t.f/28), p:r.pn+k*(t.p/28)}; };
@@ -686,7 +686,7 @@ ${(()=>{
   body.push({cls:'tot',cells:['TOTAL', gbpM(tot.ps), gbpM(tot.fs), `<span class="pill ${ragPace(div(tot.fs,tot.ps))}">${pct(div(tot.fs,tot.ps))}</span>`, num(tot.pf), num(tot.ff), `<span class="pill ${ragPace(div(tot.ff,tot.pf))}">${pct(div(tot.ff,tot.pf))}</span>`, gbpM(tot.pp), gbpM(tot.fp), `<span class="pill ${ragPace(div(tot.fp,tot.pp))}">${pct(div(tot.fp,tot.pp))}</span>`]});
   return tbl([{t:'Channel'},{t:'Plan spend',r:1},{t:'Fcst spend',r:1},{t:'%',r:1},{t:'Plan FTDs',r:1},{t:'Fcst FTDs',r:1},{t:'%',r:1},{t:'Plan PLTV',r:1},{t:'Fcst PLTV',r:1},{t:'%',r:1}], body);
 })()}
-<p class="note">${MO_CUR} channel plan vs full-month forecast (net of the 15% affiliate revshare), ranked by planned PLTV. Same forecast basis as above. Green ≥100% of plan · amber 90–99% · red &lt;90%.</p>`;
+<p class="note">${MO_CUR} channel plan vs full-month forecast (net of the affiliate revshare (15% to Mar, 10% from Apr)), ranked by planned PLTV. Same forecast basis as above. Green ≥100% of plan · amber 90–99% · red &lt;90%.</p>`;
 }
 
 // ---- S2b TARGETS ----
@@ -710,7 +710,7 @@ ${(()=>{
   const tC = cRows.map(r=>({cells:[ r.ch, gbpM(r.s), num(r.f), gbpM(r.p), r.s?f2(r.ltv):'—' ]}));
   tC.push({cls:'tot',cells:['TOTAL',gbpM(planFY.s),num(planFY.f),gbpM(planFY.p),f2(div(planFY.p,planFY.s))]});
   panes.s2b = `<h2 class="sec">Targets — plan vs actual</h2>
-<div class="callout"><b>Affiliate PLTV — plan and actual — is net of the 15% revshare haircut, so pacing is like-for-like.</b> Pace % = forecast ÷ plan (green ≥100, amber ≥90, red &lt;90).</div>
+<div class="callout"><b>Affiliate PLTV — plan and actual — is net of the affiliate revshare (15% to Mar, 10% from Apr) haircut, so pacing is like-for-like.</b> Pace % = forecast ÷ plan (green ≥100, amber ≥90, red &lt;90).</div>
 <div class="kpis" style="margin-top:14px">
 ${kpi('June PLTV pace', `<span class="pill ${ragPace(paceP)} big">${pct(paceP)}</span>`, `${gbpM(moFcst.p)} / ${gbpM(planRef.p)}`)}
 ${kpi('June FTDs pace', `<span class="pill ${ragPace(paceF)} big">${pct(paceF)}</span>`, `${num(moFcst.f)} / ${num(planRef.f)}`)}
@@ -756,7 +756,7 @@ if(CUR_MO>RM){
   EMBED.julPace = bR.filter(r=>r.pl.p>0).map(r=>({ch:r.ch, pcP:Math.round(r.pcP*100)})).sort((a,b)=>b.pcP-a.pcP);
   EMBED.julPaceMo = MOJ;
   panes.s2j = `<h2 class="sec">${MOJ} month-to-date vs plan — 1–${DAYS_ELAPSED} ${MOJ} (${DAYS_ELAPSED}/${DIM} days)</h2>
-<div class="callout">${MOJ} is the live month (June remains the headline reference until it is 7+ days old). MTD actuals are compared with the plan pro-rated to date (plan × ${DAYS_ELAPSED}/${DIM}); the full-month forecast = MTD + remaining ${kRem} days × trailing-4-week daily average. Affiliate spend gap-filled for ${GAPLBL} at ${gbp(AFF_CPA)} CPA; PLTV net of the 15% revshare.</div>
+<div class="callout">${MOJ} is the live month (June remains the headline reference until it is 7+ days old). MTD actuals are compared with the plan pro-rated to date (plan × ${DAYS_ELAPSED}/${DIM}); the full-month forecast = MTD + remaining ${kRem} days × trailing-4-week daily average. Affiliate spend gap-filled for ${GAPLBL} at ${gbp(AFF_CPA)} CPA; PLTV net of the affiliate revshare (15% to Mar, 10% from Apr).</div>
 <div class="kpis" style="margin-top:14px">
 ${kpi('MTD spend', gbpM(jmAll.s), `fcst ${gbpM(jfcAll.s)} · plan ${gbpM(planT.s)}`)}
 ${kpi('MTD FTDs', num(jmAll.f), `fcst ${num(jfcAll.f)} · plan ${num(planT.f)}`)}
@@ -818,7 +818,7 @@ ${tbl([{t:'Channel'},{t:'FY plan spend',r:1},{t:'YTD actual',r:1},{t:'% used',r:
   }
   rows.push({cls:'tot',cells:['YTD *', num(ytd.f), num(r0(yoy.ftds25)), (yoy.ftdsD>=0?'+':'')+pct(yoy.ftdsD), gbp(yoy.cpa26), gbp(yoy.cpa25), f2(yoy.ltv26), f2(yoy.ltv25), gbp(div(yoy.pltv26,yoy.ftds26)), gbp(div(yoy.pltv25,yoy.ftds25))]});
   panes.s3 = `<h2 class="sec">YTD &amp; year-on-year (hybrid 2025 baseline)</h2>
-<div class="callout">2025 baseline uses <b>FY25-tracker spend</b> with <b>model FTDs &amp; PLTV (gross)</b> from BigQuery. 2026 Affiliate PLTV is net of the 15% revshare, so the <b>YoY LTV:CAC uplift is conservative</b> (2026 net vs 2025 gross). * June &amp; YTD are through ${GAPLBL} (2025 pro-rated to match).</div>
+<div class="callout">2025 baseline uses <b>FY25-tracker spend</b> with <b>model FTDs &amp; PLTV (gross)</b> from BigQuery. 2026 Affiliate PLTV is net of the affiliate revshare (15% to Mar, 10% from Apr), so the <b>YoY LTV:CAC uplift is conservative</b> (2026 net vs 2025 gross). * June &amp; YTD are through ${GAPLBL} (2025 pro-rated to match).</div>
 <div class="kpis" style="margin-top:14px">
 ${kpi('YTD FTDs', num(ytd.f), `2025 ${num(r0(yoy.ftds25))} · ${(yoy.ftdsD>=0?'+':'')+pct(yoy.ftdsD)}`)}
 ${kpi('YTD CPA', gbp(yoy.cpa26), `2025 ${gbp(yoy.cpa25)} · ${pct1(yoy.cpaD)}`)}
@@ -890,7 +890,7 @@ if(FTDQ.length){
   const L=FTDQ[FTDQ.length-1];
   const qrows = FTDQ.map(r=>({cells:[ r.w, num(r.ftd), pct1(r.immR/100), num(r.apd2), `<span class="pill ${r.apd2R>=48?'green':r.apd2R>=44?'amber':'red'}">${r.apd2R}%</span>`, r.avgapd.toFixed(2), pct1(r.savR/100), gbp(r.ppf), gbp(r.cpf), gbp(r.cpa2) ]}));
   panes.sq = `<h2 class="sec">FTD quality — weekly trends (last ${FTDQ.length} complete weeks)</h2>
-<div class="callout"><b>What this shows.</b> Front-loaded quality signals for each week's FTD cohort. <b>IMM ratio</b> = immediate FTDs (deposit in the registration session) ÷ all FTDs. <b>APD2+</b> = players active on 2+ days in their first week (the retained group); <b>APD 0–1</b> = the rest. <b>Avg active days/FTD</b> = first-week active player-days ÷ FTDs. <b>Savvy-staker rate</b> = flagged savvy stakers ÷ FTDs. <b>PLTV/FTD (FTDPP)</b> = net 12-month PLTV ÷ FTDs. Cost-per metrics use blended spend. All net of the 15% affiliate revshare.</div>
+<div class="callout"><b>What this shows.</b> Front-loaded quality signals for each week's FTD cohort. <b>IMM ratio</b> = immediate FTDs (deposit in the registration session) ÷ all FTDs. <b>APD2+</b> = players active on 2+ days in their first week (the retained group); <b>APD 0–1</b> = the rest. <b>Avg active days/FTD</b> = first-week active player-days ÷ FTDs. <b>Savvy-staker rate</b> = flagged savvy stakers ÷ FTDs. <b>PLTV/FTD (FTDPP)</b> = net 12-month PLTV ÷ FTDs. Cost-per metrics use blended spend. All net of the affiliate revshare (15% to Mar, 10% from Apr).</div>
 <div class="kpis" style="margin-top:14px">
 ${kpi('FTDs (latest wk)', num(L.ftd), `w/c ${L.w}`)}
 ${kpi('APD2+ rate', L.apd2R+'%', `${num(L.apd2)} retained`)}
@@ -1148,7 +1148,7 @@ ${tbl(head, adgWorst.map(mk))}
 <p class="note">Top 10 affiliate partners by FTDs over the trailing 30 days (to ${ASOF}), net-of-revshare value shown in the LTV:CAC table below. The final day or two may firm up as the affiliate feed lands (Raventrack lag). Volume ≠ value: the largest-volume partners (${affName('2164')}, ${affName('2630')}, ${affName('2014')}) sit below break-even on net LTV:CAC, while ${affName('2242')} and smaller ${affName('2195')}/${affName('6071')} are the profitable ones.</p>`;
   }
   panes.s10b = affHeat + `<h2 class="sec">Within Affiliate — top 20 by spend (last 4 weeks, actual net of revshare)</h2>
-<div class="callout">Per-affiliate KPIs are <b>actual</b> from attribution_spend_metrics with PLTV haircut ×0.85. Profile usernames applied from the affiliate_groups export (matched on Affiliate Profile ID); affiliate_id shown in brackets.${(()=>{const u=affRows.filter(a=>!AFF_NAMES[a.aid]).map(a=>a.aid);return u.length?` Unmapped (not in export): ${u.join(', ')}.`:' All shown affiliates mapped.';})()}</div>
+<div class="callout">Per-affiliate KPIs are <b>actual</b> from attribution_spend_metrics with PLTV haircut ×0.90 (10% revshare from 1 Apr; ×0.85 before). Profile usernames applied from the affiliate_groups export (matched on Affiliate Profile ID); affiliate_id shown in brackets.${(()=>{const u=affRows.filter(a=>!AFF_NAMES[a.aid]).map(a=>a.aid);return u.length?` Unmapped (not in export): ${u.join(', ')}.`:' All shown affiliates mapped.';})()}</div>
 <div style="margin-top:14px">${tbl([{t:'Affiliate (username)'},{t:'Spend',r:1},{t:'FTDs',r:1},{t:'CPA',r:1},{t:'Net PLTV',r:1},{t:'PLTV/FTD',r:1},{t:'LTV:CAC',r:1},{t:'APD2+',r:1},{t:'Cost/APD2+',r:1},{t:'APD2+ %',r:1},{t:'Action'}], rows)}</div>
 <p class="note"><b>Action</b> = net LTV:CAC verdict: <span class="pill green">Scale</span> ≥ 1.2 · <span class="pill amber">Hold</span> 0.9–1.2 · <span class="pill red">Cut</span> &lt; 0.9 (renegotiate/cap). Judgement, not automated — weigh contract terms, volume and introducer value before acting.</p>
 <p class="note">${affAlerts.length? `Below 0.8 net LTV:CAC at ≥£20k spend: ${affAlerts.map(a=>affName(a.aid)+' ('+f2(a.ltv)+')').join(', ')}.` : 'No affiliate above £20k spend is below 0.8 net LTV:CAC this window.'} The three largest by spend (${affName('2164')}, ${affName('2630')}, ${affName('2014')}) drive the channel — ${affName('2014')} is the weakest of them.</p>`;
@@ -1271,7 +1271,7 @@ ${kpi('Spend variation', pct(ATLX.cov), 'too flat to fit a response curve')}
 </div>
 ${chartbox('c_atlinc')}
 <p class="note">Both series indexed to week 1 = 100: the <b>ATL line stays flat</b> while <b>total FTDs move independently</b> — visually, there's no co-movement to attribute to ATL. To actually measure ATL's incremental value you need <b>deliberate spend variation</b> (flight it up/down), a <b>geo/holdout test</b>, or a <b>media-mix model</b> that controls for the other channels, seasonality and events. Until then, treat ATL as a fixed brand investment, not a channel you can marginally optimise.</p>`:''}
-<p class="note"><b>Caveats — treat as directional, not causal.</b> Elasticities are fitted on 12 weeks of observational weekly data, so they conflate seasonality, day-of-week mix, World-Cup/heatwave effects and model re-scoring; they are not a controlled spend-lift test. Fit confidence (R²) is shown per channel — <b>low</b>-confidence rows (e.g. thin spend variation) should be treated as indicative only. Elasticity is capped at 1.0 (diminishing returns assumed) so channels that appear to show increasing returns aren't over-recommended. Validate with a proper geo/holdout test before large reallocations. PLTV is the net 12-month model figure (Affiliate net of the 15% revshare).</p>`;
+<p class="note"><b>Caveats — treat as directional, not causal.</b> Elasticities are fitted on 12 weeks of observational weekly data, so they conflate seasonality, day-of-week mix, World-Cup/heatwave effects and model re-scoring; they are not a controlled spend-lift test. Fit confidence (R²) is shown per channel — <b>low</b>-confidence rows (e.g. thin spend variation) should be treated as indicative only. Elasticity is capped at 1.0 (diminishing returns assumed) so channels that appear to show increasing returns aren't over-recommended. Validate with a proper geo/holdout test before large reallocations. PLTV is the net 12-month model figure (Affiliate net of the affiliate revshare (15% to Mar, 10% from Apr)).</p>`;
 }
 
 // ---- REC RECOMMENDATIONS ----
@@ -1387,7 +1387,7 @@ ${chartbox('c_fun_seon')}
 <h2 class="sec">Monthly FTD funnel</h2>
 ${chartbox('c_fun_mo')}
 <div style="margin-top:14px">${tbl([{t:'Month'},{t:'FTDs',r:1},{t:'First-week PBA',r:1},{t:'% FTDs — First-week PBA',r:1},{t:'FW-APD2+',r:1},{t:'FW-APD2+ %',r:1},{t:'PP 8–10',r:1},{t:'PP %',r:1},{t:'Qore FTDs',r:1},{t:'Qore %',r:1},{t:'Net PLTV/FTD',r:1}], moRows)}</div>
-<p class="note">${MONTHS[CUR_MO-1]} is partial (1–${DD}); APD2+, PP and PLTV/FTD still mature (~2-day APD lag; potential scores and PLTV re-score over the first weeks). PLTV/FTD is net of the 15% affiliate revshare. Closed-as-fraud after FTD is small (${num(fyt.cfr)} YTD) and not shown as a column. Monthly UFI, manual-duplicate and APD0 detail (YTD: UFI ${num(fyt.ufi)} · dup manual ${num(fyt.dupm)} · APD0 ${num(fyt.apd0)} Jan–May) lives in the weekly and channel tables, KPI cards and flags. Qore FTDs are published monthly in the MBR — no weekly or channel split available.</p>
+<p class="note">${MONTHS[CUR_MO-1]} is partial (1–${DD}); APD2+, PP and PLTV/FTD still mature (~2-day APD lag; potential scores and PLTV re-score over the first weeks). PLTV/FTD is net of the affiliate revshare (15% to Mar, 10% from Apr). Closed-as-fraud after FTD is small (${num(fyt.cfr)} YTD) and not shown as a column. Monthly UFI, manual-duplicate and APD0 detail (YTD: UFI ${num(fyt.ufi)} · dup manual ${num(fyt.dupm)} · APD0 ${num(fyt.apd0)} Jan–May) lives in the weekly and channel tables, KPI cards and flags. Qore FTDs are published monthly in the MBR — no weekly or channel split available.</p>
 <h2 class="sec">Clean FTDs — ex PBA &amp; APD0 — and true PLTV/FTD</h2>
 <div style="margin-top:14px">${tbl([{t:'Month'},{t:'FTDs',r:1},{t:'First-week PBA',r:1},{t:'FW-APD0',r:1},{t:'FW-APD1',r:1},{t:'FW-APD1 %',r:1},{t:'Clean FTDs',r:1},{t:'Clean %',r:1},{t:'Net PLTV',r:1},{t:'PLTV/FTD (all)',r:1},{t:'True PLTV/FTD (clean)',r:1}], clRows)}</div>
 <p class="note">Clean FTDs = FTDs − First-week PBA (official ThoughtSpot series) − APD0 (zero paid playing days). The two populations overlap to an unknown degree (player-level PBA isn't accessible yet — DD-596), so Clean FTDs is a conservative floor and true PLTV/FTD a ceiling. FW-APD0 / FW-APD1 / FW-APD2+ are the <b>first-week engagement ladder</b> (0 / exactly 1 / 2+ paid playing days in the 7 days after FTD), from core.fct_gameplay_daily; they sum to 100% and FW-APD2+ reconciles with the mart's apd_2_players. Clean FTDs removes only PBA + FW-APD0 (FW-APD1 is informational). July is still maturing (first weeks not fully elapsed). Context: measured over <b>all time</b>, ~65% of FTDs eventually reach 2+ paid days — first-week is the early-activation read. Net PLTV keeps the whole cohort's value (PBA/APD0 players contribute ≈£0), so true PLTV/FTD reads as net value per genuine customer.</p>
@@ -1434,7 +1434,7 @@ ${(()=>{ const D2=D.funnel.drag; const vp=v=>`<span class="pill ${v<0.8?'red':v<
   return `<h3 class="subsec">Affiliate partners</h3>${tbl([{t:'Affiliate'},...hdr], aff)}
 <h3 class="subsec">Other campaigns / ad groups (paid, ex-affiliate)</h3>${tbl([{t:'Channel · ad group'},...hdr], adg)}`;
 })()}
-<p class="note">The spend most dragging blended quality/value down, last 4 weeks, net of the 15% affiliate revshare. <b>Affiliates:</b> the premium big-three (nicasinoprem, newriseproject, moonshot, ~£964k/4wk) sit below breakeven with the highest freeloader (savvy) rates; the Simona Todoroska / Moar volume books (digadvfree, digadvsocial, bca22hmcuk) clear breakeven only on rock-bottom CPA but leak 55–60% one-day players. <b>Campaigns:</b> Meta App installs/purchase and Meta web-volume/incremental, UAC iOS slots, and PPC brand-other convert well below break-even last-click (time-decay re-credits some app value — verify before hard-cutting). <b>FW-APD0/FW-APD1/FW-APD2+ are the first-week engagement ladder</b> (0 / exactly 1 / 2+ paid days in the first week) and sum to ~100% — red = worse for FW-APD0/FW-APD1, green = better for FW-APD2+. <b>Verdict</b>: Cut/renegotiate &lt;0.8 net · Watch 0.8–1.0 · Keep ≥1.0. iOS slots_Q ladder omitted (n=25). LTV:CAC net of the 15% affiliate revshare.</p>
+<p class="note">The spend most dragging blended quality/value down, last 4 weeks, net of the affiliate revshare (15% to Mar, 10% from Apr). <b>Affiliates:</b> the premium big-three (nicasinoprem, newriseproject, moonshot, ~£964k/4wk) sit below breakeven with the highest freeloader (savvy) rates; the Simona Todoroska / Moar volume books (digadvfree, digadvsocial, bca22hmcuk) clear breakeven only on rock-bottom CPA but leak 55–60% one-day players. <b>Campaigns:</b> Meta App installs/purchase and Meta web-volume/incremental, UAC iOS slots, and PPC brand-other convert well below break-even last-click (time-decay re-credits some app value — verify before hard-cutting). <b>FW-APD0/FW-APD1/FW-APD2+ are the first-week engagement ladder</b> (0 / exactly 1 / 2+ paid days in the first week) and sum to ~100% — red = worse for FW-APD0/FW-APD1, green = better for FW-APD2+. <b>Verdict</b>: Cut/renegotiate &lt;0.8 net · Watch 0.8–1.0 · Keep ≥1.0. iOS slots_Q ladder omitted (n=25). LTV:CAC net of the affiliate revshare (15% to Mar, 10% from Apr).</p>
 <p class="note"><b>Definitions (per Fraud &amp; Payments):</b> SEON = accounts closed as fraud at registration (status CLOSED/FRAUD). UFI = RESTRICTED/UNDER_FRAUD_INVESTIGATION — high-risk accounts identified after first deposit, docs requested before withdrawal release. Duplicates: auto-blocks at registration (DUPLICATE_AUTO + AUTO_ORIGINAL) vs manual blocks after registration (DUPLICATE_OTHER + GAMSTOP_BREACH + SE_BREACH); legacy DUPLICATE_EXACT has no 2026 volume. PBA (freeloaders — deposit only for an offer): the monthly <b>% FTDs — First-week PBA</b> values are the OFFICIAL numbers from the "Bonus Abuse Metrics for FTDs" ThoughtSpot liveboard (First-Week PBA variant: FTDs flagged PBA within their first week; read 13 Jul 2026 at monthly granularity). <b>Jan–Jun are final</b>; <b>July is provisional</b> (~14.8%, applied to full-month 1–14 FTDs) because July cohorts' first weeks haven't fully elapsed and the pinboard tile wouldn't render the current July count — it will firm up. The platform PBA status on dim_player does NOT reconcile with this metric (a different source), so no weekly or channel PBA split is shown. Full automation (weekly/channel + live July) needs the PV dataset allow-listed in BigQuery (DD-596). <b>APD0</b> = FTDs with zero paid playing days (any window, from <code>core.fct_gameplay_daily</code>, actual paid wagers only) — the strict freeloader read; measured for all months to 14 Jul (Jun/Jul still maturing downward). The MBR's softer "no play in week 1" APD0 runs 1.3–2.0%/mo. PP = player-potential 1–10 (PP 8–10 = MBR "PPQore"), shown two ways in the channel table: <b>PP % (FTD)</b> = PP 8–10 share of FTDs, and <b>PP % (reg)</b> = PP 8–10 share of <i>registrations</i> — the reg lens shows the predicted quality of everyone a channel signs up (before deposit), the FTD lens the quality of those who convert. APD2+ = 2+ active playing days; Qore = paid wagering >£1,000. Statuses are current, not point-in-time, so recent cohorts revise up as reviews land. PP % (reg) & registration counts use last-click at registration; PP % (FTD), PBA/UFI/dup-manual use last-click at FTD. The channel FW-APD0/FW-APD1/FW-APD2+ ladder is computed per-FTD from first-week gameplay (0/1/2+ paid days in the 7 days after FTD) over the gameplay-matched FTD base, so the three sum to 100%; PLTV/FTD = net PLTV ÷ that base. Reg PP joins core.dim_player to attributed_registrations; FTD PP to attributed_ftds (both reconcile with the mart FTD PP).</p>`;
 }
 
@@ -1550,7 +1550,7 @@ if(D.ctrend){
   EMBED.ctrend=D.ctrend;
   const _cto=D.ctrend.order.map(c=>`<option value="${c}">${c}</option>`).join('');
   panes.sctr = `<h2 class="sec">Channel trends — daily, last 60 days</h2>
-<div class="callout">Pick a channel to see its daily trend over the last 60 days across all five metrics. <b>Solid line = daily actual</b>; <b>dashed = 7-day trailing average</b> (cuts through day-to-day noise — read this for the trend). CPA &amp; LTV:CAC are blank for organic channels (zero spend), and single-day ratios on low-volume channels are jumpy. PLTV net of the 15% affiliate revshare; values are to-date so the most recent days still mature upward.</div>
+<div class="callout">Pick a channel to see its daily trend over the last 60 days across all five metrics. <b>Solid line = daily actual</b>; <b>dashed = 7-day trailing average</b> (cuts through day-to-day noise — read this for the trend). CPA &amp; LTV:CAC are blank for organic channels (zero spend), and single-day ratios on low-volume channels are jumpy. PLTV net of the affiliate revshare (15% to Mar, 10% from Apr); values are to-date so the most recent days still mature upward.</div>
 <div class="selrow"><select id="ctrSel">${_cto}</select></div>
 ${chartbox('c_ctr_ftd',300)}
 ${chartbox('c_ctr_spend',300)}
@@ -1688,7 +1688,7 @@ footer{margin:30px 18px 0;font-size:11.5px;color:var(--muted);border-top:1px sol
 <header class="hero">
 <div class="logo">MrQ</div>
 <h1>Performance Marketing Dashboard</h1>
-<p>Aggregate acquisition performance — spend, FTDs, 12-month PLTV, LTV:CAC and quality (APD2+). Affiliate PLTV is net of the 15% revshare haircut throughout; plan and actual are like-for-like.</p>
+<p>Aggregate acquisition performance — spend, FTDs, 12-month PLTV, LTV:CAC and quality (APD2+). Affiliate PLTV is net of the affiliate revshare (15% to Mar, 10% from Apr) haircut throughout; plan and actual are like-for-like.</p>
 <span class="asof">As of ${TODAY} · actuals through ${ASOF} (fully-landed days)</span>
 <div class="headline">
 ${(()=>{ const sg=v=>(v>=0?'+':'')+pct(v); const cls=(v,good)=>((good?v>=0:v<0)?'up':'dn');
