@@ -1656,18 +1656,20 @@ ${kpi('Total plan (FY)', gbpM(FY.tot), 'FY26 increased-investment plan')}
 <h3 class="subsec">Blockplan by funnel stage — full year</h3>
 ${tbl([{t:'Funnel stage'},{t:'Spend',r:1},{t:'% of plan',r:1},{t:'What sits here'}], fyRows)}
 <p class="note">Stage from the blockplan's <b>Role of Media</b> column. ATL brand media = Awareness; VOD/online-video/premium-social/prospecting = Consideration; affiliate + 1st-party/platform performance channels (incl. those tagged "Awareness/Conversion") = Conversion. SEO and the TBC holding budget are shown as Other. Total ${gbpM(FY.tot)} is the increased-investment (Go faster) plan.</p>
-<h3 class="subsec">Funnel stages by month — YTD (plan)</h3>
-${(()=>{ const B=D.blockDetail; const N=7; const MOn=['Jan','Feb','Mar','Apr','May','Jun','Jul'];
+<h3 class="subsec">Funnel stages by month — full-year plan</h3>
+${(()=>{ const B=D.blockDetail;
+  const MOn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const stg=[['Awareness','var(--blue)'],['Consideration','var(--sky)'],['Conversion','var(--green)'],['Other','var(--muted)']];
   const mat={}; stg.forEach(([st])=>mat[st]=Array(12).fill(0));
   B.forEach(r=>{ if(r.p && mat[r.st]) r.m.forEach((v,i)=>mat[r.st][i]+=v); });
-  const rows=stg.map(([st,c])=>{ const a=mat[st]; const ytd=a.slice(0,N).reduce((x,y)=>x+y,0);
-    return {cells:[ `<b style="color:${c}">${st}</b>`, ...a.slice(0,N).map(v=>v?num(Math.round(v/1000)):'—'), gbpM(ytd) ]}; });
-  const tot=Array(N).fill(0); stg.forEach(([st])=>mat[st].slice(0,N).forEach((v,i)=>tot[i]+=v)); const ytdT=tot.reduce((x,y)=>x+y,0);
-  rows.push({cls:'tot',cells:['Total', ...tot.map(v=>num(Math.round(v/1000))), gbpM(ytdT)]});
-  return tbl([{t:'Funnel stage'},...MOn.map(m=>({t:m,r:1})),{t:'YTD total',r:1}], rows);
+  const fyAll=stg.reduce((x,[st])=>x+mat[st].reduce((p,q)=>p+q,0),0);
+  const rows=stg.map(([st,c])=>{ const a=mat[st]; const fy=a.reduce((x,y)=>x+y,0);
+    return {cells:[ `<b style="color:${c}">${st}</b>`, ...a.map(v=>v?num(Math.round(v/1000)):'—'), gbpM(fy), pct(fy/fyAll) ]}; });
+  const tot=Array(12).fill(0); stg.forEach(([st])=>mat[st].forEach((v,i)=>tot[i]+=v));
+  rows.push({cls:'tot',cells:['Total', ...tot.map(v=>num(Math.round(v/1000))), gbpM(fyAll), '100%']});
+  return tbl([{t:'Funnel stage'},...MOn.map(m=>({t:m,r:1})),{t:'FY total',r:1},{t:'% of FY',r:1}], rows);
 })()}
-<p class="note">Planned blockplan spend by funnel stage, month by month, year-to-date (Jan–Jul). Monthly values in £000s; YTD total in £m. Stage from the sheet's Role-of-Media tags (performance/1st-party channels, incl. those dual-tagged "Awareness/Conversion", counted as Conversion; SEO + holding = Other). This is plan, not actuals.</p>
+<p class="note">Planned blockplan spend by funnel stage across the full year (Jan–Dec). Monthly values in £000s; FY total in £m; % of FY = each stage's share of the full-year plan. Stage from the sheet's Role-of-Media tags (channels dual-tagged "Awareness/Conversion" counted as Conversion; SEO + holding = Other). This is plan, not actuals.</p>
 <h2 class="sec">Full plan — all channels &amp; sub-channels <span style="color:var(--muted);font-weight:600">(FY26, monthly \u00a3000s)</span></h2>
 ${(()=>{ const B=D.blockDetail;
   const rows=B.map(r=>({cls:r.p?'tot':'', cells:[ (r.p?'<b>':'<span style=\"color:var(--muted)\">')+r.n+(r.p?'</b>':'</span>'), r.role||'—', ...r.m.map(v=>v?num(Math.round(v/1000)):'—'), gbpM(r.fy) ]}));
