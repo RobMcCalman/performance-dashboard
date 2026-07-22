@@ -1633,6 +1633,13 @@ ${(()=>{ const W=PL.weekly;
 
 
 if(D.blockplan){ const BLK=D.blockplan, FY=BLK.fy, A=BLK.add3m;
+  // stage x 12-month matrix (£) + per-month % share, from blockDetail parents
+  const BSTG=[['Awareness','var(--blue)','#0A2ECB'],['Consideration','var(--sky)','#00B2FF'],['Conversion','var(--green)','#1c8f53'],['Other','var(--muted)','#9aa3bf']];
+  const BMAT={}; BSTG.forEach(([st])=>BMAT[st]=Array(12).fill(0));
+  (D.blockDetail||[]).forEach(r=>{ if(r.p && BMAT[r.st]) r.m.forEach((v,i)=>BMAT[r.st][i]+=v); });
+  const BMTOT=Array(12).fill(0); BSTG.forEach(([st])=>BMAT[st].forEach((v,i)=>BMTOT[i]+=v));
+  const BMIX={}; BSTG.forEach(([st])=>BMIX[st]=BMAT[st].map((v,i)=>BMTOT[i]?+(v/BMTOT[i]*100).toFixed(1):0));
+  EMBED.blkMix={labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],series:BSTG.map(([st,,hex])=>({name:st,color:hex,data:BMIX[st]}))};
   const pcm=(v,t)=>t?(v/t*100).toFixed(0)+'%':'—';
   const fyRows=[
     {cells:['<b style="color:var(--blue)">Awareness</b>', gbpM(FY.aw), pcm(FY.aw,FY.tot), 'TV, AV sponsorships (Discovery/DAZN/Sky Sports News), OOH, stadium LEDs, audio &amp; partnerships, cinema, AVOOH']},
@@ -1657,19 +1664,20 @@ ${kpi('Total plan (FY)', gbpM(FY.tot), 'FY26 increased-investment plan')}
 ${tbl([{t:'Funnel stage'},{t:'Spend',r:1},{t:'% of plan',r:1},{t:'What sits here'}], fyRows)}
 <p class="note">Stage from the blockplan's <b>Role of Media</b> column. ATL brand media = Awareness; VOD/online-video/premium-social/prospecting = Consideration; affiliate + 1st-party/platform performance channels (incl. those tagged "Awareness/Conversion") = Conversion. SEO and the TBC holding budget are shown as Other. Total ${gbpM(FY.tot)} is the increased-investment (Go faster) plan.</p>
 <h3 class="subsec">Funnel stages by month — full-year plan</h3>
-${(()=>{ const B=D.blockDetail;
-  const MOn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const stg=[['Awareness','var(--blue)'],['Consideration','var(--sky)'],['Conversion','var(--green)'],['Other','var(--muted)']];
-  const mat={}; stg.forEach(([st])=>mat[st]=Array(12).fill(0));
-  B.forEach(r=>{ if(r.p && mat[r.st]) r.m.forEach((v,i)=>mat[r.st][i]+=v); });
-  const fyAll=stg.reduce((x,[st])=>x+mat[st].reduce((p,q)=>p+q,0),0);
-  const rows=stg.map(([st,c])=>{ const a=mat[st]; const fy=a.reduce((x,y)=>x+y,0);
-    return {cells:[ `<b style="color:${c}">${st}</b>`, ...a.map(v=>v?num(Math.round(v/1000)):'—'), gbpM(fy), pct(fy/fyAll) ]}; });
-  const tot=Array(12).fill(0); stg.forEach(([st])=>mat[st].forEach((v,i)=>tot[i]+=v));
-  rows.push({cls:'tot',cells:['Total', ...tot.map(v=>num(Math.round(v/1000))), gbpM(fyAll), '100%']});
-  return tbl([{t:'Funnel stage'},...MOn.map(m=>({t:m,r:1})),{t:'FY total',r:1},{t:'% of FY',r:1}], rows);
+${(()=>{ const MOn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const sub=(t)=>`<span style="color:var(--muted);font-size:.82em">${t}</span>`;
+  const rows=BSTG.map(([st,c])=>{ const a=BMAT[st]; const fy=a.reduce((x,y)=>x+y,0);
+    return {cells:[ `<b style="color:${c}">${st}</b>`,
+      ...a.map((v,i)=> v? `${num(Math.round(v/1000))}<br>${sub(BMIX[st][i].toFixed(0)+'%')}` : '—'),
+      `${gbpM(fy)}<br>${sub(pct(fy/BMTOT.reduce((x,y)=>x+y,0)))}` ]}; });
+  const fyAll=BMTOT.reduce((x,y)=>x+y,0);
+  rows.push({cls:'tot',cells:['Total', ...BMTOT.map(v=>`${num(Math.round(v/1000))}<br>${sub('100%')}`), `${gbpM(fyAll)}<br>${sub('100%')}`]});
+  return tbl([{t:'Funnel stage'},...MOn.map(m=>({t:m,r:1})),{t:'FY total',r:1}], rows);
 })()}
-<p class="note">Planned blockplan spend by funnel stage across the full year (Jan–Dec). Monthly values in £000s; FY total in £m; % of FY = each stage's share of the full-year plan. Stage from the sheet's Role-of-Media tags (channels dual-tagged "Awareness/Conversion" counted as Conversion; SEO + holding = Other). This is plan, not actuals.</p>
+<p class="note">Planned blockplan spend by funnel stage across the full year (Jan–Dec). Top figure in each cell is £000s; the figure beneath is that stage's <b>% share of the month's</b> total plan (columns sum to 100%). FY total shows £m and the stage's share of the full year. Stage from the sheet's Role-of-Media tags (channels dual-tagged "Awareness/Conversion" counted as Conversion; SEO + holding = Other). This is plan, not actuals.</p>
+<h3 class="subsec">Funnel mix trended over the year (% of monthly plan)</h3>
+${chartbox('c_blk_mix')}
+<p class="note">Each stage's share of the month's total planned spend, month by month — a 100%-stacked view of how the funnel mix shifts across FY26.</p>
 <h2 class="sec">Full plan — all channels &amp; sub-channels <span style="color:var(--muted);font-weight:600">(FY26, monthly \u00a3000s)</span></h2>
 ${(()=>{ const B=D.blockDetail;
   const rows=B.map(r=>({cls:r.p?'tot':'', cells:[ (r.p?'<b>':'<span style=\"color:var(--muted)\">')+r.n+(r.p?'</b>':'</span>'), r.role||'—', ...r.m.map(v=>v?num(Math.round(v/1000)):'—'), gbpM(r.fy) ]}));
@@ -1864,6 +1872,10 @@ function buildPane(id){
         {label:'Total FTDs (indexed to 100)',data:a.fIdx,borderColor:COL.blue,backgroundColor:'rgba(10,46,203,.06)',tension:.2,pointRadius:2,borderWidth:2}
       ]},options:baseOpts({plugins:{title:{display:true,text:'ATL spend vs total FTDs — indexed to week 1 (ATL is flat; FTDs move independently)'},legend:{labels:{font:{size:11},boxWidth:12}}},scales:{y:{title:{display:true,text:'index (week 1 = 100)'}}}})});
     }
+  }
+  if(id==='sblk' && EMBED.blkMix){ const bm=EMBED.blkMix;
+    mkChart('c_blk_mix',{type:'line',data:{labels:bm.labels,datasets:bm.series.map(x=>({label:x.name,data:x.data,borderColor:x.color,backgroundColor:x.color+'55',fill:true,tension:.3,pointRadius:2,borderWidth:2}))},
+      options:baseOpts({interaction:{mode:'index',intersect:false},plugins:{title:{display:true,text:'Funnel-stage share of monthly plan (%)'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+'%'}}},scales:{y:{stacked:true,min:0,max:100,ticks:{callback:v=>v+'%'}},x:{stacked:true}}})});
   }
   if(id==='sfun' && EMBED.funnel){
     const F=EMBED.funnel;
