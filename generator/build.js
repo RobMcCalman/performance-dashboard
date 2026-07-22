@@ -1608,6 +1608,15 @@ ${kpi('Go faster vs Budget v2', '+'+gbpM(gf.tot.s-bv2.tot.s).slice(1), '+'+num(g
 ${kpi('Actual H1 (Jan–Jun)', gbpM(acH1s), num(acH1f)+' FTDs landed')}
 </div>
 ${tbl([{t:'Month'},{t:'Actual spend',r:1},{t:'Go faster',r:1},{t:'Budget v2',r:1},{t:'Actual FTDs',r:1},{t:'GF FTDs',r:1},{t:'v2 FTDs',r:1}], rows)}
+<h3 class="subsec">Variance vs plan — actual ÷ plan − 1 (complete months, Jan–Jun)</h3>
+${(()=>{ const mu=v=>`<span style="color:var(--muted);font-weight:600">${(v>=0?'+':'')+v.toFixed(0)}%</span>`;
+  const pill7=(v)=>`<span class="pill ${v>=0?'green':v>=-10?'amber':'red'}">${(v>=0?'+':'')+v.toFixed(0)}%</span>`;
+  const vv=(a,p)=>p?(a/p-1)*100:0;
+  const vr=M.slice(0,6).map((m,i)=>({cells:[ m, gbpM(ac.s[i]), mu(vv(ac.s[i],gf.s[i])), mu(vv(ac.s[i],bv2.s[i])), num(ac.f[i]), pill7(vv(ac.f[i],gf.f[i])), pill7(vv(ac.f[i],bv2.f[i])) ]}));
+  vr.push({cls:'tot',cells:['H1 total', gbpM(acH1s), mu(vv(acH1s,gfH1s)), mu(vv(acH1s,bvH1s)), num(acH1f), pill7(vv(acH1f,gfH1f)), pill7(vv(acH1f,bvH1f))]});
+  return tbl([{t:'Month'},{t:'Actual spend',r:1},{t:'Spend vs GF',r:1},{t:'Spend vs v2',r:1},{t:'Actual FTDs',r:1},{t:'FTDs vs GF',r:1},{t:'FTDs vs v2',r:1}], vr);
+})()}
+<p class="note">Variance = actual ÷ plan − 1 for each month (negative = under plan). Spend variance is shown neutral (muted); FTD variance is RAG-flagged (green at/above plan, amber within 10% below, red &gt;10% below). July is excluded here because it is only partial to ${ASOF}. </p>
 <p class="note"><b>H1 pace (Jan–Jun, complete):</b> actual spend ${gbpM(acH1s)} vs Go faster ${gbpM(gfH1s)} (<b>${pct(acH1s/gfH1s)}</b>) / Budget v2 ${gbpM(bvH1s)} (<b>${pct(acH1s/bvH1s)}</b>); actual FTDs ${num(acH1f)} vs GF ${num(gfH1f)} (<b>${pct(acH1f/gfH1f)}</b>) / v2 ${num(bvH1f)} (<b>${pct(acH1f/bvH1f)}</b>). H1 spend is tracking below both plans, so the back-half ramp (esp. Go faster's £6–7.7m/mo Q4) is the stretch. <b>*</b> the Actual column total is YTD to ${ASOF} (July partial), not a full-year number. Go faster = the current embedded plan; Budget v2 = FY26 Feb £60m model (Jan–Dec 2026). CPA = spend÷FTDs; LTV:CAC = net PLTV÷spend.</p>`;
 }
 
