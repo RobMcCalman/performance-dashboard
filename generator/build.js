@@ -1599,32 +1599,36 @@ if(D.plans){ const PL=D.plans, M=PL.months, gf=PL.gf, bv2=PL.bv2, ac=PL.actual, 
   const acH1s=sumTo(ac.s,6),acH1f=sumTo(ac.f,6),gfH1s=sumTo(gf.s,6),gfH1f=sumTo(gf.f,6),bvH1s=sumTo(bv2.s,6),bvH1f=sumTo(bv2.f,6);
   const rows=M.map((m,i)=>({cells:[ m, i<N?gbpM(ac.s[i]):'—', gbpM(gf.s[i]), gbpM(bv2.s[i]), i<N?num(ac.f[i]):'—', num(gf.f[i]), num(bv2.f[i]) ]}));
   rows.push({cls:'tot',cells:['YTD / Full year', gbpM(sumTo(ac.s,N))+' *', gbpM(gf.tot.s), gbpM(bv2.tot.s), num(sumTo(ac.f,N))+' *', num(gf.tot.f), num(bv2.tot.f)]});
-  panes.splan = `<h2 class="sec">Plan comparison — actuals vs Go faster vs Budget v2</h2>
-<div class="callout"><b>Two full-year targets side by side.</b> <b>Go faster</b> is the current committed plan — the increased-investment case (${gbpM(gf.tot.s)} spend, ${num(gf.tot.f)} FTDs, ${gf.tot.ltv.toFixed(2)} blended LTV:CAC). <b>Budget v2</b> is the leaner FY26 £60m scenario (${gbpM(bv2.tot.s)} in-year, ${num(bv2.tot.f)} FTDs, ${bv2.tot.ltv.toFixed(2)}). Actuals are to ${ASOF} (July partial). Net PLTV is net of the affiliate revshare (15% to Mar / 10% from Apr); Budget v2 uses the plan's own modelled value.</div>
+  panes.splan = `<h2 class="sec">Plan comparison — actuals vs Go faster vs Budget</h2>
+<div class="callout"><b>Two full-year targets side by side.</b> <b>Go faster</b> is the current committed plan — the increased-investment case (${gbpM(gf.tot.s)} spend, ${num(gf.tot.f)} FTDs, ${gf.tot.ltv.toFixed(2)} blended LTV:CAC). <b>Budget</b> is the leaner FY26 £60m scenario (${gbpM(bv2.tot.s)} in-year, ${num(bv2.tot.f)} FTDs, ${bv2.tot.ltv.toFixed(2)}). Actuals are to ${ASOF} (July partial). Net PLTV is net of the affiliate revshare (15% to Mar / 10% from Apr); Budget uses the plan's own modelled value.</div>
 <div class="kpis">
 ${kpi('Go faster — FY spend', gbpM(gf.tot.s), num(gf.tot.f)+' FTDs · £'+gf.tot.cpa+' CPA · '+gf.tot.ltv.toFixed(2)+' LTV:CAC')}
-${kpi('Budget v2 — FY spend', gbpM(bv2.tot.s), num(bv2.tot.f)+' FTDs · £'+bv2.tot.cpa+' CPA · '+bv2.tot.ltv.toFixed(2)+' LTV:CAC')}
-${kpi('Go faster vs Budget v2', '+'+gbpM(gf.tot.s-bv2.tot.s).slice(1), '+'+num(gf.tot.f-bv2.tot.f)+' FTDs of ambition')}
+${kpi('Budget — FY spend', gbpM(bv2.tot.s), num(bv2.tot.f)+' FTDs · £'+bv2.tot.cpa+' CPA · '+bv2.tot.ltv.toFixed(2)+' LTV:CAC')}
+${kpi('Go faster vs Budget', '+'+gbpM(gf.tot.s-bv2.tot.s).slice(1), '+'+num(gf.tot.f-bv2.tot.f)+' FTDs of ambition')}
 ${kpi('Actual H1 (Jan–Jun)', gbpM(acH1s), num(acH1f)+' FTDs landed')}
 </div>
-${tbl([{t:'Month'},{t:'Actual spend',r:1},{t:'Go faster',r:1},{t:'Budget v2',r:1},{t:'Actual FTDs',r:1},{t:'GF FTDs',r:1},{t:'v2 FTDs',r:1}], rows)}
+${tbl([{t:'Month'},{t:'Actual spend',r:1},{t:'Go faster',r:1},{t:'Budget',r:1},{t:'Actual FTDs',r:1},{t:'GF FTDs',r:1},{t:'Budget FTDs',r:1}], rows)}
 <h3 class="subsec">Variance vs plan — actual ÷ plan − 1 (complete months, Jan–Jun)</h3>
 ${(()=>{ const mu=v=>`<span style="color:var(--muted);font-weight:600">${(v>=0?'+':'')+v.toFixed(0)}%</span>`;
   const pill7=(v)=>`<span class="pill ${v>=0?'green':v>=-10?'amber':'red'}">${(v>=0?'+':'')+v.toFixed(0)}%</span>`;
   const vv=(a,p)=>p?(a/p-1)*100:0;
   const vr=M.slice(0,6).map((m,i)=>({cells:[ m, gbpM(ac.s[i]), mu(vv(ac.s[i],gf.s[i])), mu(vv(ac.s[i],bv2.s[i])), num(ac.f[i]), pill7(vv(ac.f[i],gf.f[i])), pill7(vv(ac.f[i],bv2.f[i])) ]}));
   vr.push({cls:'tot',cells:['H1 total', gbpM(acH1s), mu(vv(acH1s,gfH1s)), mu(vv(acH1s,bvH1s)), num(acH1f), pill7(vv(acH1f,gfH1f)), pill7(vv(acH1f,bvH1f))]});
-  return tbl([{t:'Month'},{t:'Actual spend',r:1},{t:'Spend vs GF',r:1},{t:'Spend vs v2',r:1},{t:'Actual FTDs',r:1},{t:'FTDs vs GF',r:1},{t:'FTDs vs v2',r:1}], vr);
+  return tbl([{t:'Month'},{t:'Actual spend',r:1},{t:'Spend vs GF',r:1},{t:'Spend vs Budget',r:1},{t:'Actual FTDs',r:1},{t:'FTDs vs GF',r:1},{t:'FTDs vs Budget',r:1}], vr);
 })()}
 <p class="note">Variance = actual ÷ plan − 1 for each month (negative = under plan). Spend variance is shown neutral (muted); FTD variance is RAG-flagged (green at/above plan, amber within 10% below, red &gt;10% below). July is excluded here because it is only partial to ${ASOF}. </p>
-<p class="note"><b>H1 pace (Jan–Jun, complete):</b> actual spend ${gbpM(acH1s)} vs Go faster ${gbpM(gfH1s)} (<b>${pct(acH1s/gfH1s)}</b>) / Budget v2 ${gbpM(bvH1s)} (<b>${pct(acH1s/bvH1s)}</b>); actual FTDs ${num(acH1f)} vs GF ${num(gfH1f)} (<b>${pct(acH1f/gfH1f)}</b>) / v2 ${num(bvH1f)} (<b>${pct(acH1f/bvH1f)}</b>). H1 spend is tracking below both plans, so the back-half ramp (esp. Go faster's £6–7.7m/mo Q4) is the stretch. <b>*</b> the Actual column total is YTD to ${ASOF} (July partial), not a full-year number. Go faster = the current embedded plan; Budget v2 = FY26 Feb £60m model, native-weekly figures allocated to months <b>pro-rata by day</b> (removes the 4-vs-5-week calendar distortion, so Mar/Jun/Aug/Nov are no longer over-stated). CPA = spend÷FTDs; LTV:CAC = net PLTV÷spend.</p>
-<h2 class="sec">By-week comparison — actuals vs Go faster vs Budget v2</h2>
-<div class="callout">Weekly (Mon–Sun) <b>spend &amp; FTDs</b> against both plans. Actuals to ${ASOF} (blank once the week hasn't landed); both plans run the full FY. Budget v2 is <b>native weekly</b> from the £60m model; Go faster from its weekly plan build. This is the un-aggregated view behind the monthly tables above — no month-boundary distortion.</div>
-${(()=>{ const W=PL.weekly; const dm=v=>v>=0?'':''; 
-  const rows=W.map(r=>({cells:[ r.w, ('as' in r)?gbpM(r['as']):'—', gbpM(r.gs), gbpM(r.bs), ('af' in r)?num(r.af):'—', num(r.gf), num(r.bf) ]}));
-  return tbl([{t:'Week (w/c)'},{t:'Actual spend',r:1},{t:'Go faster',r:1},{t:'Budget v2',r:1},{t:'Actual FTDs',r:1},{t:'GF FTDs',r:1},{t:'v2 FTDs',r:1}], rows);
+<p class="note"><b>H1 pace (Jan–Jun, complete):</b> actual spend ${gbpM(acH1s)} vs Go faster ${gbpM(gfH1s)} (<b>${pct(acH1s/gfH1s)}</b>) / Budget ${gbpM(bvH1s)} (<b>${pct(acH1s/bvH1s)}</b>); actual FTDs ${num(acH1f)} vs GF ${num(gfH1f)} (<b>${pct(acH1f/gfH1f)}</b>) / v2 ${num(bvH1f)} (<b>${pct(acH1f/bvH1f)}</b>). H1 spend is tracking below both plans, so the back-half ramp (esp. Go faster's £6–7.7m/mo Q4) is the stretch. <b>*</b> the Actual column total is YTD to ${ASOF} (July partial), not a full-year number. Go faster = the current embedded plan; Budget = FY26 Feb £60m model, native-weekly figures allocated to months <b>pro-rata by day</b> (removes the 4-vs-5-week calendar distortion, so Mar/Jun/Aug/Nov are no longer over-stated). CPA = spend÷FTDs; LTV:CAC = net PLTV÷spend.</p>
+<h2 class="sec">By-week comparison — actuals vs Go faster vs Budget</h2>
+<div class="callout">Weekly (Mon–Sun) <b>spend &amp; FTDs</b> against both plans. Actuals to ${ASOF} (blank once the week hasn't landed); both plans run the full FY. Budget is <b>native weekly</b> from the £60m model; Go faster from its weekly plan build. This is the un-aggregated view behind the monthly tables above — no month-boundary distortion.</div>
+${(()=>{ const W=PL.weekly;
+  const vv=(a,p)=>p?(a/p-1)*100:null;
+  const mu=v=>v==null?'—':`<span style="color:var(--muted);font-weight:600">${(v>=0?'+':'')+v.toFixed(0)}%</span>`;
+  const pl=v=>v==null?'—':`<span class="pill ${v>=0?'green':v>=-10?'amber':'red'}">${(v>=0?'+':'')+v.toFixed(0)}%</span>`;
+  const rows=W.map(r=>{ const h=('af' in r);
+    return {cells:[ r.w, h?gbpM(r['as']):'—', gbpM(r.gs), gbpM(r.bs), h?mu(vv(r['as'],r.gs)):'—', h?mu(vv(r['as'],r.bs)):'—', h?num(r.af):'—', num(r.gf), num(r.bf), h?pl(vv(r.af,r.gf)):'—', h?pl(vv(r.af,r.bf)):'—' ]}; });
+  return tbl([{t:'Week (w/c)'},{t:'Act spend',r:1},{t:'Go faster',r:1},{t:'Budget',r:1},{t:'sp v GF',r:1},{t:'sp v Bud',r:1},{t:'Act FTDs',r:1},{t:'GF FTDs',r:1},{t:'Budget FTDs',r:1},{t:'FTDs v GF',r:1},{t:'FTDs v Bud',r:1}], rows);
 })()}
-<p class="note">${PL.weekly.filter(r=>'af' in r).length} weeks landed to ${ASOF}. Weekly spend/FTDs; net PLTV omitted at week grain. Go faster = current committed plan (weekly); Budget v2 = £60m FY26 model (weekly).</p>`;
+<p class="note">${PL.weekly.filter(r=>'af' in r).length} weeks landed to ${ASOF}. Weekly spend/FTDs; net PLTV omitted at week grain. Go faster = current committed plan (weekly); Budget = £60m FY26 model (weekly).</p>`;
 }
 
 const TABS = [['summary','Summary'],['rec','Recommendations'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],...(panes.splan?[['splan','Plan comparison']]:[]),['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),...(panes.sfun?[['sfun','Quality funnel']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],...(panes.sctr?[['sctr','Channel trends']]:[]),['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],...(panes.satl?[['satl','ATL model']]:[]),...(panes.stv?[['stv','TV: Bingo v Casino']]:[]),['s9','Channel opt'],...(panes.sinc?[['sinc','Incremental CPA']]:[]),['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],...(panes.srev?[['srev','Revshare 10%']]:[]),['s11','Per-channel'],['s12','Weekly trends']];
