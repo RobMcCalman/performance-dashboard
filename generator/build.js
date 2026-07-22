@@ -1631,7 +1631,37 @@ ${(()=>{ const W=PL.weekly;
 <p class="note">${PL.weekly.filter(r=>'af' in r).length} weeks landed to ${ASOF}. Weekly spend/FTDs; net PLTV omitted at week grain. Go faster = current committed plan (weekly); Budget = £60m FY26 model (weekly).</p>`;
 }
 
-const TABS = [['summary','Summary'],['rec','Recommendations'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],...(panes.splan?[['splan','Plan comparison']]:[]),['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),...(panes.sfun?[['sfun','Quality funnel']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],...(panes.sctr?[['sctr','Channel trends']]:[]),['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],...(panes.satl?[['satl','ATL model']]:[]),...(panes.stv?[['stv','TV: Bingo v Casino']]:[]),['s9','Channel opt'],...(panes.sinc?[['sinc','Incremental CPA']]:[]),['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],...(panes.srev?[['srev','Revshare 10%']]:[]),['s11','Per-channel'],['s12','Weekly trends']];
+
+if(D.blockplan){ const BLK=D.blockplan, FY=BLK.fy, A=BLK.add3m;
+  const pcm=(v,t)=>t?(v/t*100).toFixed(0)+'%':'—';
+  const fyRows=[
+    {cells:['<b style="color:var(--blue)">Awareness</b>', gbpM(FY.aw), pcm(FY.aw,FY.tot), 'TV, AV sponsorships (Discovery/DAZN/Sky Sports News), OOH, stadium LEDs, audio &amp; partnerships, cinema, AVOOH']},
+    {cells:['<b style="color:var(--sky)">Consideration</b>', gbpM(FY.con), pcm(FY.con,FY.tot), 'VOD, digital video / YouTube, premium social (X/TikTok/Meta), prospecting, UFC']},
+    {cells:['<b style="color:var(--green)">Conversion</b>', gbpM(FY.conv), pcm(FY.conv,FY.tot), 'Affiliate, PPC Brand, Apple/Google app & search, Meta app & paid social, PPC generic, organic']},
+    {cells:['Other / unallocated', gbpM(FY.oth), pcm(FY.oth,FY.tot), 'SEO, holding (TBC — O2/Ladbible/creator/late opportunities)']},
+    {cls:'tot',cells:['Total blockplan', gbpM(FY.tot), '100%', 'FY26 increased-investment plan']} ];
+  const addRows=[
+    {cells:['<b style="color:var(--blue)">Awareness</b>', ...A.aw.map(gbpK), gbpK(A.awT)]},
+    {cells:['<b style="color:var(--sky)">Consideration</b>', ...A.con.map(gbpK), gbpK(A.conT)]},
+    {cells:['Testing &amp; Partnership', ...A.test.map(gbpK), gbpK(A.testT)]},
+    {cls:'tot',cells:['Total additional', ...A.tot.map(gbpK), gbpK(A.totT)]} ];
+  panes.sblk = `<h2 class="sec">H2 Blockplan — full-funnel view <span style="color:var(--muted);font-weight:600">(MrQ FY26 Blockplan)</span></h2>
+<div class="callout">The 2026 media blockplan tagged by <b>role of media</b> into the marketing funnel — <b>Awareness → Consideration → Conversion</b> — from the MrQ FY26 Blockplan sheet. Total plan <b>${gbpM(FY.tot)}</b>: heavily conversion-weighted (${pcm(FY.conv,FY.tot)}, the always-on affiliate + performance base), with <b>${gbpM(FY.aw)}</b> of brand awareness (${pcm(FY.aw,FY.tot)}) and <b>${gbpM(FY.con)}</b> mid-funnel consideration (${pcm(FY.con,FY.tot)}). The <b>additional £3m committed over H2</b> is shown below — it lands mostly in <b>Testing &amp; Partnership activation</b>, with modest net top-ups to Awareness and Consideration.</div>
+<div class="kpis">
+${kpi('Awareness (FY)', gbpM(FY.aw), pcm(FY.aw,FY.tot)+' of plan · ATL brand')}
+${kpi('Consideration (FY)', gbpM(FY.con), pcm(FY.con,FY.tot)+' of plan · VOD/video/social')}
+${kpi('Conversion (FY)', gbpM(FY.conv), pcm(FY.conv,FY.tot)+' of plan · affiliate/performance')}
+${kpi('Additional H2', gbpM(A.totT), 'the +£3m Jul–Dec layer')}
+</div>
+<h3 class="subsec">Blockplan by funnel stage — full year</h3>
+${tbl([{t:'Funnel stage'},{t:'Spend',r:1},{t:'% of plan',r:1},{t:'What sits here'}], fyRows)}
+<p class="note">Stage from the blockplan's <b>Role of Media</b> column. ATL brand media = Awareness; VOD/online-video/premium-social/prospecting = Consideration; affiliate + 1st-party/platform performance channels (incl. those tagged "Awareness/Conversion") = Conversion. SEO and the TBC holding budget are shown as Other. Total ${gbpM(FY.tot)} is the increased-investment (Go faster) plan.</p>
+<h3 class="subsec">Where the additional £3m is invested over H2 — by funnel stage</h3>
+${tbl([{t:'Funnel stage'},{t:'Jul',r:1},{t:'Aug',r:1},{t:'Sep',r:1},{t:'Oct',r:1},{t:'Nov',r:1},{t:'Dec',r:1},{t:'H2 total',r:1}], addRows)}
+<p class="note">From the blockplan's "Where additional £3m invested over H2" section: net changes vs the base plan, summing to <b>${gbpM(A.totT)}</b> (£500k/month Jul–Dec). Most of it (<b>${gbpM(A.testT)}</b>) sits in <b>Testing &amp; Partnership media activation</b> (upper-funnel experimental — the section's balancing line); Awareness nets <b>${gbpK(A.awT)}</b> and Consideration <b>${gbpK(A.conT)}</b>. Negative months are reallocations <i>out</i> of a stage into Testing &amp; Partnership. No Conversion line — the extra £3m is entirely brand/ATL-side, on top of the always-on performance base.</p>`;
+}
+
+const TABS = [['summary','Summary'],['rec','Recommendations'],['s1','This-week'],['s2','Month-to-date'],['s2b','Targets'],...(panes.s2j?[['s2j',MONTHS[CUR_MO-1]+' MTD']]:[]),['s2c','Budget'],...(panes.splan?[['splan','Plan comparison']]:[]),...(panes.sblk?[['sblk','H2 Blockplan']]:[]),['s3','YTD & YoY'],['s3b','PLTV drivers'],...(panes.sq?[['sq','FTD quality']]:[]),...(panes.sfun?[['sfun','Quality funnel']]:[]),['s4','Daily'],['s4b','Timing'],['s4c','Weather'],['s4d','World Cup'],['s5','Insights'],['s6','Channel mix'],['s6b','APD2+'],...(panes.sctr?[['sctr','Channel trends']]:[]),['straffic','Traffic'],['s7','Web vs App'],['s8','ATL'],...(panes.satl?[['satl','ATL model']]:[]),...(panes.stv?[['stv','TV: Bingo v Casino']]:[]),['s9','Channel opt'],...(panes.sinc?[['sinc','Incremental CPA']]:[]),['s9b','Time-decay'],['s10','Ad-groups'],['s10b','Affiliates'],...(panes.srev?[['srev','Revshare 10%']]:[]),['s11','Per-channel'],['s12','Weekly trends']];
 const tabbar = TABS.map((t,i)=>`<button class="tab${i===0?' active':''}" data-pane="${t[0]}">${t[1]}</button>`).join('');
 const paneHTML = TABS.map((t,i)=>`<section class="pane${i===0?' active':''}" id="pane-${t[0]}">${panes[t[0]]||''}</section>`).join('');
 
