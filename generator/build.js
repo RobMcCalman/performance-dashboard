@@ -1646,19 +1646,28 @@ if(D.blockplan){ const BLK=D.blockplan, FY=BLK.fy, A=BLK.add3m;
     {cells:['Testing &amp; Partnership', ...A.test.map(gbpK), gbpK(A.testT)]},
     {cls:'tot',cells:['Total additional', ...A.tot.map(gbpK), gbpK(A.totT)]} ];
   panes.sblk = `<h2 class="sec">H2 Blockplan — full-funnel view <span style="color:var(--muted);font-weight:600">(MrQ FY26 Blockplan)</span></h2>
-<div class="callout">The 2026 media blockplan tagged by <b>role of media</b> into the marketing funnel — <b>Awareness → Consideration → Conversion</b> — from the MrQ FY26 Blockplan sheet. Total plan <b>${gbpM(FY.tot)}</b>: heavily conversion-weighted (${pcm(FY.conv,FY.tot)}, the always-on affiliate + performance base), with <b>${gbpM(FY.aw)}</b> of brand awareness (${pcm(FY.aw,FY.tot)}) and <b>${gbpM(FY.con)}</b> mid-funnel consideration (${pcm(FY.con,FY.tot)}). The <b>additional £3m committed over H2</b> is shown below — it lands mostly in <b>Testing &amp; Partnership activation</b>, with modest net top-ups to Awareness and Consideration.</div>
+<div class="callout">The 2026 media blockplan tagged by <b>role of media</b> into the marketing funnel — <b>Awareness → Consideration → Conversion</b> — from the MrQ FY26 Blockplan sheet. Total plan <b>${gbpM(FY.tot)}</b>: heavily conversion-weighted (${pcm(FY.conv,FY.tot)}, the always-on affiliate + performance base), with <b>${gbpM(FY.aw)}</b> of brand awareness (${pcm(FY.aw,FY.tot)}) and <b>${gbpM(FY.con)}</b> mid-funnel consideration (${pcm(FY.con,FY.tot)}). The month-by-month funnel split (YTD) is shown below, with the full line-by-line plan beneath.</div>
 <div class="kpis">
 ${kpi('Awareness (FY)', gbpM(FY.aw), pcm(FY.aw,FY.tot)+' of plan · ATL brand')}
 ${kpi('Consideration (FY)', gbpM(FY.con), pcm(FY.con,FY.tot)+' of plan · VOD/video/social')}
 ${kpi('Conversion (FY)', gbpM(FY.conv), pcm(FY.conv,FY.tot)+' of plan · affiliate/performance')}
-${kpi('Additional H2', gbpM(A.totT), 'the +£3m Jul–Dec layer')}
+${kpi('Total plan (FY)', gbpM(FY.tot), 'FY26 increased-investment plan')}
 </div>
 <h3 class="subsec">Blockplan by funnel stage — full year</h3>
 ${tbl([{t:'Funnel stage'},{t:'Spend',r:1},{t:'% of plan',r:1},{t:'What sits here'}], fyRows)}
 <p class="note">Stage from the blockplan's <b>Role of Media</b> column. ATL brand media = Awareness; VOD/online-video/premium-social/prospecting = Consideration; affiliate + 1st-party/platform performance channels (incl. those tagged "Awareness/Conversion") = Conversion. SEO and the TBC holding budget are shown as Other. Total ${gbpM(FY.tot)} is the increased-investment (Go faster) plan.</p>
-<h3 class="subsec">Where the additional £3m is invested over H2 — by funnel stage</h3>
-${tbl([{t:'Funnel stage'},{t:'Jul',r:1},{t:'Aug',r:1},{t:'Sep',r:1},{t:'Oct',r:1},{t:'Nov',r:1},{t:'Dec',r:1},{t:'H2 total',r:1}], addRows)}
-<p class="note">From the blockplan's "Where additional £3m invested over H2" section: net changes vs the base plan, summing to <b>${gbpM(A.totT)}</b> (£500k/month Jul–Dec). Most of it (<b>${gbpM(A.testT)}</b>) sits in <b>Testing &amp; Partnership media activation</b> (upper-funnel experimental — the section's balancing line); Awareness nets <b>${gbpK(A.awT)}</b> and Consideration <b>${gbpK(A.conT)}</b>. Negative months are reallocations <i>out</i> of a stage into Testing &amp; Partnership. No Conversion line — the extra £3m is entirely brand/ATL-side, on top of the always-on performance base.</p>
+<h3 class="subsec">Funnel stages by month — YTD (plan)</h3>
+${(()=>{ const B=D.blockDetail; const N=7; const MOn=['Jan','Feb','Mar','Apr','May','Jun','Jul'];
+  const stg=[['Awareness','var(--blue)'],['Consideration','var(--sky)'],['Conversion','var(--green)'],['Other','var(--muted)']];
+  const mat={}; stg.forEach(([st])=>mat[st]=Array(12).fill(0));
+  B.forEach(r=>{ if(r.p && mat[r.st]) r.m.forEach((v,i)=>mat[r.st][i]+=v); });
+  const rows=stg.map(([st,c])=>{ const a=mat[st]; const ytd=a.slice(0,N).reduce((x,y)=>x+y,0);
+    return {cells:[ `<b style="color:${c}">${st}</b>`, ...a.slice(0,N).map(v=>v?num(Math.round(v/1000)):'—'), gbpM(ytd) ]}; });
+  const tot=Array(N).fill(0); stg.forEach(([st])=>mat[st].slice(0,N).forEach((v,i)=>tot[i]+=v)); const ytdT=tot.reduce((x,y)=>x+y,0);
+  rows.push({cls:'tot',cells:['Total', ...tot.map(v=>num(Math.round(v/1000))), gbpM(ytdT)]});
+  return tbl([{t:'Funnel stage'},...MOn.map(m=>({t:m,r:1})),{t:'YTD total',r:1}], rows);
+})()}
+<p class="note">Planned blockplan spend by funnel stage, month by month, year-to-date (Jan–Jul). Monthly values in £000s; YTD total in £m. Stage from the sheet's Role-of-Media tags (performance/1st-party channels, incl. those dual-tagged "Awareness/Conversion", counted as Conversion; SEO + holding = Other). This is plan, not actuals.</p>
 <h2 class="sec">Full plan — all channels &amp; sub-channels <span style="color:var(--muted);font-weight:600">(FY26, monthly \u00a3000s)</span></h2>
 ${(()=>{ const B=D.blockDetail;
   const rows=B.map(r=>({cls:r.p?'tot':'', cells:[ (r.p?'<b>':'<span style=\"color:var(--muted)\">')+r.n+(r.p?'</b>':'</span>'), r.role||'—', ...r.m.map(v=>v?num(Math.round(v/1000)):'—'), gbpM(r.fy) ]}));
