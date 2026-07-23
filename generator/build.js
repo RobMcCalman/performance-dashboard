@@ -1643,6 +1643,7 @@ if(D.blockplan){ const BLK=D.blockplan, FY=BLK.fy, A=BLK.add3m;
   const BSTG=[['Awareness','var(--blue)','#0A2ECB'],['Consideration','var(--sky)','#00B2FF'],['Conversion','var(--green)','#1c8f53'],['Other','var(--muted)','#9aa3bf']];
   const BMAT={}; BSTG.forEach(([st])=>BMAT[st]=Array(12).fill(0));
   (D.blockDetail||[]).forEach(r=>{ if(r.p && BMAT[r.st]) r.m.forEach((v,i)=>BMAT[r.st][i]+=v); });
+  if(D.sponsors){ D.sponsors.tot.forEach((v,i)=>BMAT['Awareness'][i]+=v); }
   const BMTOT=Array(12).fill(0); BSTG.forEach(([st])=>BMAT[st].forEach((v,i)=>BMTOT[i]+=v));
   const BMIX={}; BSTG.forEach(([st])=>BMIX[st]=BMAT[st].map((v,i)=>BMTOT[i]?+(v/BMTOT[i]*100).toFixed(1):0));
   EMBED.blkMix={labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],series:BSTG.map(([st,,hex])=>({name:st,color:hex,data:BMIX[st],abs:BMAT[st].map(v=>Math.round(v/1000))}))};
@@ -1723,12 +1724,12 @@ ${tblHtml}
 })()}
 <h2 class="sec">Sponsorships — sports &amp; entertainment <span style="color:var(--muted);font-weight:600">(H2 activation · Awareness)</span></h2>
 ${(()=>{ const SP=D.sponsors; if(!SP) return '';
- const MOn=['Jul','Aug','Sep','Oct','Nov','Dec'];
- const rows=SP.rows.map(r=>({cells:[ r.n, ...r.m.slice(6).map(v=>v?gbpK(v):'—'), gbpM(r.fy) ]}));
- rows.push({cls:'tot',cells:['Total sponsorships', ...SP.tot.slice(6).map(v=>gbpK(v)), gbpM(SP.fy)]});
+ const MOn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+ const rows=SP.rows.map(r=>({cells:[ r.n, ...r.m.map(v=>v?num(Math.round(v/1000)):'—'), gbpM(r.fy) ]}));
+ rows.push({cls:'tot',cells:['Total sponsorships', ...SP.tot.map(v=>v?num(Math.round(v/1000)):'—'), gbpM(SP.fy)]});
  return tbl([{t:'Sponsorship'},...MOn.map(m=>({t:m,r:1})),{t:'FY total',r:1}], rows);
 })()}
-<p class="note">Sports &amp; entertainment sponsorship deals from the FY26 Blockplan sheet — <b>${gbpM(D.sponsors.fy)} full year</b>, ramping to <b>~£486–528k/month from August</b> and held in <b>Awareness</b> (the H2 brand rebalance). H1 columns (Jan–Jun) omitted for space; Watford (H1), UFC and Ladbible (Mar) and 4Ricky (Jun) sit earlier in the year. Judged on MMM + brand tracking over 6–12 months, not in-month CPA. <b>Note:</b> shown as a distinct sponsorship layer — some club/partner names (QPR, Bournemouth, Sheff Weds, DAZN, O2) also appear as LED/AV lines in the main plan above; treat these as the separate sponsorship/partnership deals, not duplicates.</p>
+<p class="note">Sports &amp; entertainment sponsorship deals from the FY26 Blockplan sheet — <b>${gbpM(D.sponsors.fy)} full year</b>, ramping to <b>~£486–528k/month from August</b> and held in <b>Awareness</b> (the H2 brand rebalance). Full year shown, monthly values in £000s; Watford runs H1, UFC and Ladbible land in Mar, 4Ricky in Jun. Judged on MMM + brand tracking over 6–12 months, not in-month CPA. <b>Now included in the Awareness stage totals</b> (funnel tables, mix charts and FY stage split above). Some club/partner names (QPR, Bournemouth, Sheff Weds, DAZN, O2) also appear as LED/AV lines in the main plan; these are counted as the separate sponsorship/partnership deals — flag if any should be de-duplicated.</p>
 <h2 class="sec">Full plan — all channels &amp; sub-channels <span style="color:var(--muted);font-weight:600">(FY26, monthly \u00a3000s)</span></h2>
 ${(()=>{ const B=D.blockDetail;
   const rows=B.map(r=>({cls:r.p?'tot':'', cells:[ (r.p?'<b>':'<span style=\"color:var(--muted)\">')+r.n+(r.p?'</b>':'</span>'), r.role||'—', ...r.m.map(v=>v?num(Math.round(v/1000)):'—'), gbpM(r.fy) ]}));
