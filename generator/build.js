@@ -1901,7 +1901,7 @@ function buildPane(id){
     mkChart('c_blk_abs',{type:'bar',data:{labels:bm.labels,datasets:bm.series.map(x=>({label:x.name,data:x.abs,backgroundColor:x.color,borderWidth:0}))},
       options:baseOpts({interaction:{mode:'index',intersect:false},plugins:{title:{display:true,text:'Funnel-stage spend by month (\u00a3000s)'},tooltip:{callbacks:{label:c=>c.dataset.label+': \u00a3'+(c.parsed.y).toLocaleString()+'k'}}},scales:{y:{stacked:true,ticks:{callback:v=>'\u00a3'+v+'k'}},x:{stacked:true}}})});
     if(EMBED.blkEff){ const be=EMBED.blkEff;
-      mkChart('c_blk_eff',{data:{labels:be.labels,datasets:[
+      mkChart('c_blk_eff',{type:'bar',data:{labels:be.labels,datasets:[
         {type:'bar',label:'Spend (£m)',data:be.spend,backgroundColor:COL.blue+'cc',yAxisID:'y',order:2},
         {type:'line',label:'Implied CPA (£)',data:be.cpa,borderColor:COL.pink,backgroundColor:COL.pink,yAxisID:'y1',tension:.3,pointRadius:3,borderWidth:2,order:1}
       ]},options:baseOpts({interaction:{mode:'index',intersect:false},plugins:{title:{display:true,text:'Planned spend vs implied CPA by month'}},scales:{y:{position:'left',title:{display:true,text:'Spend (£m)'},ticks:{callback:v=>'£'+v+'m'}},y1:{position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'CPA (£)'},ticks:{callback:v=>'£'+v}}}})});
