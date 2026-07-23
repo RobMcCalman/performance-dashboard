@@ -515,8 +515,8 @@ ${kpi('MTD FTDs', num(mtd.f), `full-month fcst ${num(moFcst.f)}`)}
 ${kpi('MTD LTV:CAC', f2(mtd.ltv), `net · CPA ${gbp(mtd.cpa)}`)}
 </div>
 <div class="kpis" style="margin-top:14px">
-${kpi('June pace — PLTV', `<span class="pill ${ragPace(paceP)} big">${pct(paceP)}</span>`, `fcst ${gbpM(moFcst.p)} vs plan ${gbpM(planRef.p)}`)}
-${kpi('June pace — FTDs', `<span class="pill ${ragPace(paceF)} big">${pct(paceF)}</span>`, `fcst ${num(moFcst.f)} vs plan ${num(planRef.f)}`)}
+${kpi(`${MO_CUR} pace — PLTV`, `<span class="pill ${ragPace(paceP)} big">${pct(paceP)}</span>`, `fcst ${gbpM(moFcst.p)} vs plan ${gbpM(planRef.p)}`)}
+${kpi(`${MO_CUR} pace — FTDs`, `<span class="pill ${ragPace(paceF)} big">${pct(paceF)}</span>`, `fcst ${num(moFcst.f)} vs plan ${num(planRef.f)}`)}
 ${kpi('YoY FTDs', (yoy.ftdsD>=0?'+':'')+pct(yoy.ftdsD), `CPA ${pct1(yoy.cpaD)} · LTV:CAC ${(yoy.ltvD>=0?'+':'')+pct(yoy.ltvD)}`)}
 ${kpi('Budget used (spend)', pct(div(ytd.s,planFY.s)), `${pct(YEAR_ELAPSED_DAYS/365)} of year elapsed`)}
 </div>
@@ -524,7 +524,7 @@ ${kpi('Budget used (spend)', pct(div(ytd.s,planFY.s)), `${pct(YEAR_ELAPSED_DAYS/
 <li><b>Tighten the softest affiliates.</b> ${affAlerts.length? `${affAlerts.length} affiliate(s) above the £20k/4-week spend bar are below 0.8 net LTV:CAC — ${affAlerts.map(a=>affName(a.aid)+' ('+f2(a.ltv)+')').join(', ')}. Renegotiate CPA before scaling.` : 'No large affiliate is below 0.8 net LTV:CAC this 4-week window — hold current deals and watch the lagging tail.'}</li>
 <li><b>Lean into brand search &amp; UAC.</b> ${adgBest.slice(0,3).map(a=>a.ag||a.camp||a.channel).join(', ')} are the best material ad groups (LTV:CAC ${f2(adgBest[0].ltv)}–${f2(adgBest[2].ltv)}). Shift incremental budget here.</li>
 <li><b>Rework the worst app placements.</b> ${adgWorst.slice(0,2).map(a=>`${a.channel} ${a.ag||a.camp||''} (${f2(a.ltv)})`).join(', ')} convert below break-even last-click — time-decay re-credits some app value, so verify before hard-cutting.</li>
-<li><b>Mind the June mix.</b> Blended PLTV/FTD is ${gbp(mtd.ppf)} (vs ${gbp(moBlend[4].ppf)} in May) — diluted by FTD growth skewing to low-value ${standout.ch} (${pct1(standout.share)} share at ${gbp(standout.ppf)}/FTD), not within-channel decay.</li>
+<li><b>Mind the ${MO_CUR} mix.</b> Blended PLTV/FTD is ${gbp(mtd.ppf)} (vs ${gbp(moBlend[RM-2].ppf)} in ${MO_PREV}) — diluted by FTD growth skewing to low-value ${standout.ch} (${pct1(standout.share)} share at ${gbp(standout.ppf)}/FTD), not within-channel decay.</li>
 </ol></div>
 <div class="health"><h3>Data health &amp; anomaly check <span>last complete week (22 Jun) vs prior (15 Jun) + lag watch</span></h3><ul>
 <li><b>Reconciliation OK.</b> YTD spend ${gbpM(ytd.s)}, FTDs ${num(ytd.f)}, net PLTV ${gbpM(ytd.p)} — channel rows reconcile to blended totals (err ${(reconErr*100).toFixed(2)}%).</li>
@@ -712,12 +712,12 @@ ${(()=>{
   panes.s2b = `<h2 class="sec">Targets — plan vs actual</h2>
 <div class="callout"><b>Affiliate PLTV — plan and actual — is net of the affiliate revshare (15% to Mar, 10% from Apr) haircut, so pacing is like-for-like.</b> Pace % = forecast ÷ plan (green ≥100, amber ≥90, red &lt;90).</div>
 <div class="kpis" style="margin-top:14px">
-${kpi('June PLTV pace', `<span class="pill ${ragPace(paceP)} big">${pct(paceP)}</span>`, `${gbpM(moFcst.p)} / ${gbpM(planRef.p)}`)}
-${kpi('June FTDs pace', `<span class="pill ${ragPace(paceF)} big">${pct(paceF)}</span>`, `${num(moFcst.f)} / ${num(planRef.f)}`)}
+${kpi(`${MO_CUR} PLTV pace`, `<span class="pill ${ragPace(paceP)} big">${pct(paceP)}</span>`, `${gbpM(moFcst.p)} / ${gbpM(planRef.p)}`)}
+${kpi(`${MO_CUR} FTDs pace`, `<span class="pill ${ragPace(paceF)} big">${pct(paceF)}</span>`, `${num(moFcst.f)} / ${num(planRef.f)}`)}
 ${kpi('YTD PLTV pace', `<span class="pill ${ragPace(div(ytd.p,planYTD.p))} big">${pct(div(ytd.p,planYTD.p))}</span>`, `${gbpM(ytd.p)} / ${gbpM(planYTD.p)}`)}
 ${kpi('YTD FTDs pace', `<span class="pill ${ragPace(div(ytd.f,planYTD.f))} big">${pct(div(ytd.f,planYTD.f))}</span>`, `${num(ytd.f)} / ${num(planYTD.f)}`)}
 </div>
-<h2 class="sec">Table A — June: plan vs full-month forecast by channel</h2>
+<h2 class="sec">Table A — ${MO_CUR}: plan vs full-month forecast by channel</h2>
 ${tbl([{t:'Channel'},{t:'Plan spend',r:1},{t:'Fcst spend',r:1},{t:'Spend %',r:1},{t:'Plan FTDs',r:1},{t:'Fcst FTDs',r:1},{t:'FTDs %',r:1},{t:'Plan PLTV',r:1},{t:'Fcst PLTV',r:1},{t:'PLTV %',r:1},{t:'LTV:CAC',r:1}], tA)}
 <h2 class="sec">Table B — YTD pacing by channel (vs plan-to-date, ${MONTHS[CUR_MO-1]} pro-rated ${DAYS_ELAPSED}/${DIM})</h2>
 ${tbl([{t:'Channel'},{t:'Plan spend',r:1},{t:'Act spend',r:1},{t:'Plan FTDs',r:1},{t:'Act FTDs',r:1},{t:'FTDs %',r:1},{t:'Plan PLTV',r:1},{t:'Act PLTV',r:1},{t:'PLTV %',r:1}], tB)}
@@ -756,7 +756,7 @@ if(CUR_MO>RM){
   EMBED.julPace = bR.filter(r=>r.pl.p>0).map(r=>({ch:r.ch, pcP:Math.round(r.pcP*100)})).sort((a,b)=>b.pcP-a.pcP);
   EMBED.julPaceMo = MOJ;
   panes.s2j = `<h2 class="sec">${MOJ} month-to-date vs plan — 1–${DAYS_ELAPSED} ${MOJ} (${DAYS_ELAPSED}/${DIM} days)</h2>
-<div class="callout">${MOJ} is the live month (June remains the headline reference until it is 7+ days old). MTD actuals are compared with the plan pro-rated to date (plan × ${DAYS_ELAPSED}/${DIM}); the full-month forecast = MTD + remaining ${kRem} days × trailing-4-week daily average. Affiliate spend gap-filled for ${GAPLBL} at ${gbp(AFF_CPA)} CPA; PLTV net of the affiliate revshare (15% to Mar, 10% from Apr).</div>
+<div class="callout">${MOJ} is the live month (the prior month stays the headline reference until the new month is 7+ days old). MTD actuals are compared with the plan pro-rated to date (plan × ${DAYS_ELAPSED}/${DIM}); the full-month forecast = MTD + remaining ${kRem} days × trailing-4-week daily average. Affiliate spend gap-filled for ${GAPLBL} at ${gbp(AFF_CPA)} CPA; PLTV net of the affiliate revshare (15% to Mar, 10% from Apr).</div>
 <div class="kpis" style="margin-top:14px">
 ${kpi('MTD spend', gbpM(jmAll.s), `fcst ${gbpM(jfcAll.s)} · plan ${gbpM(planT.s)}`)}
 ${kpi('MTD FTDs', num(jmAll.f), `fcst ${num(jfcAll.f)} · plan ${num(planT.f)}`)}
@@ -818,7 +818,7 @@ ${tbl([{t:'Channel'},{t:'FY plan spend',r:1},{t:'YTD actual',r:1},{t:'% used',r:
   }
   rows.push({cls:'tot',cells:['YTD *', num(ytd.f), num(r0(yoy.ftds25)), (yoy.ftdsD>=0?'+':'')+pct(yoy.ftdsD), gbp(yoy.cpa26), gbp(yoy.cpa25), f2(yoy.ltv26), f2(yoy.ltv25), gbp(div(yoy.pltv26,yoy.ftds26)), gbp(div(yoy.pltv25,yoy.ftds25))]});
   panes.s3 = `<h2 class="sec">YTD &amp; year-on-year (hybrid 2025 baseline)</h2>
-<div class="callout">2025 baseline uses <b>FY25-tracker spend</b> with <b>model FTDs &amp; PLTV (gross)</b> from BigQuery. 2026 Affiliate PLTV is net of the affiliate revshare (15% to Mar, 10% from Apr), so the <b>YoY LTV:CAC uplift is conservative</b> (2026 net vs 2025 gross). * June &amp; YTD are through ${GAPLBL} (2025 pro-rated to match).</div>
+<div class="callout">2025 baseline uses <b>FY25-tracker spend</b> with <b>model FTDs &amp; PLTV (gross)</b> from BigQuery. 2026 Affiliate PLTV is net of the affiliate revshare (15% to Mar, 10% from Apr), so the <b>YoY LTV:CAC uplift is conservative</b> (2026 net vs 2025 gross). * ${MO_CUR} &amp; YTD are through ${GAPLBL} (2025 pro-rated to match).</div>
 <div class="kpis" style="margin-top:14px">
 ${kpi('YTD FTDs', num(ytd.f), `2025 ${num(r0(yoy.ftds25))} · ${(yoy.ftdsD>=0?'+':'')+pct(yoy.ftdsD)}`)}
 ${kpi('YTD CPA', gbp(yoy.cpa26), `2025 ${gbp(yoy.cpa25)} · ${pct1(yoy.cpaD)}`)}
@@ -1021,10 +1021,10 @@ ${tbl([{t:'Channel'},{t:'Sessions',r:1},{t:'% new',r:1},{t:'New sessions',r:1},{
   panes.s5 = `<h2 class="sec">Insights</h2>
 <div class="rec"><h3>What the data is saying</h3><ol>
 <li><b>Acquisition is well ahead of last year</b> — YTD FTDs ${(yoy.ftdsD>=0?'+':'')+pct(yoy.ftdsD)} vs 2025 at ${pct1(yoy.cpaD)} lower CPA. Blended LTV:CAC ${f2(yoy.ltv26)} (net) vs ${f2(yoy.ltv25)} (gross) last year.</li>
-<li><b>June is pacing slightly behind plan</b> — PLTV ${pct(paceP)} and FTDs ${pct(paceF)} of target. The gap is value-mix, not volume: blended PLTV/FTD ${gbp(mtd.ppf)} vs May ${gbp(moBlend[4].ppf)}.</li>
-<li><b>${standout.ch} is the June dilutant</b> — ${pct1(standout.share)} of FTDs at ${gbp(standout.ppf)}/FTD. Premium channels (Organic Search, PPC Generic) held value but lost share.</li>
+<li><b>${MO_CUR} is pacing slightly behind plan</b> — PLTV ${pct(paceP)} and FTDs ${pct(paceF)} of target. The gap is value-mix, not volume: blended PLTV/FTD ${gbp(mtd.ppf)} vs ${MO_PREV} ${gbp(moBlend[RM-2].ppf)}.</li>
+<li><b>${standout.ch} is the ${MO_CUR} dilutant</b> — ${pct1(standout.share)} of FTDs at ${gbp(standout.ppf)}/FTD. Premium channels (Organic Search, PPC Generic) held value but lost share.</li>
 <li><b>Best-returning paid channel:</b> ${bestCh? bestCh.ch+' at '+f2(bestCh.ltv)+' net LTV:CAC':'—'}. Brand search and UAC ad groups top the leaderboard.</li>
-<li><b>Affiliate is the largest paid channel</b> (${pct1(div(junCh["Affiliate"].f,moTot[RM].f))} of June FTDs) and the softest premium spend — ${affAlerts.length? affAlerts.length+' large affiliate(s) below 0.8 net':'no large affiliate below 0.8 net'} this 4-week window.</li>
+<li><b>Affiliate is the largest paid channel</b> (${pct1(div(junCh["Affiliate"].f,moTot[RM].f))} of ${MO_CUR} FTDs) and the softest premium spend — ${affAlerts.length? affAlerts.length+' large affiliate(s) below 0.8 net':'no large affiliate below 0.8 net'} this 4-week window.</li>
 <li><b>Quality holding:</b> blended cost per APD2+ ${gbp(apdBlendCost)} YTD; value-per-FTD is stable week to week, so FTD volume — not per-player value — drives PLTV.</li>
 </ol></div>`;
 }
@@ -1172,7 +1172,7 @@ ${tbl(head, adgWorst.map(mk))}
     `${m.may_s?f2(m.mayL):'—'}→${m.jun_s?f2(m.junL):'—'}`
   ]}));
   const affMomLtvMay=div(affMayTot.p,affMayTot.s), affMomLtvJun=div(affJunTot.p,affJunTot.s);
-  panes.s10b += `<h2 class="sec">Affiliate month-on-month — May vs June (matched 1–${MD}, net)</h2>
+  panes.s10b += `<h2 class="sec">Affiliate month-on-month — ${MO_PREV} vs ${MO_CUR} (matched 1–${MD}, net)</h2>
 <div class="kpis">
 ${kpi('Net PLTV MoM', (div(affJunTot.p,affMayTot.p)-1>=0?'+':'')+pct1(div(affJunTot.p,affMayTot.p)-1), `May ${gbpM(affMayTot.p)} → Jun ${gbpM(affJunTot.p)}`)}
 ${kpi('FTDs MoM', (div(affJunTot.f,affMayTot.f)-1>=0?'+':'')+pct1(div(affJunTot.f,affMayTot.f)-1), `May ${num(affMayTot.f)} → Jun ${num(affJunTot.f)}`)}
@@ -1187,7 +1187,7 @@ ${kpi('Net LTV:CAC', `${f2(affMomLtvMay)}→${f2(affMomLtvJun)}`, 'channel blend
 // ---- S11 PER-CHANNEL ----
 {
   const opts = Object.keys(trendCh).sort((a,b)=>apdYTD[b].f-apdYTD[a].f).map(ch=>`<option value="${ch}">${ch}</option>`).join('');
-  panes.s11 = `<h2 class="sec">Per-channel trends (monthly, Jan–Jun · June = partial MTD)</h2>
+  panes.s11 = `<h2 class="sec">Per-channel trends (monthly, Jan–${MO_CUR} · ${MO_CUR} = partial MTD)</h2>
 <div class="selrow"><select id="chanSel">${opts}</select></div>
 <div class="grid2" style="margin-top:8px">${chartbox('c_pc_sf')}${chartbox('c_pc_cl')}</div>
 <p class="note">${MO_CUR} is ${!RMcomplete?`a partial month (1–${MD}); the final point will rise to a full-month total`:`complete`}. Granularity is monthly for stability across all 25 channels.</p>`;
