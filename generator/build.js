@@ -1639,7 +1639,7 @@ if(D.blockplan){ const BLK=D.blockplan, FY=BLK.fy, A=BLK.add3m;
   (D.blockDetail||[]).forEach(r=>{ if(r.p && BMAT[r.st]) r.m.forEach((v,i)=>BMAT[r.st][i]+=v); });
   const BMTOT=Array(12).fill(0); BSTG.forEach(([st])=>BMAT[st].forEach((v,i)=>BMTOT[i]+=v));
   const BMIX={}; BSTG.forEach(([st])=>BMIX[st]=BMAT[st].map((v,i)=>BMTOT[i]?+(v/BMTOT[i]*100).toFixed(1):0));
-  EMBED.blkMix={labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],series:BSTG.map(([st,,hex])=>({name:st,color:hex,data:BMIX[st]}))};
+  EMBED.blkMix={labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],series:BSTG.map(([st,,hex])=>({name:st,color:hex,data:BMIX[st],abs:BMAT[st].map(v=>Math.round(v/1000))}))};
   const pcm=(v,t)=>t?(v/t*100).toFixed(0)+'%':'—';
   const fyRows=[
     {cells:['<b style="color:var(--blue)">Awareness</b>', gbpM(FY.aw), pcm(FY.aw,FY.tot), 'TV, AV sponsorships (Discovery/DAZN/Sky Sports News), OOH, stadium LEDs, audio &amp; partnerships, cinema, AVOOH']},
@@ -1675,6 +1675,9 @@ ${(()=>{ const MOn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct',
   return tbl([{t:'Funnel stage'},...MOn.map(m=>({t:m,r:1})),{t:'FY total',r:1}], rows);
 })()}
 <p class="note">Planned blockplan spend by funnel stage across the full year (Jan–Dec). Top figure in each cell is £000s; the figure beneath is that stage's <b>% share of the month's</b> total plan (columns sum to 100%). FY total shows £m and the stage's share of the full year. Stage from the sheet's Role-of-Media tags (channels dual-tagged "Awareness/Conversion" counted as Conversion; SEO + holding = Other). This is plan, not actuals.</p>
+<h3 class="subsec">Funnel mix trended over the year (£ per month)</h3>
+${chartbox('c_blk_abs')}
+<p class="note">Planned spend by funnel stage, stacked by month (£000s) — the same mix in absolute pounds, so the total plan height per month is visible alongside the split.</p>
 <h3 class="subsec">Funnel mix trended over the year (% of monthly plan)</h3>
 ${chartbox('c_blk_mix')}
 <p class="note">Each stage's share of the month's total planned spend, month by month — a 100%-stacked view of how the funnel mix shifts across FY26.</p>
@@ -1876,6 +1879,8 @@ function buildPane(id){
   if(id==='sblk' && EMBED.blkMix){ const bm=EMBED.blkMix;
     mkChart('c_blk_mix',{type:'line',data:{labels:bm.labels,datasets:bm.series.map(x=>({label:x.name,data:x.data,borderColor:x.color,backgroundColor:x.color+'55',fill:true,tension:.3,pointRadius:2,borderWidth:2}))},
       options:baseOpts({interaction:{mode:'index',intersect:false},plugins:{title:{display:true,text:'Funnel-stage share of monthly plan (%)'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+'%'}}},scales:{y:{stacked:true,min:0,max:100,ticks:{callback:v=>v+'%'}},x:{stacked:true}}})});
+    mkChart('c_blk_abs',{type:'bar',data:{labels:bm.labels,datasets:bm.series.map(x=>({label:x.name,data:x.abs,backgroundColor:x.color,borderWidth:0}))},
+      options:baseOpts({interaction:{mode:'index',intersect:false},plugins:{title:{display:true,text:'Funnel-stage spend by month (\u00a3000s)'},tooltip:{callbacks:{label:c=>c.dataset.label+': \u00a3'+(c.parsed.y).toLocaleString()+'k'}}},scales:{y:{stacked:true,ticks:{callback:v=>'\u00a3'+v+'k'}},x:{stacked:true}}})});
   }
   if(id==='sfun' && EMBED.funnel){
     const F=EMBED.funnel;
