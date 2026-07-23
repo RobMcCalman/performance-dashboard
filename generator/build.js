@@ -1470,26 +1470,6 @@ if(D.atlModel){
 <li style="margin-bottom:8px"><b>Size the budget against multi-year LTV, not 12-month.</b> On 12-month net PLTV alone ATL returns <b>~${AM.ftd.base.roi.toFixed(2)}x</b> and would need to drive <b>~${AM.breakevenShare}%</b> of all halo-channel FTDs just to break even — it won't on that lens. Its case rests on longer LTV, cheaper brand search and category presence, so defend the budget on brand/efficiency grounds and judge it there, not on last-click CPA.</li>
 <li style="margin-bottom:8px"><b>Ring-fence ~10–15% for a clean measurement test — the highest-value action.</b> Run a <b>regional TV hold-out</b> (dark 1–2 regions for 6–8 weeks) or a <b>national on/off burst</b> and read the halo-channel + brand-search response. That single test turns every number on this tab from scenario into measured, and lets you rank media types — and eventually specific properties — for the first time.</li>
 </ol>
-<h3 class="subsec">Where to flex — model-ranked by medium</h3>
-${(()=>{ const m=AM.mediaMix.slice();
-  const totSp=m.reduce((a,r)=>a+r.sp,0), totF=m.reduce((a,r)=>a+r.incf,0); const blend=totSp/totF;
-  const rk=m.map(r=>({...r, roi:r.incp/r.sp, rel:r.cpi/blend}))
-            .sort((a,b)=>a.cpi-b.cpi);
-  const verdict=(r)=>{
-    if(r.m.indexOf('TV (linear)')===0) return ['<span class="pill amber">Hold</span>','Core reach base — keep, but tilt edits to 10s (below)'];
-    if(r.rel<=0.92) return ['<span class="pill green">Scale up</span>','Best £/FTD in the mix — put incremental ATL £ here'];
-    if(r.rel<=1.10) return ['<span class="pill amber">Hold</span>','Around the ATL average — maintain'];
-    return ['<span class="pill red">Trim / flex down</span>', r.m.indexOf('Other')===0?'Weakest £/FTD (impressions under-tracked — low confidence)':'Above-average cost per incremental FTD'];
-  };
-  const rows=rk.map(r=>{ const [v,act]=verdict(r); return {cells:[ r.m, gbpM(r.sp), r.spsh+'%', gbp(r.cpi), r.roi.toFixed(2)+'x', (r.rel*100).toFixed(0)+'%', v+' — '+act ]}; });
-  rows.push({cls:'tot',cells:['Blended ATL', gbpM(totSp),'100%', gbp(Math.round(blend)), (m.reduce((a,r)=>a+r.incp,0)/totSp).toFixed(2)+'x','100%','—']});
-  return tbl([{t:'ATL medium'},{t:'H1 spend',r:1},{t:'% of ATL',r:1},{t:'Cost / incr FTD',r:1},{t:'12m ROI',r:1},{t:'vs blended',r:1},{t:'Flex verdict'}], rows);
-})()}
-<p class="note">${(()=>{ const m=AM.mediaMix; const blend=m.reduce((a,r)=>a+r.sp,0)/m.reduce((a,r)=>a+r.incf,0);
-  const scale=m.filter(r=>r.m.indexOf('TV (linear)')!==0 && r.cpi/blend<=0.92).map(r=>r.m);
-  const trim=m.filter(r=>r.cpi/blend>1.10);
-  const trimSp=trim.reduce((a,r)=>a+r.sp,0);
-  return `<b>Flex read (model-ranked, directional):</b> the efficient tier — <b>${scale.join(' and ')}</b> — sits ~10–20% below the £${num(Math.round(blend))} blended cost per incremental FTD, so it is where incremental ATL money works hardest. The trim tier — <b>${trim.map(r=>r.m).join(', ')}</b> — totals <b>${gbpM(trimSp)} (${(trimSp/m.reduce((a,r)=>a+r.sp,0)*100).toFixed(0)}% of ATL)</b> at above-average £/FTD. Indicative move: redirect <b>~£0.5–0.75m</b> (a fifth to a third of that trim tier) into ${scale.join(' + ')} and toward <b>10s TV edits</b> (£${num(AM.spotLen[0].cpi)} vs £${num(AM.spotLen[1].cpi)}/incr FTD), while holding <b>linear TV</b> as the reach backbone. Amounts are planning inputs on a scenario model — confirm with the hold-out / on-off test (point 5) before committing budget.`; })()}</p>
 <p class="note">Anchored to the base halo scenario: £${gbpM(AM.atlH1).slice(1)} ATL H1 spend, ${num(AM.ftd.base.f)} incremental FTDs, £${AM.ppf} net PLTV per incremental FTD. ATL is a single untracked line in the warehouse, so any allocation below media-type level is a <b>planning input, not measured performance</b>; all of the above is directional pending a hold-out / on-off test.</p>
 <div class="kpis">
 ${kpi('ATL spend H1', gbpM(AM.atlH1), 'TV+radio+AVOOH+OV+sponsorship')}
@@ -1720,6 +1700,27 @@ ${(()=>{ const B=D.blockDetail; const GFF=(D.plans&&D.plans.gf)?D.plans.gf.f:nul
 })()}
 ${chartbox('c_blk_eff')}
 <p class="note">Planned <b>spend</b> is the FY26 media blockplan (all channels); <b>FTDs</b> are the Go faster plan's monthly acquisition targets; <b>CPA</b> = spend ÷ FTDs. Chart: spend bars (£m, left axis) against implied CPA (£, right axis) — the efficiency curve rises into H2 as the plan leans harder on higher-cost awareness/scale. Plan, not actuals.</p>
+<h2 class="sec">Recommendations — flexing the Awareness (ATL) spend</h2>
+${(()=>{ const AM=D.atlModel; if(!AM||!AM.mediaMix) return '<p class="note">ATL model data unavailable.</p>';
+  const m=AM.mediaMix.slice();
+  const totSp=m.reduce((a,r)=>a+r.sp,0), totF=m.reduce((a,r)=>a+r.incf,0); const blend=totSp/totF;
+  const rk=m.map(r=>({...r, roi:r.incp/r.sp, rel:r.cpi/blend})).sort((a,b)=>a.cpi-b.cpi);
+  const verdict=(r)=>{
+    if(r.m.indexOf('TV (linear)')===0) return ['<span class="pill amber">Hold</span>','Core reach base — keep, tilt edits to 10s'];
+    if(r.rel<=0.92) return ['<span class="pill green">Scale up</span>','Best £/FTD — put incremental Awareness £ here'];
+    if(r.rel<=1.10) return ['<span class="pill amber">Hold</span>','Around the ATL average — maintain'];
+    return ['<span class="pill red">Trim / flex down</span>', r.m.indexOf('Other')===0?'Weakest £/FTD (impressions under-tracked — low confidence)':'Above-average cost per incremental FTD'];
+  };
+  const rows=rk.map(r=>{ const [v,act]=verdict(r); return {cells:[ r.m, gbpM(r.sp), r.spsh+'%', gbp(r.cpi), r.roi.toFixed(2)+'x', (r.rel*100).toFixed(0)+'%', v+' — '+act ]}; });
+  rows.push({cls:'tot',cells:['Blended ATL', gbpM(totSp),'100%', gbp(Math.round(blend)), (m.reduce((a,r)=>a+r.incp,0)/totSp).toFixed(2)+'x','100%','—']});
+  const scale=m.filter(r=>r.m.indexOf('TV (linear)')!==0 && r.cpi/blend<=0.92).map(r=>r.m);
+  const trim=m.filter(r=>r.cpi/blend>1.10);
+  const trimSp=trim.reduce((a,r)=>a+r.sp,0);
+  const tblHtml=tbl([{t:'ATL medium'},{t:'H1 spend',r:1},{t:'% of ATL',r:1},{t:'Cost / incr FTD',r:1},{t:'12m ROI',r:1},{t:'vs blended',r:1},{t:'Flex verdict'}], rows);
+  return `<div class="callout">The blockplan's <b>Awareness</b> stage is the ATL/brand spend (TV, radio, AVOOH, online video, sponsorship, OOH). This ranks each ATL medium by <b>cost per incremental FTD</b> against the £${num(Math.round(blend))} blended benchmark from the ATL model — where to lean in vs pull back. Directional (scenario model); confirm with a hold-out / on-off test.</div>
+${tblHtml}
+<p class="note"><b>Flex read (model-ranked, directional):</b> the efficient tier — <b>${scale.join(' and ')}</b> — sits ~10–20% below the £${num(Math.round(blend))} blended cost per incremental FTD, so incremental Awareness money works hardest there. The trim tier — <b>${trim.map(r=>r.m).join(', ')}</b> — totals <b>${gbpM(trimSp)} (${(trimSp/totSp*100).toFixed(0)}% of ATL)</b> at above-average £/FTD. Indicative move: redirect <b>~£0.5–0.75m</b> (a fifth to a third of that trim tier) into ${scale.join(' + ')} and toward <b>10s TV edits</b> (£${num(AM.spotLen[0].cpi)} vs £${num(AM.spotLen[1].cpi)}/incr FTD), holding <b>linear TV</b> as the reach backbone. Full ATL model, halo detail and the measurement-test recommendation are on the <b>ATL model</b> tab.</p>`;
+})()}
 <h2 class="sec">Full plan — all channels &amp; sub-channels <span style="color:var(--muted);font-weight:600">(FY26, monthly \u00a3000s)</span></h2>
 ${(()=>{ const B=D.blockDetail;
   const rows=B.map(r=>({cls:r.p?'tot':'', cells:[ (r.p?'<b>':'<span style=\"color:var(--muted)\">')+r.n+(r.p?'</b>':'</span>'), r.role||'—', ...r.m.map(v=>v?num(Math.round(v/1000)):'—'), gbpM(r.fy) ]}));
