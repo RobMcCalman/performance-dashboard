@@ -1646,6 +1646,8 @@ if(D.blockplan){ const BLK=D.blockplan, FY=BLK.fy, A=BLK.add3m;
   const BMTOT=Array(12).fill(0); BSTG.forEach(([st])=>BMAT[st].forEach((v,i)=>BMTOT[i]+=v));
   const BMIX={}; BSTG.forEach(([st])=>BMIX[st]=BMAT[st].map((v,i)=>BMTOT[i]?+(v/BMTOT[i]*100).toFixed(1):0));
   EMBED.blkMix={labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],series:BSTG.map(([st,,hex])=>({name:st,color:hex,data:BMIX[st],abs:BMAT[st].map(v=>Math.round(v/1000))}))};
+  const GFF=(D.plans&&D.plans.gf)?D.plans.gf.f:null;
+  EMBED.blkEff={labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],spend:BMTOT.map(v=>+(v/1e6).toFixed(3)),ftds:GFF,cpa:BMTOT.map((v,i)=>GFF&&GFF[i]?Math.round(v/GFF[i]):null)};
   const pcm=(v,t)=>t?(v/t*100).toFixed(0)+'%':'—';
   const fyRows=[
     {cells:['<b style="color:var(--blue)">Awareness</b>', gbpM(FY.aw), pcm(FY.aw,FY.tot), 'TV, AV sponsorships (Discovery/DAZN/Sky Sports News), OOH, stadium LEDs, audio &amp; partnerships, cinema, AVOOH']},
@@ -1687,6 +1689,17 @@ ${chartbox('c_blk_abs')}
 <h3 class="subsec">Funnel mix trended over the year (% of monthly plan)</h3>
 ${chartbox('c_blk_mix')}
 <p class="note">Each stage's share of the month's total planned spend, month by month — a 100%-stacked view of how the funnel mix shifts across FY26.</p>
+<h2 class="sec">FTDs &amp; CPA vs spend — by month</h2>
+${(()=>{ const B=D.blockDetail; const GFF=(D.plans&&D.plans.gf)?D.plans.gf.f:null;
+  const MOn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const rows=MOn.map((m,i)=>{ const sp=BMTOT[i]; const f=GFF?GFF[i]:null; const cpa=f?sp/f:null;
+    return {cells:[ m, gbpM(sp), f!=null?num(f):'—', cpa!=null?gbp(Math.round(cpa)):'—' ]}; });
+  const spT=BMTOT.reduce((x,y)=>x+y,0); const fT=GFF?GFF.reduce((x,y)=>x+y,0):null; const cpaT=fT?spT/fT:null;
+  rows.push({cls:'tot',cells:['FY total', gbpM(spT), fT!=null?num(fT):'—', cpaT!=null?gbp(Math.round(cpaT)):'—']});
+  return tbl([{t:'Month'},{t:'Blockplan spend',r:1},{t:'Plan FTDs',r:1},{t:'Implied CPA',r:1}], rows);
+})()}
+${chartbox('c_blk_eff')}
+<p class="note">Planned <b>spend</b> is the FY26 media blockplan (all channels); <b>FTDs</b> are the Go faster plan's monthly acquisition targets; <b>CPA</b> = spend ÷ FTDs. Chart: spend bars (£m, left axis) against implied CPA (£, right axis) — the efficiency curve rises into H2 as the plan leans harder on higher-cost awareness/scale. Plan, not actuals.</p>
 <h2 class="sec">Full plan — all channels &amp; sub-channels <span style="color:var(--muted);font-weight:600">(FY26, monthly \u00a3000s)</span></h2>
 ${(()=>{ const B=D.blockDetail;
   const rows=B.map(r=>({cls:r.p?'tot':'', cells:[ (r.p?'<b>':'<span style=\"color:var(--muted)\">')+r.n+(r.p?'</b>':'</span>'), r.role||'—', ...r.m.map(v=>v?num(Math.round(v/1000)):'—'), gbpM(r.fy) ]}));
@@ -1887,6 +1900,12 @@ function buildPane(id){
       options:baseOpts({interaction:{mode:'index',intersect:false},plugins:{title:{display:true,text:'Funnel-stage share of monthly plan (%)'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+'%'}}},scales:{y:{stacked:true,min:0,max:100,ticks:{callback:v=>v+'%'}},x:{stacked:true}}})});
     mkChart('c_blk_abs',{type:'bar',data:{labels:bm.labels,datasets:bm.series.map(x=>({label:x.name,data:x.abs,backgroundColor:x.color,borderWidth:0}))},
       options:baseOpts({interaction:{mode:'index',intersect:false},plugins:{title:{display:true,text:'Funnel-stage spend by month (\u00a3000s)'},tooltip:{callbacks:{label:c=>c.dataset.label+': \u00a3'+(c.parsed.y).toLocaleString()+'k'}}},scales:{y:{stacked:true,ticks:{callback:v=>'\u00a3'+v+'k'}},x:{stacked:true}}})});
+    if(EMBED.blkEff){ const be=EMBED.blkEff;
+      mkChart('c_blk_eff',{data:{labels:be.labels,datasets:[
+        {type:'bar',label:'Spend (£m)',data:be.spend,backgroundColor:COL.blue+'cc',yAxisID:'y',order:2},
+        {type:'line',label:'Implied CPA (£)',data:be.cpa,borderColor:COL.pink,backgroundColor:COL.pink,yAxisID:'y1',tension:.3,pointRadius:3,borderWidth:2,order:1}
+      ]},options:baseOpts({interaction:{mode:'index',intersect:false},plugins:{title:{display:true,text:'Planned spend vs implied CPA by month'}},scales:{y:{position:'left',title:{display:true,text:'Spend (£m)'},ticks:{callback:v=>'£'+v+'m'}},y1:{position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'CPA (£)'},ticks:{callback:v=>'£'+v}}}})});
+    }
   }
   if(id==='sfun' && EMBED.funnel){
     const F=EMBED.funnel;
