@@ -1651,7 +1651,7 @@ if(D.blockplan){ const BLK=D.blockplan, FY=BLK.fy, A=BLK.add3m;
   EMBED.blkEff={labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],spend:BMTOT.map(v=>+(v/1e6).toFixed(3)),ftds:GFF,cpa:BMTOT.map((v,i)=>GFF&&GFF[i]?Math.round(v/GFF[i]):null)};
   const pcm=(v,t)=>t?(v/t*100).toFixed(0)+'%':'—';
   const fyRows=[
-    {cells:['<b style="color:var(--blue)">Awareness</b>', gbpM(FY.aw), pcm(FY.aw,FY.tot), 'TV, AV sponsorships (Discovery/DAZN/Sky Sports News), OOH, stadium LEDs, audio &amp; partnerships, cinema, AVOOH']},
+    {cells:['<b style="color:var(--blue)">Awareness</b>', gbpM(FY.aw), pcm(FY.aw,FY.tot), 'TV, AV sponsorships (Discovery/DAZN/Sky Sports News), sports &amp; entertainment sponsorships (Queensbury, Bournemouth, QPR, Sheff Weds, UFC, Watford, O2, Ladbible), OOH, stadium LEDs, audio &amp; partnerships, cinema, AVOOH']},
     {cells:['<b style="color:var(--sky)">Consideration</b>', gbpM(FY.con), pcm(FY.con,FY.tot), 'VOD, digital video / YouTube, premium social (X/TikTok/Meta), prospecting, UFC']},
     {cells:['<b style="color:var(--green)">Conversion</b>', gbpM(FY.conv), pcm(FY.conv,FY.tot), 'Affiliate, PPC Brand, Apple/Google app & search, Meta app & paid social, PPC generic, organic']},
     {cells:['Other / unallocated', gbpM(FY.oth), pcm(FY.oth,FY.tot), 'SEO, holding (TBC — O2/Ladbible/creator/late opportunities)']},
