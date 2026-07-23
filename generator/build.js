@@ -651,21 +651,27 @@ ${kpi('MTD net PLTV', gbpM(mtd.p), `fcst ${gbpM(moFcst.p)}`)}
 ${kpi('MTD PLTV/FTD', gbp(mtd.ppf), `fcst ${gbp(div(moFcst.p,moFcst.f))} · net`)}
 ${kpi('MTD LTV:CAC', f2(mtd.ltv), `CPA ${gbp(mtd.cpa)}`)}
 </div>
-<h2 class="sec">Full-month: plan vs forecast</h2>
+<h2 class="sec">Full-month: forecast vs plan — Go faster &amp; Budget</h2>
 ${(()=>{
-  const planCpa=div(planRef.s,planRef.f), fcCpa=div(moFcst.s,moFcst.f), planLtv=div(planRef.p,planRef.s);
-  const planPpf=div(planRef.p,planRef.f), mtdPpf=div(mtd.p,mtd.f), fcPpf=div(moFcst.p,moFcst.f);
+  const PLp=(D.plans||{}); const i=RM-1;
+  const gfJ=PLp.gf?{s:PLp.gf.s[i],f:PLp.gf.f[i],p:PLp.gf.p[i]}:planRef;
+  const bvJ=PLp.bv2?{s:PLp.bv2.s[i],f:PLp.bv2.f[i],p:PLp.bv2.p[i]}:planRef;
+  const der=o=>({s:o.s,f:o.f,p:o.p,cpa:div(o.s,o.f),ltv:div(o.p,o.s),ppf:div(o.p,o.f)});
+  const g=der(gfJ), b=der(bvJ);
+  const fc={s:moFcst.s,f:moFcst.f,p:moFcst.p,cpa:div(moFcst.s,moFcst.f),ltv:moFcst.ltv,ppf:div(moFcst.p,moFcst.f)};
+  const pl=(v)=>`<span class="pill ${ragPace(v)}">${pct(v)}</span>`;      // higher=better
+  const plCpa=(v)=>`<span class="pill ${ragPace(v)}">${pct(v)}</span>`;   // pass plan/fc (higher=cheaper=better)
   const rows=[
-    {cells:['Spend', gbpM(planRef.s), gbpM(mtd.s), gbpM(moFcst.s), `<span class="pill ${ragPace(paceS)}">${pct(paceS)}</span>`]},
-    {cells:['FTDs', num(planRef.f), num(mtd.f), num(moFcst.f), `<span class="pill ${ragPace(paceF)}">${pct(paceF)}</span>`]},
-    {cells:['Net 12m PLTV', gbpM(planRef.p), gbpM(mtd.p), gbpM(moFcst.p), `<span class="pill ${ragPace(paceP)}">${pct(paceP)}</span>`]},
-    {cells:['Net PLTV/FTD', gbp(planPpf), gbp(mtdPpf), gbp(fcPpf), `<span class="pill ${ragPace(div(fcPpf,planPpf))}">${pct(div(fcPpf,planPpf))}</span>`]},
-    {cells:['CPA', gbp(planCpa), gbp(mtd.cpa), gbp(fcCpa), `<span class="pill ${ragPace(div(planCpa,fcCpa))}">${pct(div(planCpa,fcCpa))}</span>`]},
-    {cells:['LTV:CAC', f2(planLtv), f2(mtd.ltv), f2(moFcst.ltv), `<span class="pill ${ragPace(div(moFcst.ltv,planLtv))}">${pct(div(moFcst.ltv,planLtv))}</span>`]},
+    {cells:['Spend', gbpM(mtd.s), gbpM(fc.s), gbpM(g.s), pl(div(fc.s,g.s)), gbpM(b.s), pl(div(fc.s,b.s))]},
+    {cells:['FTDs', num(mtd.f), num(fc.f), num(g.f), pl(div(fc.f,g.f)), num(b.f), pl(div(fc.f,b.f))]},
+    {cells:['Net 12m PLTV', gbpM(mtd.p), gbpM(fc.p), gbpM(g.p), pl(div(fc.p,g.p)), gbpM(b.p), pl(div(fc.p,b.p))]},
+    {cells:['Net PLTV/FTD', gbp(mtd.ppf), gbp(fc.ppf), gbp(g.ppf), pl(div(fc.ppf,g.ppf)), gbp(b.ppf), pl(div(fc.ppf,b.ppf))]},
+    {cells:['CPA', gbp(mtd.cpa), gbp(fc.cpa), gbp(g.cpa), plCpa(div(g.cpa,fc.cpa)), gbp(b.cpa), plCpa(div(b.cpa,fc.cpa))]},
+    {cells:['LTV:CAC', f2(mtd.ltv), f2(fc.ltv), f2(g.ltv), pl(div(fc.ltv,g.ltv)), f2(b.ltv), pl(div(fc.ltv,b.ltv))]},
   ];
-  return tbl([{t:'Metric'},{t:`${MO_CUR} plan`,r:1},{t:`MTD (1–${MD})`,r:1},{t:'Full-month fcst',r:1},{t:'Fcst vs plan',r:1}], rows);
+  return tbl([{t:'Metric'},{t:`MTD (1–${MD})`,r:1},{t:'Full-month fcst',r:1},{t:'Go faster',r:1},{t:'vs GF',r:1},{t:'Budget',r:1},{t:'vs Budget',r:1}], rows);
 })()}
-<p class="note">Full-month forecast = MTD actuals + remaining days × trailing daily average (affiliate gap-filled). Plan is the ${MO_CUR} monthly target (net of the affiliate revshare (15% to Mar, 10% from Apr)). For CPA, the pill is plan÷forecast (higher = cheaper than plan = good); for spend/FTDs/PLTV/LTV:CAC it is forecast÷plan. Per-channel plan-vs-forecast is on the Targets tab.</p>
+<p class="note">Full-month forecast = MTD actuals + remaining days × trailing daily average (affiliate gap-filled), compared to both FY26 plans for ${MO_CUR}: <b>Go faster</b> (the committed increased-investment plan) and <b>Budget</b> (the leaner £60m scenario). Net PLTV is net of the affiliate revshare (15% to Mar, 10% from Apr); Budget uses the plan's own modelled value. Pills = forecast ÷ plan (green ≥100, amber ≥90, red &lt;90); for CPA the pill is plan ÷ forecast (higher = cheaper than plan = better). Per-channel plan-vs-forecast is on the Targets tab.</p>
 <div class="grid2" style="margin-top:14px">${chartbox('c_mtd_spend')}${chartbox('c_mtd_ftd')}</div>
 <h2 class="sec">CPA — daily (MTD, net)</h2>
 ${chartbox('c_mtd_cpa')}
