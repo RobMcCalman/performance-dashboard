@@ -1721,6 +1721,14 @@ ${(()=>{ const AM=D.atlModel; if(!AM||!AM.mediaMix) return '<p class="note">ATL 
 ${tblHtml}
 <p class="note"><b>Flex read (model-ranked, directional):</b> the efficient tier — <b>${scale.join(' and ')}</b> — sits ~10–20% below the £${num(Math.round(blend))} blended cost per incremental FTD, so incremental Awareness money works hardest there. The trim tier — <b>${trim.map(r=>r.m).join(', ')}</b> — totals <b>${gbpM(trimSp)} (${(trimSp/totSp*100).toFixed(0)}% of ATL)</b> at above-average £/FTD. Indicative move: redirect <b>~£0.5–0.75m</b> (a fifth to a third of that trim tier) into ${scale.join(' + ')} and toward <b>10s TV edits</b> (£${num(AM.spotLen[0].cpi)} vs £${num(AM.spotLen[1].cpi)}/incr FTD), holding <b>linear TV</b> as the reach backbone. Full ATL model, halo detail and the measurement-test recommendation are on the <b>ATL model</b> tab.</p>`;
 })()}
+<h2 class="sec">Sponsorships — sports &amp; entertainment <span style="color:var(--muted);font-weight:600">(H2 activation · Awareness)</span></h2>
+${(()=>{ const SP=D.sponsors; if(!SP) return '';
+ const MOn=['Jul','Aug','Sep','Oct','Nov','Dec'];
+ const rows=SP.rows.map(r=>({cells:[ r.n, ...r.m.slice(6).map(v=>v?gbpK(v):'—'), gbpM(r.fy) ]}));
+ rows.push({cls:'tot',cells:['Total sponsorships', ...SP.tot.slice(6).map(v=>gbpK(v)), gbpM(SP.fy)]});
+ return tbl([{t:'Sponsorship'},...MOn.map(m=>({t:m,r:1})),{t:'FY total',r:1}], rows);
+})()}
+<p class="note">Sports &amp; entertainment sponsorship deals from the FY26 Blockplan sheet — <b>${gbpM(D.sponsors.fy)} full year</b>, ramping to <b>~£486–528k/month from August</b> and held in <b>Awareness</b> (the H2 brand rebalance). H1 columns (Jan–Jun) omitted for space; Watford (H1), UFC and Ladbible (Mar) and 4Ricky (Jun) sit earlier in the year. Judged on MMM + brand tracking over 6–12 months, not in-month CPA. <b>Note:</b> shown as a distinct sponsorship layer — some club/partner names (QPR, Bournemouth, Sheff Weds, DAZN, O2) also appear as LED/AV lines in the main plan above; treat these as the separate sponsorship/partnership deals, not duplicates.</p>
 <h2 class="sec">Full plan — all channels &amp; sub-channels <span style="color:var(--muted);font-weight:600">(FY26, monthly \u00a3000s)</span></h2>
 ${(()=>{ const B=D.blockDetail;
   const rows=B.map(r=>({cls:r.p?'tot':'', cells:[ (r.p?'<b>':'<span style=\"color:var(--muted)\">')+r.n+(r.p?'</b>':'</span>'), r.role||'—', ...r.m.map(v=>v?num(Math.round(v/1000)):'—'), gbpM(r.fy) ]}));
