@@ -1691,13 +1691,12 @@ ${chartbox('c_blk_abs')}
 ${chartbox('c_blk_mix')}
 <p class="note">Each stage's share of the month's total planned spend, month by month — a 100%-stacked view of how the funnel mix shifts across FY26.</p>
 <h2 class="sec">FTDs &amp; CPA vs spend — by month</h2>
-${(()=>{ const B=D.blockDetail; const GFF=(D.plans&&D.plans.gf)?D.plans.gf.f:null;
+${(()=>{ const GF=(D.plans&&D.plans.gf)?D.plans.gf:null; if(!GF) return '';
   const MOn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const rows=MOn.map((m,i)=>{ const sp=BMTOT[i]; const f=GFF?GFF[i]:null; const cpa=f?sp/f:null;
-    return {cells:[ m, gbpM(sp), f!=null?num(f):'—', cpa!=null?gbp(Math.round(cpa)):'—' ]}; });
-  const spT=BMTOT.reduce((x,y)=>x+y,0); const fT=GFF?GFF.reduce((x,y)=>x+y,0):null; const cpaT=fT?spT/fT:null;
-  rows.push({cls:'tot',cells:['FY total', gbpM(spT), fT!=null?num(fT):'—', cpaT!=null?gbp(Math.round(cpaT)):'—']});
-  return tbl([{t:'Month'},{t:'Blockplan spend',r:1},{t:'Plan FTDs',r:1},{t:'Implied CPA',r:1}], rows);
+  const rows=MOn.map((m,i)=>{ const sp=GF.s[i], f=GF.f[i], cpa=f?sp/f:null;
+    return {cells:[ m, gbpM(sp), num(f), cpa!=null?gbp(Math.round(cpa)):'-' ]}; });
+  rows.push({cls:'tot',cells:['FY total', gbpM(GF.tot.s), num(GF.tot.f), gbp(Math.round(GF.tot.s/GF.tot.f))]});
+  return tbl([{t:'Month'},{t:'Go faster spend',r:1},{t:'Go faster FTDs',r:1},{t:'Implied CPA',r:1}], rows);
 })()}
 ${chartbox('c_blk_eff')}
 <p class="note">Planned <b>spend</b> is the FY26 media blockplan (all channels); <b>FTDs</b> are the Go faster plan's monthly acquisition targets; <b>CPA</b> = spend ÷ FTDs. Chart: spend bars (£m, left axis) against implied CPA (£, right axis) — the efficiency curve rises into H2 as the plan leans harder on higher-cost awareness/scale. Plan, not actuals.</p>
